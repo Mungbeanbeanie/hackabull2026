@@ -26,7 +26,7 @@ Ordered by dependency. Each phase unblocks the next.
 - [ ] `wikimediaApi.java` — fetch structured biographical and political history text; supplies foundational background context for LLM entity summarization and profile enrichment
 
 ## Phase 5 — Tagging Pipeline (OpenStates data → PoliVector)
-- [ ] `prompt_builder.py` — construct LLM prompt from taxonomy.json + OpenStates figure data
+- [x] `prompt_builder.py` — construct LLM prompt from taxonomy.json + OpenStates figure data
 - [ ] `llm_analyst.py` — call LLM with prompt, return raw allele scores
 - [ ] `score_validator.py` — validate scores against vector.schema before PoliVector creation
 
