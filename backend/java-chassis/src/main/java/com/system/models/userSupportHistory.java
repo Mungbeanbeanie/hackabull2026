@@ -13,8 +13,9 @@
 
 package com.system.models;
 
-import main.java.com.system.storage.DataManager;
+import com.system.storage.DataManager;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 
@@ -26,20 +27,20 @@ public class userSupportHistory {
         this.dataManager = dataManager;
     }
 
-    public void addEntry(String titleId, String voteStatus, List<String> tags) {
+    public void addEntry(String titleId, String voteStatus, List<String> tags) throws IOException {
         String timestamp = Instant.now().toString();
         dataManager.appendHistoryEntry(titleId, timestamp, voteStatus, tags);
     }
 
-    public List<String> getLikedIds(int limit) {
+    public List<String> getLikedIds(int limit) throws IOException {
         return dataManager.readHistoryIdsByStatus("liked", limit);
     }
 
-    public List<String> getDislikedIds(int limit) {
+    public List<String> getDislikedIds(int limit) throws IOException {
         return dataManager.readHistoryIdsByStatus("disliked", limit);
     }
 
-    public void removeEntry(String titleId) {
+    public void removeEntry(String titleId) throws IOException {
         dataManager.deleteHistoryEntry(titleId);
     }
 }

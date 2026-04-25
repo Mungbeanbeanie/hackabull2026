@@ -4,7 +4,7 @@
     * later when move to a real database chng to SqlDatabaseManager.java logic
 */
 
-package main.java.com.system.storage;
+package com.system.storage;
 
 import java.io.*;
 import java.nio.file.*;
