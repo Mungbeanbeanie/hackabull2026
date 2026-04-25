@@ -21,7 +21,7 @@ Ordered by dependency. Each phase unblocks the next.
 - [x] `googleCivicInfoApi.java` — map user location to their specific representatives and districts
 - [x] `openStatesApi.java` — fetch all 50 state legislature data; sole source for PoliVector generation
 - [x] `congressGovApi.java` — federal voting records; used for Adherence Scalar only (not vector generation)
-- [ ] `openFecApi.java` — donor/PAC connections; feeds Edge Map directly (no LLM tagging)
+- [x] `openFecApi.java` — donor/PAC connections; feeds Edge Map directly (no LLM tagging)
 - [ ] `legiscanApi.java` — fetch raw bill texts and granular state-level roll-call voting records; handles deep policy text extraction and supplemental state data
 - [x] `wikimediaApi.java` — fetch structured biographical and political history text; supplies foundational background context for LLM entity summarization and profile enrichment
 
