@@ -1,0 +1,149 @@
+{
+  "version": "1.0.1",
+  "metadata": {
+    "description": "Genetic Political Alleles for deterministic policy similarity.",
+    "scale": "1 (Minimum) to 5 (Maximum)"
+  },
+  "alleles": [
+    {
+      "id": "p1",
+      "name": "Market Autonomy",
+      "definition": "The degree to which the economy operates as a self-correcting system vs. a managed one.",
+      "endpoint_1": "Regulated: Active state intervention and wealth redistribution (System Overrides).",
+      "endpoint_5": "Laissez-faire: Pure market logic and deregulation (Rigid Internal Consistency)."
+    },
+    {
+      "id": "p2",
+      "name": "Labor Alignment",
+      "definition": "The power balance between the system's human components (workers) and its controllers (management).",
+      "endpoint_1": "Pro-Labor: Strengthening unions and worker protections (Component Agency).",
+      "endpoint_5": "Pro-Management: Protecting corporate autonomy and employer flexibility (Controller Priority)."
+    },
+    {
+      "id": "p3",
+      "name": "Economic Boundary",
+      "definition": "The openness of the system to external economic 'code' and resources.",
+      "endpoint_1": "Globalism: Supporting free trade and global supply chains (Interconnected Systems).",
+      "endpoint_5": "Protectionism: High tariffs and domestic-only manufacturing (Isolated System)."
+    },
+    {
+      "id": "p4",
+      "name": "Fiscal Metabolism",
+      "definition": "The approach to the system's 'energy' (capital) expenditure.",
+      "endpoint_1": "Stimulus: Deficit spending to fund growth and social programs (System Expansion).",
+      "endpoint_5": "Austerity: Strict fiscal conservatism and balanced budgets (System Maintenance)."
+    },
+    {
+      "id": "p5",
+      "name": "Cultural Continuity",
+      "definition": "The adherence to the world's 'Legacy Code' vs. rewriting for modern parity.",
+      "endpoint_1": "Progressive: Dismantling traditional hierarchies for social equity (System Evolution).",
+      "endpoint_5": "Traditional: Upholding historical family structures and social norms (System Rigidity)."
+    },
+    {
+      "id": "p6",
+      "name": "Moral Source",
+      "definition": "The origin of the system's ethical operating parameters.",
+      "endpoint_1": "Secular: Strict separation of church and state (Logic-Based Governance).",
+      "endpoint_5": "Faith-Based: Religious morality guides public policy (Theocratic Architecture)."
+    },
+    {
+      "id": "p7",
+      "name": "Corrective Logic",
+      "definition": "The method for handling system 'errors' (crime).",
+      "endpoint_1": "Restorative: Reform, rehabilitation, and restructuring (Optimization).",
+      "endpoint_5": "Punitive: Tough on crime, pro-police, and strict sentencing (Rigid Enforcement)."
+    },
+    {
+      "id": "p8",
+      "name": "Armament Access",
+      "definition": "The distribution of defensive 'tools' to the system's individual components.",
+      "endpoint_1": "Gun Control: Strict federal restrictions on firearm access (Centralized Security).",
+      "endpoint_5": "Gun Rights: Absolute defense of the Second Amendment (Distributed Security)."
+    },
+    {
+      "id": "p9",
+      "name": "System Permeability",
+      "definition": "The control of external entities (immigrants) entering the system architecture.",
+      "endpoint_1": "Open: Pathways to citizenship and asylum access (Dynamic Scaling).",
+      "endpoint_5": "Closed: Border walls and strict deportation (Fixed Parameters)."
+    },
+    {
+      "id": "p10",
+      "name": "Establishment Alignment",
+      "definition": "The trust in the 'Legacy Architecture' vs. a desire to reboot.",
+      "endpoint_1": "Populist: Seeking to disrupt or dismantle the 'Establishment' (System Disruption).",
+      "endpoint_5": "Institutionalist: Defending established norms and agencies (Architectural Stability)."
+    },
+    {
+      "id": "p11",
+      "name": "Authority Distribution",
+      "definition": "The 'Server' structure of the government.",
+      "endpoint_1": "Federalism: Consolidating power at the national level (Centralized Hub).",
+      "endpoint_5": "States' Rights: Decentralizing power to local governments (Distributed Nodes)."
+    },
+    {
+      "id": "p12",
+      "name": "Interpretive Rigidity",
+      "definition": "The flexibility of the 'System Manual' (Constitution).",
+      "endpoint_1": "Living Document: Interpreting rules flexibly for modern context (Patching).",
+      "endpoint_5": "Originalism: Strict interpretation as originally written (Immutable Code)."
+    },
+    {
+      "id": "p13",
+      "name": "Branch Dominance",
+      "definition": "The balance of execution power within the system.",
+      "endpoint_1": "Legislative Supremacy: Constraining authority to law-makers (Distributed Governance).",
+      "endpoint_5": "Executive Power: Broad use of presidential/executive orders (Linear Command)."
+    },
+    {
+      "id": "p14",
+      "name": "Kinetic Projection",
+      "definition": "The system's active military footprint outside its own borders.",
+      "endpoint_1": "Isolationist: Withdrawing from foreign conflicts (Systemic Hibernation).",
+      "endpoint_5": "Interventionist: Projecting military strength globally (Systemic Predator)."
+    },
+    {
+      "id": "p15",
+      "name": "Diplomatic Protocol",
+      "definition": "The method of interacting with 'External Systems' (other nations).",
+      "endpoint_1": "Multilateral: Working through alliances like NATO/UN (Systemic Clusters).",
+      "endpoint_5": "Unilateral: Prioritizing national sovereignty over agreements (Standalone Operation)."
+    },
+    {
+      "id": "p16",
+      "name": "Biological Maintenance",
+      "definition": "The delivery system for component health (Healthcare).",
+      "endpoint_1": "Universal: Healthcare as a state-managed right (Systemic Provisioning).",
+      "endpoint_5": "Privatized: Healthcare as a market commodity (Component Responsibility)."
+    },
+    {
+      "id": "p17",
+      "name": "Social Safety Net",
+      "definition": "The presence of redundant resources for failing components.",
+      "endpoint_1": "Universal Net: Broad public welfare and assistance (Resource Buffering).",
+      "endpoint_5": "Self-Reliance: Individuals must earn their keep (Zero-Redundancy Logic)."
+    },
+    {
+      "id": "p18",
+      "name": "Ecological Priority",
+      "definition": "The management of the system's long-term environmental viability.",
+      "endpoint_1": "Green Transition: State-mandated shift to renewables (System Sustainability).",
+      "endpoint_5": "Fossil Fuel Dominance: Prioritizing growth through oil/gas (Resource Extraction)."
+    },
+    {
+      "id": "p19",
+      "name": "Transit Topology",
+      "definition": "The architecture of component movement across the system.",
+      "endpoint_1": "Public Transit: Walkable cities and high-speed rail (Mass Transit Logic).",
+      "endpoint_5": "Auto-Centric: Highway expansion and car infrastructure (Individual Transit Logic)."
+    },
+    {
+      "id": "p20",
+      "name": "Technological Oversight",
+      "definition": "The level of auditing applied to emerging 'External Code' (AI).",
+      "endpoint_1": "Tech Regulation: Auditing AI and antitrust enforcement (Code Policing).",
+      "endpoint_5": "Tech Laissez-Faire: Allowing rapid innovation and self-regulation (Unrestricted Evolution)."
+    }
+  ]
+}
