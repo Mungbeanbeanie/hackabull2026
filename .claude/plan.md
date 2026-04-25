@@ -50,8 +50,8 @@ Ordered by dependency. Each phase unblocks the next.
   - accepts `use_adherence` boolean flag; passes uniform_weights or adherence_weights to cosine_sim accordingly
 
 ## Phase 9 — Java↔Python IPC
-- [ ] `InferencePayload.java` — request/response data contract for PythonRunner
-- [ ] `PythonRunner.java` — launch Python scripts, pass payload via stdin, capture stdout
+- [x] `InferencePayload.java` — request/response data contract for PythonRunner
+- [x] `PythonRunner.java` — launch Python scripts, pass payload via stdin, capture stdout
 
 ## Phase 10 — Search Orchestration
 - [ ] `SearchController.java` — route queries (full-library / neighborhood / catalog)
