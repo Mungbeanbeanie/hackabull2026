@@ -1,6 +1,6 @@
 /*
- * Wikimedia API wrapper — fetches politician biography summaries from Wikipedia.
- * Delegates all OAuth token management to WikimediaOAuthClient.
+ * Wikimedia Enterprise API wrapper — fetches structured article data for politicians.
+ * Delegates all auth token management to WikimediaOAuthClient.
  * On 401, triggers a token refresh and retries the request once.
  */
 
@@ -19,7 +19,7 @@ import java.util.Map;
 
 public class wikimediaApi {
 
-    private static final String SUMMARY_BASE_URL = "https://en.wikipedia.org/api/rest_v1/page/summary/";
+    private static final String ARTICLE_BASE_URL = "https://api.enterprise.wikimedia.com/v2/articles/";
 
     private final WikimediaOAuthClient oauthClient;
     private final HttpClient httpClient;
@@ -31,7 +31,7 @@ public class wikimediaApi {
         this.objectMapper = new ObjectMapper();
     }
 
-    // Wikipedia REST API → biography summary for a politician; enriches PoliFigure metadata
+    // Enterprise API → structured article data for a politician; enriches PoliFigure metadata
     public Map<String, Object> fetchPoliticianSummary(String pageTitle)
             throws IOException, InterruptedException {
         String encoded = URLEncoder.encode(pageTitle, StandardCharsets.UTF_8);
@@ -40,13 +40,13 @@ public class wikimediaApi {
         HttpResponse<String> response = sendRequest(encoded, token);
 
         if (response.statusCode() == 401) {
-            // Cached token was rejected — refresh and retry once
+            // Token was rejected — force refresh and retry once
             token = oauthClient.forceRefresh();
             response = sendRequest(encoded, token);
         }
 
         if (response.statusCode() != 200) {
-            throw new IOException("Wikimedia summary request failed: HTTP " + response.statusCode()
+            throw new IOException("Wikimedia Enterprise request failed: HTTP " + response.statusCode()
                 + " for title=" + pageTitle);
         }
 
@@ -56,7 +56,7 @@ public class wikimediaApi {
     private HttpResponse<String> sendRequest(String encodedTitle, String token)
             throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(SUMMARY_BASE_URL + encodedTitle))
+            .uri(URI.create(ARTICLE_BASE_URL + encodedTitle))
             .header("Authorization", "Bearer " + token)
             .header("Accept", "application/json")
             .GET()

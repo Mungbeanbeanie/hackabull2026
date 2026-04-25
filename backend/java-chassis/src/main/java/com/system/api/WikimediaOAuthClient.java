@@ -1,6 +1,7 @@
 /*
- * Manages the Wikimedia OAuth 2.0 client-credentials token lifecycle.
- * Caches the active token and auto-refreshes before expiry or on upstream 401.
+ * Manages Wikimedia Enterprise API authentication.
+ * Logs in with username/password, caches the access token, and refreshes via
+ * refresh token before expiry. Falls back to full re-login if refresh fails.
  */
 
 package com.system.api;
@@ -17,67 +18,99 @@ import java.util.Objects;
 
 public class WikimediaOAuthClient {
 
-    private static final String TOKEN_URL = "https://meta.wikimedia.org/w/rest.php/oauth2/access_token";
+    private static final String LOGIN_URL = "https://auth.enterprise.wikimedia.com/v1/login";
+    private static final String REFRESH_URL = "https://auth.enterprise.wikimedia.com/v1/token-refresh";
     private static final long EXPIRY_BUFFER_SECONDS = 60;
 
-    private final String clientId;
-    private final String clientSecret;
+    private final String username;
+    private final String password;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
-    private String cachedToken;
+    private String accessToken;
+    private String refreshToken;
     private Instant tokenExpiresAt = Instant.EPOCH;
 
     public WikimediaOAuthClient() {
-        this.clientId = Objects.requireNonNull(
-            System.getenv("WIKIMEDIA_CLIENT_ID"), "WIKIMEDIA_CLIENT_ID must be set");
-        this.clientSecret = Objects.requireNonNull(
-            System.getenv("WIKIMEDIA_CLIENT_SECRET"), "WIKIMEDIA_CLIENT_SECRET must be set");
+        this.username = Objects.requireNonNull(
+            System.getenv("WIKIMEDIA_USERNAME"), "WIKIMEDIA_USERNAME must be set");
+        this.password = Objects.requireNonNull(
+            System.getenv("WIKIMEDIA_PASSWORD"), "WIKIMEDIA_PASSWORD must be set");
         this.httpClient = HttpClient.newHttpClient();
         this.objectMapper = new ObjectMapper();
     }
 
-    // Returns a valid token, fetching a new one if the cached token is expired or near expiry
+    // Returns a valid access token, refreshing or re-logging in as needed
     public synchronized String getToken() throws IOException, InterruptedException {
-        if (isTokenValid()) {
-            return cachedToken;
+        if (accessToken == null) {
+            login();
+        } else if (!isTokenValid()) {
+            refreshAccessToken();
         }
-        return fetchNewToken();
+        return accessToken;
     }
 
-    // Unconditionally fetches a new token; call when upstream returns 401
+    // Unconditionally refreshes the access token; call when upstream returns 401
     public synchronized String forceRefresh() throws IOException, InterruptedException {
-        return fetchNewToken();
+        refreshAccessToken();
+        return accessToken;
     }
 
     private boolean isTokenValid() {
-        return cachedToken != null
-            && Instant.now().plusSeconds(EXPIRY_BUFFER_SECONDS).isBefore(tokenExpiresAt);
+        return Instant.now().plusSeconds(EXPIRY_BUFFER_SECONDS).isBefore(tokenExpiresAt);
     }
 
-    private String fetchNewToken() throws IOException, InterruptedException {
-        String formBody = "grant_type=client_credentials"
-            + "&client_id=" + clientId
-            + "&client_secret=" + clientSecret;
+    private void login() throws IOException, InterruptedException {
+        String body = objectMapper.writeValueAsString(
+            new java.util.HashMap<>() {{
+                put("username", username);
+                put("password", password);
+            }}
+        );
 
+        JsonNode json = postJson(LOGIN_URL, body);
+        storeTokens(json);
+    }
+
+    private void refreshAccessToken() throws IOException, InterruptedException {
+        try {
+            String body = objectMapper.writeValueAsString(
+                new java.util.HashMap<>() {{
+                    put("refresh_token", refreshToken);
+                }}
+            );
+            JsonNode json = postJson(REFRESH_URL, body);
+            storeTokens(json);
+        } catch (IOException e) {
+            // Refresh token expired or invalid — fall back to full re-login
+            login();
+        }
+    }
+
+    private void storeTokens(JsonNode json) {
+        accessToken = json.get("access_token").asText();
+        // Refresh token is only issued on full login; preserve existing one on refresh responses
+        if (json.has("refresh_token")) {
+            refreshToken = json.get("refresh_token").asText();
+        }
+        long expiresIn = json.has("expires_in") ? json.get("expires_in").asLong() : 3600L;
+        tokenExpiresAt = Instant.now().plusSeconds(expiresIn);
+    }
+
+    private JsonNode postJson(String url, String body) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(TOKEN_URL))
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .POST(HttpRequest.BodyPublishers.ofString(formBody))
+            .uri(URI.create(url))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(body))
             .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
-            throw new IOException("OAuth token fetch failed: HTTP " + response.statusCode()
-                + " — " + response.body());
+            throw new IOException("Auth request to " + url + " failed: HTTP "
+                + response.statusCode() + " — " + response.body());
         }
 
-        JsonNode json = objectMapper.readTree(response.body());
-        cachedToken = json.get("access_token").asText();
-        long expiresIn = json.get("expires_in").asLong();
-        tokenExpiresAt = Instant.now().plusSeconds(expiresIn);
-
-        return cachedToken;
+        return objectMapper.readTree(response.body());
     }
 }
