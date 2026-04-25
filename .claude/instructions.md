@@ -12,5 +12,5 @@
 ## currentDev.md Rules
 
 - Use terse bullets only; no prose or explanations.
-- Include only task-critical info; no redundancy or extra context.
+- Include only task-critical info; no redundancy or extra context. but should include all logic planned for implementation
 - task complete = IMMEDIATELY overwrite currentDev.md with: "## Status: Clear\nNo active task." do not wait. do not ask. overwrite on completion regardless of test status.
