@@ -1,9 +1,12 @@
-# Computes the user taste vector and per-dimension weights from liked politician vectors
-# Called by inference_manager.py with vectors sourced by userPosPreference.java
+# Computes per-dimension adherence weights from a politician's voting history vectors
+# Input: multiple vector snapshots of a politician's votes over time (from Congress.gov / OpenStates)
+# Called by inference_manager.py per politician before cosine_sim is run
 #
-# Returns two values used directly by cosine_sim.py:
-#   avg_vector — centroid of all liked PoliVectors; becomes user_vector (left-hand side of cosine sim)
-#   weights    — per-dimension importance via 1/σ; low variance across liked vectors = strong preference = higher weight
+# Returns two values:
+#   avg_vector — politician's average position across their voting history
+#   weights    — adherence signal via 1/σ per dimension; low variance = consistent voting = higher weight
+#                fed into cosine_sim.py so dimensions where a politician reliably holds their position
+#                carry more influence in the final similarity score
 
 
 import json

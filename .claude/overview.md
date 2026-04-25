@@ -13,9 +13,16 @@ Two modules: 20D Vector Space + Weighted Edge Map.
 - Display: Radar chart (deep dive) + dimensionality-reduced scatter plot (overview)
 
 ## Feature: Adherence Scalar (w ∈ [0,1])
-- Measures Δ(Theoretical, Legislative) → "reliability score"
-- Practicality Toggle: applies w to 20D vector, physically shifts dot on map
-- WOW factor: animate dot moving from stated → actual position
+- Measures Δ(Theoretical Vector, Legislative Vector) → "reliability score"
+- Theoretical Vector = LLM-tagged PoliVector from OpenStates stated positions
+- Legislative Vector = avg_vector from weight_calculator.py (centroid of actual voting history)
+- Per-dimension adherence weights = 1/σ across voting history; consistent dimensions weighted higher
+
+### Toggle Mechanic
+- **Toggle OFF (default):** cosine_sim(user_vector, poli_vector, uniform_weights) — pure position alignment; "who says they agree with you"
+- **Toggle ON:** cosine_sim(user_vector, poli_vector, adherence_weights) — consistency-weighted; "who actually follows through"
+- cosine_sim.py is unchanged — inference_manager.py switches which weights it passes based on the toggle flag
+- WOW factor: animate dot moving from stated → actual position as toggle turns on
 
 ## Feature: Stochastic Edge Map
 - Weighted graph of influence infrastructure
@@ -88,10 +95,13 @@ congressGovApi      →  federal voting records → Adherence Scalar (comparison
 openFecApi          →  donor/PAC data → Edge Map (no LLM tagging)
 
 ── Query (per request) ────────────────────────────────────────────────────────
-QuizEngine / DemoProfile  →  user_vector + weights (idealized, quiz-generated)  ─┐
-user_history.csv → userNegPreference → constraint_discoverer.py → exclusion bounds ─┤
-                                                                                     ↓
-                             PythonRunner → InferencePayload → inference_manager.py
-                                                                       ↓
-                                                              cosine_sim.py → ranked PoliFigures
+QuizEngine / DemoProfile    →  user_vector (idealized, quiz-generated)
+politician voting history   →  weight_calculator.py → adherence_weights + avg_vector (legislative centroid)
+user_history.csv → userNegPreference → constraint_discoverer.py → exclusion bounds
+                                              ↓
+                         PythonRunner → InferencePayload → inference_manager.py
+                                              ↓                          ↓
+                                toggle=OFF: uniform_weights     toggle=ON: adherence_weights
+                                              ↓                          ↓
+                                         cosine_sim.py → ranked PoliFigures
 ```

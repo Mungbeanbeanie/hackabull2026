@@ -17,7 +17,7 @@ Ordered by dependency. Each phase unblocks the next.
 - [x] `DataManager.java` — sole CSV gatekeeper; read/write user_history.csv and politician library
 
 ## Phase 4 — API Ingestion
-- [ ] `ApiDispatcher.java` — route lookups to correct wrapper, merge normalized responses
+- [x] `ApiDispatcher.java` — route lookups to correct wrapper, merge normalized responses
 - [ ] `googleCivicInfoApi.java` — map user location to their specific representatives and districts
 - [ ] `openStatesApi.java` — fetch all 50 state legislature data; sole source for PoliVector generation
 - [ ] `congressGovApi.java` — federal voting records; used for Adherence Scalar only (not vector generation)
@@ -44,9 +44,10 @@ Ordered by dependency. Each phase unblocks the next.
 
 ## Phase 8 — Python Inference
 - [x] `cosine_sim.py` — weighted cosine similarity
+- [x] `weight_calculator.py` — per-dimension adherence weights (1/σ from politician's voting history); feeds cosine_sim
 - [x] `constraint_discoverer.py` — exclusion bounds from blacklisted vectors
 - [ ] `inference_manager.py` — orchestrate: pre-filter → cosine_sim → sort → return ranked IDs
-- ~~`weight_calculator.py`~~ — superseded by quiz-generated weights (kept for reference)
+  - accepts `useAdherence` boolean flag; passes uniform_weights or adherence_weights to cosine_sim accordingly
 
 ## Phase 9 — Java↔Python IPC
 - [ ] `InferencePayload.java` — request/response data contract for PythonRunner
