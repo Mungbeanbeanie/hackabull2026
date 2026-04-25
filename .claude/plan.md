@@ -18,12 +18,12 @@ Ordered by dependency. Each phase unblocks the next.
 
 ## Phase 4 — API Ingestion
 - [x] `ApiDispatcher.java` — route lookups to correct wrapper, merge normalized responses
-- [ ] `googleCivicInfoApi.java` — map user location to their specific representatives and districts
-- [ ] `openStatesApi.java` — fetch all 50 state legislature data; sole source for PoliVector generation
-- [ ] `congressGovApi.java` — federal voting records; used for Adherence Scalar only (not vector generation)
-- [ ] `openFecApi.java` — donor/PAC connections; feeds Edge Map directly (no LLM tagging)
-- [ ] `legiscanApi.java` — fetch raw bill texts and granular state-level roll-call voting records
-- [ ] `wikimediaApi.java` — fetch structured biographical and political history text for LLM enrichment
+- [x] `googleCivicInfoApi.java` — map user location to their specific representatives and districts
+- [x] `openStatesApi.java` — fetch all 50 state legislature data; sole source for PoliVector generation
+- [x] `congressGovApi.java` — federal voting records; used for Adherence Scalar only (not vector generation)
+- [x] `openFecApi.java` — donor/PAC connections; feeds Edge Map directly (no LLM tagging)
+- [x] `legiscanApi.java` — fetch raw bill texts and granular state-level roll-call voting records
+- [x] `wikimediaApi.java` — fetch structured biographical and political history text for LLM enrichment
 
 ## Phase 5 — Tagging Pipeline (OpenStates data → PoliVector)
 - [x] `prompt_builder.py` — construct LLM prompt from taxonomy.json + OpenStates figure data
