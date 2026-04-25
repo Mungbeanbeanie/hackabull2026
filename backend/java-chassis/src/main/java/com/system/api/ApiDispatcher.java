@@ -17,14 +17,17 @@ public class ApiDispatcher {
     private final congressGovApi congressApi;
     private final openFecApi fecApi;
     private final wikimediaApi wikiApi;
+    private final legiscanApi legiscanApi;
 
     public ApiDispatcher(googleCivicInfoApi civicApi, openStatesApi statesApi,
-                         congressGovApi congressApi, openFecApi fecApi, wikimediaApi wikiApi) {
+                         congressGovApi congressApi, openFecApi fecApi, wikimediaApi wikiApi,
+                         legiscanApi legiscanApi) {
         this.civicApi = civicApi;
         this.statesApi = statesApi;
         this.congressApi = congressApi;
         this.fecApi = fecApi;
         this.wikiApi = wikiApi;
+        this.legiscanApi = legiscanApi;
     }
 
     // Google Civic Info → politician IDs for the user's district
@@ -50,5 +53,15 @@ public class ApiDispatcher {
     // Wikimedia → biography summary; enriches PoliFigure metadata, not used for vector generation
     public Map<String, Object> getBiographyData(String pageTitle) throws IOException, InterruptedException {
         return wikiApi.fetchPoliticianSummary(pageTitle);
+    }
+
+    // LegiScan → full bill details including sponsors and base64 text links; supplemental policy data
+    public Map<String, Object> getBillDetails(int billId) throws IOException {
+        return legiscanApi.fetchBill(billId);
+    }
+
+    // LegiScan → granular roll-call record with individual member votes; supplemental state vote data
+    public Map<String, Object> getRollCall(int rollCallId) throws IOException {
+        return legiscanApi.fetchRollCall(rollCallId);
     }
 }
