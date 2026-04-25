@@ -46,7 +46,7 @@ Ordered by dependency. Each phase unblocks the next.
 - [x] `cosine_sim.py` — weighted cosine similarity
 - [x] `weight_calculator.py` — per-dimension adherence weights (1/σ from politician's voting history); feeds cosine_sim
 - [x] `constraint_discoverer.py` — exclusion bounds from blacklisted vectors
-- [ ] `inference_manager.py` — orchestrate: pre-filter → cosine_sim → sort → return ranked IDs
+- [x] `inference_manager.py` — orchestrate: pre-filter → cosine_sim → sort → return ranked IDs
   - accepts `useAdherence` boolean flag; passes uniform_weights or adherence_weights to cosine_sim accordingly
 
 ## Phase 9 — Java↔Python IPC
