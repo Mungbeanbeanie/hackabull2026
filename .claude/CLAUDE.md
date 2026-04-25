@@ -1,5 +1,6 @@
 # Project Overview (only load when architecture planning or context needed)
-@.claude/overview.md
+- **Comprehensive Context:** @.claude/overview.md
+- **File Breakdown:** @.claude/structure.md
 
 # Development Status
 - **Current Task:** @.claude/currentDev.md
