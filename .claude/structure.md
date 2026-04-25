@@ -1,34 +1,45 @@
 ALL FILES SHOULD BE MODULAR AND ONLY CONTAIN SINGULAR LOGIC
 Plan extension and relational edge mapping if time permits
 
-/poli
+/hackabull2026
 │
 ├── /backend                   # The "Intelligence" Layer
 │   ├── /java-chassis          # The "System Manager" (State & Flow)
 │   │   ├── /src/main/java/com/system/
-│   │   │   ├── /api           # Data Ingestion ()
+│   │   │   ├── /api           # Data Ingestion
+│   │   │   │   ├── BallotpediaApi.java
+│   │   │   │   ├── congressGovApi.java
+│   │   │   │   ├── googleCivicInfoApi.java
+│   │   │   │   ├── openFecApi.java
+│   │   │   │   └── proPublicaApi.java
 │   │   │   ├── /storage       # Persistence (CSV/DB Management)
 │   │   │   ├── /sampler       # Sampling (Stochastic/Sliding Window)
-│   │   │   ├── /models        # Rigid Objects (MediaVector, Title)
+│   │   │   ├── /models        # Rigid Objects
+│   │   │   │   └── PoliVector.java      # 20D policy vector model [stub]
+│   │   │   ├── /managers      # Orchestration / lifecycle managers
+│   │   │   │   ├── LibraryIndexer.java  # k-d tree spatial index [stub]
+│   │   │   │   └── SearchController.java # search routing logic [stub]
 │   │   │   └── /bridge        # IPC (Calling Python Workers)
-│   │   └── pom.xml            # Java Dependencies
+│   │   │       └── PythonRunner.java    # Java→Python stdin/stdout pipe [stub]
+│   │   └── pom.xml            # [planned] Java Dependencies
 │   │
 │   ├── /inference-engine      # The "Calculators" (Stateless Math)
-│   │   ├── /math              # Vector similarity & weights
-│   │   ├── /tagger            # LLM Prompting & Audit
-│   │   └── requirements.txt   # Python Dependencies
+│   │   ├── /math
+│   │   │   ├── cosine_sim.py       # 20D cosine similarity
+│   │   │   └── weight_calculator.py # Adherence scalar (w)
+│   │   ├── /tagging           # LLM Prompting & Audit
+│   │   └── requirements.txt   # [planned] Python Dependencies
 │   │
 │   └── /shared                # The "Contracts"
-│       ├── taxonomy.json      # Universal definitions for vectors
-│       └── vector.schema      # Structural data integrity
+│       ├── taxonomy.json      # [planned] Universal definitions for vectors
+│       └── vector.schema      # [planned] Structural data integrity
 │
 ├── /data                      # The "Knowledge Base" (The State)
-│   ├── /cache                 # Raw JSON API dumps
-│   ├── global_library.csv     # chng to pinecone or mongoDB
-│   └── user_history.csv       # optional user voting preference storage
+│   └── /cache
+│       └── /raw               # Raw JSON API dumps
 │
-├── /frontend                  # (FOR LATER) The "Interface" Layer
-│   ├── /web                   # React/Next.js dashboard
-│   └── /mobile                # React Native/Flutter app
+├── /frontend                  # The "Interface" Layer
+│   ├── /deskApp               # Desktop dashboard (Electron/web)
+│   └── /extension             # Browser extension (entity overlay)
 │
-└── docker-compose.yml         # (Optional) To run everything in sync
+└── docker-compose.yml         # [planned] Run everything in sync
