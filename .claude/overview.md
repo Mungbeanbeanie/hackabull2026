@@ -60,8 +60,10 @@ Two modules: 20D Vector Space + Weighted Edge Map.
 - `PoliFigure.java` — full politician object: figure metadata + ID + PoliVector
 - `userSupportHistory.java` — logic manager for user history; delegates all reads/writes to DataManager (entry shape: titleId, timestamp, voteStatus, tags)
 - `DataManager.java` — sole gatekeeper for CSV reads/writes (later: MongoDB/SQL)
-- `userPosPreference.java` — pulls last N liked politicians from user_history.csv → input for weight_calculator
-- `userNegPreference.java` — pulls last 20 disliked/blacklisted politicians → input for constraint_discoverer
+- `QuizEngine.java` — presents 20-allele quiz, maps answers to a 20D idealized user_vector + per-dimension weights
+- `UserProfile.java` — holds quiz-generated user_vector and weights; passed directly to inference pipeline
+- `DemoProfile.java` — hardcoded demo vector + uniform weights for prototype (swapped out when QuizEngine is live)
+- `userNegPreference.java` — pulls last 20 explicitly disliked IDs → resolves PoliVectors → input for constraint_discoverer
 - `LibraryIndexer.java` — k-d tree spatial index (RAM-only for local dev; swap to Pinecone/Weaviate for prod)
 - `SearchController.java` — routes queries to full-library scan, neighborhood, or catalog
 - `PythonRunner.java` — Java→Python IPC via stdin/stdout
@@ -86,10 +88,10 @@ congressGovApi      →  federal voting records → Adherence Scalar (comparison
 openFecApi          →  donor/PAC data → Edge Map (no LLM tagging)
 
 ── Query (per request) ────────────────────────────────────────────────────────
-user_history.csv → userPosPreference → weight_calculator.py  →  avg_vector + weights ─┐
-user_history.csv → userNegPreference → constraint_discoverer.py → exclusion bounds    ─┤
-                                                                                        ↓
-                              PythonRunner → InferencePayload → inference_manager.py
-                                                                        ↓
-                                                               cosine_sim.py → ranked PoliFigures
+QuizEngine / DemoProfile  →  user_vector + weights (idealized, quiz-generated)  ─┐
+user_history.csv → userNegPreference → constraint_discoverer.py → exclusion bounds ─┤
+                                                                                     ↓
+                             PythonRunner → InferencePayload → inference_manager.py
+                                                                       ↓
+                                                              cosine_sim.py → ranked PoliFigures
 ```

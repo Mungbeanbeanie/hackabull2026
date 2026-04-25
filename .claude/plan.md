@@ -31,15 +31,20 @@ Ordered by dependency. Each phase unblocks the next.
 ## Phase 6 — Library Index
 - [ ] `LibraryIndexer.java` — build k-d tree from PoliFigures on boot; handle lookups by ID
 
-## Phase 7 — Samplers
-- [ ] `userPosPreference.java` — pull last N liked IDs → resolve PoliVectors → feed weight_calculator
-- [ ] `userNegPreference.java` — pull last 20 disliked IDs → resolve PoliVectors → feed constraint_discoverer
+## Phase 7 — User Profile
+- [ ] `QuizEngine.java` — presents 20-allele quiz to user, maps answers to a 20D idealized vector and per-dimension weights
+- [ ] `UserProfile.java` — stores quiz-generated user_vector + weights; passed directly to inference pipeline
+- [ ] `DemoProfile.java` — hardcoded demo vector + uniform weights for prototype; swapped out when QuizEngine is live
+- [ ] `userNegPreference.java` — pull last 20 explicitly disliked IDs → resolve PoliVectors → feed constraint_discoverer
+
+> Note: `userPosPreference.java` is removed — the quiz replaces history-based positive preference sampling.
+> `weight_calculator.py` is no longer used for user_vector derivation; weights come from the quiz directly.
 
 ## Phase 8 — Python Inference
 - [x] `cosine_sim.py` — weighted cosine similarity
-- [x] `weight_calculator.py` — avg_vector (user_vector) + per-dimension weights via 1/σ
 - [x] `constraint_discoverer.py` — exclusion bounds from blacklisted vectors
 - [ ] `inference_manager.py` — orchestrate: pre-filter → cosine_sim → sort → return ranked IDs
+- ~~`weight_calculator.py`~~ — superseded by quiz-generated weights (kept for reference)
 
 ## Phase 9 — Java↔Python IPC
 - [ ] `InferencePayload.java` — request/response data contract for PythonRunner
