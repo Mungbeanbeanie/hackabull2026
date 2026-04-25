@@ -8,3 +8,4 @@
 
 # Guidelines
 - Follow all rules in @.claude/instructions.md
+- responsible for updating overview.md, plan.md, structure.md outside of manual request (alway ask if user is ok with update before execution)
