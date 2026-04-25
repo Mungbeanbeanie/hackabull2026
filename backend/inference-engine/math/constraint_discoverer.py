@@ -1,8 +1,10 @@
-# Derives per-dimension exclusion bounds from a set of blacklisted PoliVectors
-# Given last N disliked politician vectors, finds upper/lower bounds per dimension
-# Any candidate vector with a dimension outside those bounds is excluded
-# Called by inference_manager.py after userNegPreference samples the blacklist
-# passes bound to inference_manager.py to prevent useless math done by cosine_sim.py
+# Derives exclusion bounds from blacklisted PoliVectors — called by inference_manager.py
+# Input: PoliVectors of last 20 disliked politicians (IDs resolved by userNegPreference.java)
+#
+# Finds the 3 alleles with lowest σ across those vectors — lowest variance = most consistent
+# signal of what the user hates — and returns lower/upper bounds for each of those alleles.
+# inference_manager.py uses these bounds to drop candidates BEFORE cosine_sim runs,
+# avoiding similarity math on figures the user will definitely reject.
 
 import json
 import sys

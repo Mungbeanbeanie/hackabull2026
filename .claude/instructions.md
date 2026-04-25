@@ -1,4 +1,4 @@
-# Claude Instructions — Waypoint
+# Claude Instructions — hackabull2026
 
 ## Code Editing Rules
 

@@ -1,6 +1,9 @@
-# calcs the weight of "allele" based on the user taste profle
-# weight is different per "allele" and is used in recommendation engine
-# user taste profile is found and created by WindowSampler.java and weight_caculator.py
+# Computes the user taste vector and per-dimension weights from liked politician vectors
+# Called by inference_manager.py with vectors sourced by userPosPreference.java
+#
+# Returns two values used directly by cosine_sim.py:
+#   avg_vector — centroid of all liked PoliVectors; becomes user_vector (left-hand side of cosine sim)
+#   weights    — per-dimension importance via 1/σ; low variance across liked vectors = strong preference = higher weight
 
 
 import json
