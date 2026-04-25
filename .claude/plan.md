@@ -11,7 +11,7 @@ Ordered by dependency. Each phase unblocks the next.
 ## Phase 2 — Data Models
 - [x] `PoliVector.java` — 20D policy vector (d1–d20)
 - [x] `PoliFigure.java` — full politician object (metadata + ID + PoliVector)
-- [ ] `userSupportHistory.java` — logic manager for user history; calls DataManager for all CSV I/O (add/query/remove entries)
+- [x] `userSupportHistory.java` — logic manager for user history; calls DataManager for all CSV I/O (add/query/remove entries)
 
 ## Phase 3 — Storage
 - [ ] `DataManager.java` — sole CSV gatekeeper; read/write user_history.csv and politician library
