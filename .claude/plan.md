@@ -31,7 +31,7 @@ Ordered by dependency. Each phase unblocks the next.
 - [x] `score_validator.py` — validate scores against vector.schema before PoliVector creation
 
 ## Phase 6 — Library Index
-- [ ] `LibraryIndexer.java` — RAM index for PoliFigures; lookups by ID + full candidate list for scoring
+- [x] `LibraryIndexer.java` — RAM index for PoliFigures; lookups by ID + full candidate list for scoring
 
 ## Phase 7 — User Profile
 - [x] `QuizEngine.java` — presents 20-plank quiz to user, maps answers to a 20D idealized vector and per-dimension weights
