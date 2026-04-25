@@ -27,7 +27,7 @@ Ordered by dependency. Each phase unblocks the next.
 
 ## Phase 5 — Tagging Pipeline (OpenStates data → PoliVector)
 - [x] `prompt_builder.py` — construct LLM prompt from taxonomy.json + OpenStates figure data
-- [ ] `llm_analyst.py` — call LLM with prompt, return raw allele scores
+- [x] `llm_analyst.py` — call LLM with prompt, return raw allele scores
 - [ ] `score_validator.py` — validate scores against vector.schema before PoliVector creation
 
 ## Phase 6 — Library Index
