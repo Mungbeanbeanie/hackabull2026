@@ -65,7 +65,10 @@ Two modules: 20D Vector Space + Weighted Edge Map.
 - `LibraryIndexer.java` — k-d tree spatial index (RAM-only for local dev; swap to Pinecone/Weaviate for prod)
 - `SearchController.java` — routes queries to full-library scan, neighborhood, or catalog
 - `PythonRunner.java` — Java→Python IPC via stdin/stdout
-- API wrappers — Ballotpedia, Congress.gov, Google Civic Info, OpenFEC, ProPublica
+- `googleCivicInfoApi.java` — maps user location to their specific representatives and districts
+- `openStatesApi.java` — all 50 state legislature data; sole source for PoliVector generation via LLM tagging
+- `congressGovApi.java` — federal voting records; used for Adherence Scalar comparison only
+- `openFecApi.java` — donor/PAC connections; feeds Edge Map directly (no LLM tagging)
 
 ### Not started
 - Frontend: `deskApp`, `extension`
@@ -74,14 +77,19 @@ Two modules: 20D Vector Space + Weighted Edge Map.
 ## Data Flow (target)
 ```
 Frontend → RequestHandler → SearchController
-                                  ↓
-ApiDispatcher → [API wrappers] → raw figure data
-                                  ↓
-prompt_builder → llm_analyst (LLM) → score_validator → PoliVector → PoliFigure → LibraryIndexer
-                                  ↓
-user_history.csv → userPosPreference → weight_calculator.py (1/σ weights)
-                                  ↓
-user_history.csv → userNegPreference → constraint_discoverer.py (exclusion bounds)
-                                  ↓
-PythonRunner → InferencePayload → inference_manager.py → cosine_sim.py → ranked PoliFigures
+
+── Ingestion (one-time / on-demand) ──────────────────────────────────────────
+googleCivicInfoApi  →  user location → rep/district lookup
+openStatesApi       →  legislative data → prompt_builder → llm_analyst (LLM)
+                                            → score_validator → PoliVector → PoliFigure → LibraryIndexer
+congressGovApi      →  federal voting records → Adherence Scalar (comparison only, not vector input)
+openFecApi          →  donor/PAC data → Edge Map (no LLM tagging)
+
+── Query (per request) ────────────────────────────────────────────────────────
+user_history.csv → userPosPreference → weight_calculator.py  →  avg_vector + weights ─┐
+user_history.csv → userNegPreference → constraint_discoverer.py → exclusion bounds    ─┤
+                                                                                        ↓
+                              PythonRunner → InferencePayload → inference_manager.py
+                                                                        ↓
+                                                               cosine_sim.py → ranked PoliFigures
 ```

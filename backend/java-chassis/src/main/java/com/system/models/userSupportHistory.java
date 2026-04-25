@@ -11,7 +11,7 @@
     *   titleId (String), timestamp (ISO-8601), voteStatus (String), tags (List<String>)
 */
 
-package main.java.com.system.models;
+package com.system.models;
 
 import main.java.com.system.storage.DataManager;
 

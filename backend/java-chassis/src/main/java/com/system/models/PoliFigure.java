@@ -3,7 +3,7 @@
     * basically full obj of a given figure
 */
 
-package main.java.com.system.models;
+package com.system.models;
 
 import java.util.Objects;
 

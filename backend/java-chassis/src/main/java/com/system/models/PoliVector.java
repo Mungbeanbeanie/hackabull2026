@@ -3,7 +3,7 @@
     * basically stores the 10 values defiend in taxonomy.java
 */
 
-package main.java.com.system.models;
+package com.system.models;
 
 import java.util.Objects;
 

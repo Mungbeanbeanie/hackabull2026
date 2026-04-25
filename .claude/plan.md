@@ -14,18 +14,17 @@ Ordered by dependency. Each phase unblocks the next.
 - [x] `userSupportHistory.java` — logic manager for user history; calls DataManager for all CSV I/O (add/query/remove entries)
 
 ## Phase 3 — Storage
-- [ ] `DataManager.java` — sole CSV gatekeeper; read/write user_history.csv and politician library
+- [x] `DataManager.java` — sole CSV gatekeeper; read/write user_history.csv and politician library
 
 ## Phase 4 — API Ingestion
 - [ ] `ApiDispatcher.java` — route lookups to correct wrapper, merge normalized responses
-- [ ] `BallotpediaApi.java` — fetch candidate bio + office data
-- [ ] `congressGovApi.java` — fetch voting records
-- [ ] `googleCivicInfoApi.java` — fetch district/office data
-- [ ] `openFecApi.java` — fetch campaign finance data
-- [ ] `proPublicaApi.java` — fetch legislative voting history
+- [ ] `googleCivicInfoApi.java` — map user location to their specific representatives and districts
+- [ ] `openStatesApi.java` — fetch all 50 state legislature data; sole source for PoliVector generation
+- [ ] `congressGovApi.java` — federal voting records; used for Adherence Scalar only (not vector generation)
+- [ ] `openFecApi.java` — donor/PAC connections; feeds Edge Map directly (no LLM tagging)
 
-## Phase 5 — Tagging Pipeline (raw data → PoliVector)
-- [ ] `prompt_builder.py` — construct LLM prompt from taxonomy.json + figure metadata
+## Phase 5 — Tagging Pipeline (OpenStates data → PoliVector)
+- [ ] `prompt_builder.py` — construct LLM prompt from taxonomy.json + OpenStates figure data
 - [ ] `llm_analyst.py` — call LLM with prompt, return raw allele scores
 - [ ] `score_validator.py` — validate scores against vector.schema before PoliVector creation
 
