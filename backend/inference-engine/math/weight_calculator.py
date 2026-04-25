@@ -17,6 +17,21 @@ VECTOR_LENGTH = 20
 EPSILON = 1e-6
 WEIGHT_FLOOR = 0.1
 
+def compute(vectors: list) -> dict:
+    # Step 3 — compute avg_vector
+    n = len(vectors)
+    avg_vector = [sum(vec[i] for vec in vectors) / n for i in range(VECTOR_LENGTH)]
+
+    # Step 4 — compute weights via 1/σ (population std dev — we have the full ledger)
+    weights = []
+    for i in range(VECTOR_LENGTH):
+        column = [vec[i] for vec in vectors]
+        sigma = statistics.pstdev(column)
+        weights.append(max(1.0 / (sigma + EPSILON), WEIGHT_FLOOR)) # makes sure to not delete low weight alleles by adding wieght floor
+
+    return {"avg_vector": avg_vector, "weights": weights}
+
+
 def main():
     # Step 1 — read stdin parse
     raw = sys.stdin.read()
@@ -37,19 +52,9 @@ def main():
                 print(json.dumps({"error": f"non-numeric value in vector at index {i}"}), file=sys.stderr)
                 sys.exit(1)
 
-    # Step 3 — compute avg_vector
-    n = len(vectors)
-    avg_vector = [sum(vec[i] for vec in vectors) / n for i in range(VECTOR_LENGTH)]
-
-    # Step 4 — compute weights via 1/σ (population std dev — we have the full ledger)
-    weights = []
-    for i in range(VECTOR_LENGTH):
-        column = [vec[i] for vec in vectors]
-        sigma = statistics.pstdev(column)
-        weights.append(max(1.0 / (sigma + EPSILON), WEIGHT_FLOOR)) # makes sure to not delete low weight alleles by adding wieght floor
-
     # Step 5 — output
-    print(json.dumps({"avg_vector": avg_vector, "weights": weights}))
+    result = compute(vectors)
+    print(json.dumps(result))
     sys.exit(0)
 
 

@@ -15,19 +15,32 @@ import java.util.Scanner;
 
 public class QuizEngine {
 
-    private static final String TAXONOMY_PATH = "backend/shared/taxonomy.json";
+    private final String taxonomyPath;
+    private static final String DEFAULT_TAXONOMY_PATH = "backend/shared/taxonomy.json";
     private static final float  SKIP_SCORE    = 3.0f;
     private static final float  SKIP_WEIGHT   = 0.5f;
     private static final float  FULL_WEIGHT   = 1.0f;
 
+    public QuizEngine() {
+        this.taxonomyPath = DEFAULT_TAXONOMY_PATH;
+    }
+
+    /* package-private — inject path for tests */
+    QuizEngine(String taxonomyPath) {
+        this.taxonomyPath = taxonomyPath;
+    }
+
     public UserProfile run() throws Exception {
+        return run(new Scanner(System.in));
+    }
+
+    public UserProfile run(Scanner sc) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode root   = mapper.readTree(new File(TAXONOMY_PATH));
+        JsonNode root   = mapper.readTree(new File(taxonomyPath));
         JsonNode planks = root.has("planks") ? root.get("planks") : root.get("alleles");
 
         float[] vector  = new float[20];
         float[] weights = new float[20];
-        Scanner sc = new Scanner(System.in);
 
         System.out.println("\n=== Civic Alignment Quiz ===");
         System.out.println("Rate each policy dimension 1-5, or press S to skip.\n");

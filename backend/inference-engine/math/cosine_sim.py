@@ -9,7 +9,7 @@ import sys
 
 VECTOR_LENGTH = 20
 
-def vaidate(user_vector, poli_vector, weights):
+def validate(user_vector, poli_vector, weights):
     for name, vec in [("user_vector", user_vector), ("poli_vector", poli_vector), ("weights", weights)]:
         if not isinstance(vec, list) or len(vec) != VECTOR_LENGTH:
             raise ValueError(f"{name} must be a list of length {VECTOR_LENGTH}")

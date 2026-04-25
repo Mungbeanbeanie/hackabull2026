@@ -34,6 +34,11 @@ def main():
             print(json.dumps({"error": f"non-numeric value in vector at index {i}"}), file=sys.stderr)
             sys.exit(1)
 
+    print(json.dumps(compute(vectors)))
+    sys.exit(0)
+
+
+def compute(vectors: list) -> dict:
     # find 3 alleles with lowest σ — strongest consistent signal of what's hated
     sigmas = []
     for i in range(VECTOR_LENGTH):
@@ -48,8 +53,7 @@ def main():
         column = [vec[i] for vec in vectors]
         constraints.append({"allele": i, "lower": min(column), "upper": max(column)})
 
-    print(json.dumps({"constraints": constraints}))
-    sys.exit(0)
+    return {"constraints": constraints}
 
 
 if __name__ == "__main__":

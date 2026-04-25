@@ -12,11 +12,21 @@ import java.util.*;
 
 public class DataManager {
 
-    private static final String HISTORY_PATH = "data/cache/user_history.csv";
+    private static final String DEFAULT_PATH = "data/cache/user_history.csv";
     private static final String HISTORY_HEADER = "titleId,timestamp,voteStatus,tags";
+    private final String historyPath;
+
+    public DataManager() {
+        this.historyPath = DEFAULT_PATH;
+    }
+
+    /* package-private — inject path for tests */
+    DataManager(String historyPath) {
+        this.historyPath = historyPath;
+    }
 
     public void appendHistoryEntry(String titleId, String timestamp, String voteStatus, List<String> tags) throws IOException {
-        File file = new File(HISTORY_PATH);
+        File file = new File(historyPath);
         boolean isNew = !file.exists() || file.length() == 0;
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file, true))) {
@@ -32,7 +42,7 @@ public class DataManager {
 
     // returns last `limit` titleIds with matching voteStatus (most recent first)
     public List<String> readHistoryIdsByStatus(String voteStatus, int limit) throws IOException {
-        File file = new File(HISTORY_PATH);
+        File file = new File(historyPath);
         if (!file.exists()) return Collections.emptyList();
 
         List<String> matched = new ArrayList<>();
@@ -53,7 +63,7 @@ public class DataManager {
     }
 
     public void deleteHistoryEntry(String titleId) throws IOException {
-        File file = new File(HISTORY_PATH);
+        File file = new File(historyPath);
         if (!file.exists()) return;
 
         Path path = file.toPath();
