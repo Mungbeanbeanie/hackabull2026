@@ -16,46 +16,38 @@ public class PythonRunner {
     private static final String PYTHON_CMD       = "python3";
     private static final String INFERENCE_SCRIPT = "backend/inference-engine/inference_manager.py";
 
-    public static InferencePayload.Response run(InferencePayload.Request payload) {
-        String json = payload.toJson();
-
-        ProcessBuilder pb = new ProcessBuilder(List.of(PYTHON_CMD, INFERENCE_SCRIPT));
+    // General-purpose pipe: any script path, raw JSON in, raw JSON out
+    public String run(String scriptPath, String jsonPayload) {
+        ProcessBuilder pb = new ProcessBuilder(List.of(PYTHON_CMD, scriptPath));
         pb.redirectErrorStream(false);
 
         Process process;
         try {
             process = pb.start();
         } catch (Exception e) {
-            throw new RuntimeException("failed to launch inference_manager.py", e);
+            throw new RuntimeException("failed to launch " + scriptPath, e);
         }
 
-        // write payload JSON to Python stdin
         try (Writer stdin = new OutputStreamWriter(process.getOutputStream(), StandardCharsets.UTF_8)) {
-            stdin.write(json);
+            stdin.write(jsonPayload);
         } catch (Exception e) {
-            throw new RuntimeException("failed to write payload to inference_manager stdin", e);
+            throw new RuntimeException("failed to write payload to " + scriptPath + " stdin", e);
         }
 
-        // read stdout into a string
         StringBuilder stdout = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
             String line;
-            while ((line = reader.readLine()) != null) {
-                stdout.append(line);
-            }
+            while ((line = reader.readLine()) != null) stdout.append(line);
         } catch (Exception e) {
-            throw new RuntimeException("failed to read inference_manager stdout", e);
+            throw new RuntimeException("failed to read " + scriptPath + " stdout", e);
         }
 
-        // collect stderr for error reporting
         StringBuilder stderr = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
             String line;
-            while ((line = reader.readLine()) != null) {
-                stderr.append(line).append('\n');
-            }
+            while ((line = reader.readLine()) != null) stderr.append(line).append('\n');
         } catch (Exception ignored) {}
 
         int exitCode;
@@ -63,13 +55,20 @@ public class PythonRunner {
             exitCode = process.waitFor();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("interrupted while waiting for inference_manager.py", e);
+            throw new RuntimeException("interrupted while waiting for " + scriptPath, e);
         }
 
         if (exitCode != 0) {
-            throw new RuntimeException("inference_manager.py exited " + exitCode + ": " + stderr.toString().trim());
+            throw new RuntimeException(scriptPath + " exited " + exitCode + ": " + stderr.toString().trim());
         }
 
-        return InferencePayload.Response.fromJson(stdout.toString());
+        return stdout.toString();
     }
+
+    // Typed convenience wrapper for inference_manager.py
+    public InferencePayload.Response run(InferencePayload.Request payload) {
+        return InferencePayload.Response.fromJson(run(INFERENCE_SCRIPT, payload.toJson()));
+    }
+
+
 }
