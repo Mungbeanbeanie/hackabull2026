@@ -16,13 +16,15 @@ public class ApiDispatcher {
     private final openStatesApi statesApi;
     private final congressGovApi congressApi;
     private final openFecApi fecApi;
+    private final wikimediaApi wikiApi;
 
     public ApiDispatcher(googleCivicInfoApi civicApi, openStatesApi statesApi,
-                         congressGovApi congressApi, openFecApi fecApi) {
+                         congressGovApi congressApi, openFecApi fecApi, wikimediaApi wikiApi) {
         this.civicApi = civicApi;
         this.statesApi = statesApi;
         this.congressApi = congressApi;
         this.fecApi = fecApi;
+        this.wikiApi = wikiApi;
     }
 
     // Google Civic Info → politician IDs for the user's district
@@ -43,5 +45,10 @@ public class ApiDispatcher {
     // OpenFEC → donor/PAC connections; feeds Edge Map directly, no LLM tagging
     public Map<String, Object> getDonorConnections(String politicianId) throws IOException {
         return fecApi.fetchDonorConnections(politicianId);
+    }
+
+    // Wikimedia → biography summary; enriches PoliFigure metadata, not used for vector generation
+    public Map<String, Object> getBiographyData(String pageTitle) throws IOException, InterruptedException {
+        return wikiApi.fetchPoliticianSummary(pageTitle);
     }
 }
