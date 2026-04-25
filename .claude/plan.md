@@ -5,7 +5,7 @@ Ordered by dependency. Each phase unblocks the next.
 ---
 
 ## Phase 1 — Contracts
-- [x] `taxonomy.json` — 20 alleles (p1–p20), scale 1–5
+- [x] `taxonomy.json` — 20 planks (p1–p20), scale 1–5
 - [x] `vector.schema` — 20D JSON schema, fields d1–d20, range 1.0–5.0
 
 ## Phase 2 — Data Models
@@ -18,23 +18,23 @@ Ordered by dependency. Each phase unblocks the next.
 
 ## Phase 4 — API Ingestion
 - [x] `ApiDispatcher.java` — route lookups to correct wrapper, merge normalized responses
-- [x] `googleCivicInfoApi.java` — map user location to their specific representatives and districts
-- [x] `openStatesApi.java` — fetch all 50 state legislature data; sole source for PoliVector generation
-- [x] `congressGovApi.java` — federal voting records; used for Adherence Scalar only (not vector generation)
-- [x] `openFecApi.java` — donor/PAC connections; feeds Edge Map directly (no LLM tagging)
-- [x] `legiscanApi.java` — fetch raw bill texts and granular state-level roll-call voting records; handles deep policy text extraction and supplemental state data
-- [x] `wikimediaApi.java` — fetch structured biographical and political history text; supplies foundational background context for LLM entity summarization and profile enrichment
+- [ ] `googleCivicInfoApi.java` — map user location to their specific representatives and districts
+- [ ] `openStatesApi.java` — fetch all 50 state legislature data; sole source for PoliVector generation
+- [ ] `congressGovApi.java` — federal voting records; used for Adherence Scalar only (not vector generation)
+- [ ] `openFecApi.java` — donor/PAC connections; feeds Edge Map directly (no LLM tagging)
+- [ ] `legiscanApi.java` — fetch raw bill texts and granular state-level roll-call voting records
+- [ ] `wikimediaApi.java` — fetch structured biographical and political history text for LLM enrichment
 
 ## Phase 5 — Tagging Pipeline (OpenStates data → PoliVector)
 - [x] `prompt_builder.py` — construct LLM prompt from taxonomy.json + OpenStates figure data
-- [x] `llm_analyst.py` — call LLM with prompt, return raw allele scores
+- [x] `llm_analyst.py` — call LLM with prompt, return raw plank scores
 - [x] `score_validator.py` — validate scores against vector.schema before PoliVector creation
 
 ## Phase 6 — Library Index
-- [ ] `LibraryIndexer.java` — build k-d tree from PoliFigures on boot; handle lookups by ID
+- [ ] `LibraryIndexer.java` — RAM index for PoliFigures; lookups by ID + full candidate list for scoring
 
 ## Phase 7 — User Profile
-- [x] `QuizEngine.java` — presents 20-allele quiz to user, maps answers to a 20D idealized vector and per-dimension weights
+- [x] `QuizEngine.java` — presents 20-plank quiz to user, maps answers to a 20D idealized vector and per-dimension weights
 - [x] `UserProfile.java` — stores quiz-generated user_vector + weights; passed directly to inference pipeline
 - [ ] `DemoProfile.java` — hardcoded demo vector + uniform weights for prototype; swapped out when QuizEngine is live
 - [x] `userNegPreference.java` — pull last 20 explicitly disliked IDs → resolve PoliVectors → feed constraint_discoverer
@@ -47,7 +47,7 @@ Ordered by dependency. Each phase unblocks the next.
 - [x] `weight_calculator.py` — per-dimension adherence weights (1/σ from politician's voting history); feeds cosine_sim
 - [x] `constraint_discoverer.py` — exclusion bounds from blacklisted vectors
 - [x] `inference_manager.py` — orchestrate: pre-filter → cosine_sim → sort → return ranked IDs
-  - accepts `useAdherence` boolean flag; passes uniform_weights or adherence_weights to cosine_sim accordingly
+  - accepts `use_adherence` boolean flag; passes uniform_weights or adherence_weights to cosine_sim accordingly
 
 ## Phase 9 — Java↔Python IPC
 - [ ] `InferencePayload.java` — request/response data contract for PythonRunner
