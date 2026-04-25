@@ -58,7 +58,7 @@ Two modules: 20D Vector Space + Weighted Edge Map.
 - `InferencePayload.java` — IPC data contract for PythonRunner (request: user_vector, candidates, weights, constraints; response: ranked IDs + scores)
 - `PoliVector.java` — 20D policy vector model (d1–d20)
 - `PoliFigure.java` — full politician object: figure metadata + ID + PoliVector
-- `userSupportHistory.java` — maps user_history.csv (titleId, timestamp, vote status, tags)
+- `userSupportHistory.java` — logic manager for user history; delegates all reads/writes to DataManager (entry shape: titleId, timestamp, voteStatus, tags)
 - `DataManager.java` — sole gatekeeper for CSV reads/writes (later: MongoDB/SQL)
 - `userPosPreference.java` — pulls last N liked politicians from user_history.csv → input for weight_calculator
 - `userNegPreference.java` — pulls last 20 disliked/blacklisted politicians → input for constraint_discoverer
