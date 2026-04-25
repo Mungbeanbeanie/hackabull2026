@@ -34,8 +34,8 @@ Ordered by dependency. Each phase unblocks the next.
 - [ ] `LibraryIndexer.java` — build k-d tree from PoliFigures on boot; handle lookups by ID
 
 ## Phase 7 — User Profile
-- [ ] `QuizEngine.java` — presents 20-allele quiz to user, maps answers to a 20D idealized vector and per-dimension weights
-- [ ] `UserProfile.java` — stores quiz-generated user_vector + weights; passed directly to inference pipeline
+- [x] `QuizEngine.java` — presents 20-allele quiz to user, maps answers to a 20D idealized vector and per-dimension weights
+- [x] `UserProfile.java` — stores quiz-generated user_vector + weights; passed directly to inference pipeline
 - [ ] `DemoProfile.java` — hardcoded demo vector + uniform weights for prototype; swapped out when QuizEngine is live
 - [ ] `userNegPreference.java` — pull last 20 explicitly disliked IDs → resolve PoliVectors → feed constraint_discoverer
 
