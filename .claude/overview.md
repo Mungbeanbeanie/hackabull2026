@@ -49,26 +49,26 @@ Two modules: 20D Vector Space + Weighted Edge Map.
 ## Build Status
 
 ### Implemented
-- `taxonomy.json` — 20 alleles (p1–p20), scale 1–5, with names and endpoint definitions
+- `taxonomy.json` — 20 planks (p1–p20), scale 1–5, with names and endpoint definitions
 - `vector.schema` — 20D JSON schema; fields d1–d20, range 1.0–5.0
 - `cosine_sim.py` — weighted cosine similarity over two 20D vectors; reads `{user_vector, poli_vector, weights}` from stdin JSON, returns `{"score": float}`
 - `weight_calculator.py` — per-dimension weights via `1/σ` (population std dev) with `EPSILON=1e-6` guard and `WEIGHT_FLOOR=0.1`; reads `{vectors: [...]}`, returns `{"avg_vector": [...], "weights": [...]}`
-
-### Stubbed (comment-only, no logic yet)
-- `inference_manager.py` — main Python orchestration; receives Java bridge input, calls weight_calculator + cosine_sim, returns ranked IDs
-- `llm_analyst.py` — calls prompt_builder, sends prompt to LLM, passes raw scores to score_validator
-- `prompt_builder.py` — constructs LLM prompt from taxonomy.json allele definitions + figure metadata
-- `score_validator.py` — validates LLM scores against vector.schema (20 dims, range 1.0–5.0) before PoliVector creation
 - `constraint_discoverer.py` — derives per-dimension exclusion bounds from blacklisted PoliVectors
-- `RequestHandler.java` — HTTP entry point; validates inbound request, delegates to SearchController
+- `prompt_builder.py` — constructs LLM prompt from taxonomy.json plank definitions + figure metadata; returns formatted string for llm_analyst
+- `llm_analyst.py` — calls prompt_builder, sends to claude-haiku, strips fences, passes parsed scores to score_validator; returns `{d1..d20: float}`
+- `score_validator.py` — validates LLM scores: all 20 keys present, values numeric and in `[1.0, 5.0]`; raises ValueError on violation
 - `ApiDispatcher.java` — routes to correct API wrapper(s), merges and normalizes responses
-- `InferencePayload.java` — IPC data contract for PythonRunner (request: user_vector, candidates, weights, constraints; response: ranked IDs + scores)
-- `PoliVector.java` — 20D policy vector model (d1–d20)
+- `PoliVector.java` — 20D policy vector model (d1–d20), immutable, with `toArray()`
 - `PoliFigure.java` — full politician object: figure metadata + ID + PoliVector
 - `userSupportHistory.java` — logic manager for user history; delegates all reads/writes to DataManager (entry shape: titleId, timestamp, voteStatus, tags)
 - `DataManager.java` — sole gatekeeper for CSV reads/writes (later: MongoDB/SQL)
-- `QuizEngine.java` — presents 20-allele quiz, maps answers to a 20D idealized user_vector + per-dimension weights
-- `UserProfile.java` — holds quiz-generated user_vector and weights; passed directly to inference pipeline
+- `QuizEngine.java` — presents 20-plank quiz via stdin; maps answers 1–5 to user_vector scores; skipped/invalid → 3.0 neutral, weight 0.5
+- `UserProfile.java` — immutable container for quiz-generated user_vector and weights; passed directly to inference pipeline
+
+### Stubbed (comment-only, no logic yet)
+- `inference_manager.py` — main Python orchestration; receives Java bridge input, calls weight_calculator + cosine_sim, returns ranked IDs
+- `RequestHandler.java` — HTTP entry point; validates inbound request, delegates to SearchController
+- `InferencePayload.java` — IPC data contract for PythonRunner (request: user_vector, candidates, weights, constraints; response: ranked IDs + scores)
 - `DemoProfile.java` — hardcoded demo vector + uniform weights for prototype (swapped out when QuizEngine is live)
 - `userNegPreference.java` — pulls last 20 explicitly disliked IDs → resolves PoliVectors → input for constraint_discoverer
 - `LibraryIndexer.java` — k-d tree spatial index (RAM-only for local dev; swap to Pinecone/Weaviate for prod)
@@ -78,6 +78,8 @@ Two modules: 20D Vector Space + Weighted Edge Map.
 - `openStatesApi.java` — all 50 state legislature data; sole source for PoliVector generation via LLM tagging
 - `congressGovApi.java` — federal voting records; used for Adherence Scalar comparison only
 - `openFecApi.java` — donor/PAC connections; feeds Edge Map directly (no LLM tagging)
+- `legiscanApi.java` — raw bill text + granular state-level roll-call voting records
+- `wikimediaApi.java` — structured biographical and political history text for LLM enrichment
 
 ### Not started
 - Frontend: `deskApp`, `extension`

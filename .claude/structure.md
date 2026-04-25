@@ -9,21 +9,24 @@ Plan extension and relational edge mapping if time permits
 │   │   │   ├── /controllers   # Inbound HTTP gateway
 │   │   │   │   └── RequestHandler.java  # Receives frontend requests, delegates to SearchController [stub]
 │   │   │   ├── /api           # Outbound API clients
-│   │   │   │   ├── ApiDispatcher.java   # Routes to correct wrapper, merges normalized responses [stub]
-│   │   │   │   ├── BallotpediaApi.java
-│   │   │   │   ├── congressGovApi.java
-│   │   │   │   ├── googleCivicInfoApi.java
-│   │   │   │   ├── openFecApi.java
-│   │   │   │   └── proPublicaApi.java
+│   │   │   │   ├── ApiDispatcher.java       # Routes to correct wrapper, merges normalized responses [implemented]
+│   │   │   │   ├── congressGovApi.java      # Federal voting records; Adherence Scalar only [stub]
+│   │   │   │   ├── googleCivicInfoApi.java  # Maps user location → representatives/districts [stub]
+│   │   │   │   ├── legiscanApi.java         # Raw bill text + state roll-call voting records [stub]
+│   │   │   │   ├── openFecApi.java          # Donor/PAC connections → Edge Map [stub]
+│   │   │   │   ├── openStatesApi.java       # All 50 state legislature data; sole PoliVector source [stub]
+│   │   │   │   ├── wikimediaApi.java        # Biographical/political history text for LLM enrichment [stub]
+│   │   │   │   └── WikimediaOAuthClient.java # OAuth helper for Wikimedia API [stub]
 │   │   │   ├── /storage       # Persistence (CSV/DB Management)
 │   │   │   │   └── DataManager.java     # Sole gatekeeper for CSV reads/writes [stub]
 │   │   │   ├── /sampler       # Sampling
-│   │   │   │   ├── userPosPreference.java # Pulls last N liked figures → weights input [stub]
-│   │   │   │   └── userNegPreference.java # Pulls last 20 disliked figures → constraint input [stub]
+│   │   │   │   ├── QuizEngine.java          # Presents 20-plank quiz → 20D user_vector + weights [implemented]
+│   │   │   │   └── userNegPreference.java   # Pulls last 20 disliked figures → constraint input [stub]
 │   │   │   ├── /models        # Rigid Objects
-│   │   │   │   ├── PoliVector.java      # 20D policy vector (d1–d20, range 1–5) [stub]
-│   │   │   │   ├── PoliFigure.java      # Full politician object (figure + ID + PoliVector) [stub]
-│   │   │   │   └── userSupportHistory.java # Maps user_history.csv (titleId, timestamp, vote, tags) [stub]
+│   │   │   │   ├── PoliVector.java          # 20D policy vector (d1–d20, range 1–5) [implemented]
+│   │   │   │   ├── PoliFigure.java          # Full politician object (figure + ID + PoliVector) [implemented]
+│   │   │   │   ├── UserProfile.java         # Quiz-generated user_vector + weights [implemented]
+│   │   │   │   └── userSupportHistory.java  # Maps user_history.csv (titleId, timestamp, vote, tags) [implemented]
 │   │   │   ├── /managers      # Orchestration / lifecycle managers
 │   │   │   │   ├── LibraryIndexer.java  # k-d tree spatial index [stub]
 │   │   │   │   └── SearchController.java # Search routing: full-library / neighborhood / catalog [stub]
@@ -35,17 +38,17 @@ Plan extension and relational edge mapping if time permits
 │   ├── /inference-engine      # The "Calculators" (Stateless Math)
 │   │   ├── inference_manager.py     # Main Python entry point; orchestrates full inference request
 │   │   ├── /math
-│   │   │   ├── cosine_sim.py           # 20D weighted cosine similarity
-│   │   │   ├── weight_calculator.py    # Per-dimension weights via 1/σ
-│   │   │   └── constraint_discoverer.py # Derives exclusion bounds from blacklisted vectors
+│   │   │   ├── cosine_sim.py           # 20D weighted cosine similarity [implemented]
+│   │   │   ├── weight_calculator.py    # Per-dimension adherence weights via 1/σ [implemented]
+│   │   │   └── constraint_discoverer.py # Derives exclusion bounds from blacklisted vectors [implemented]
 │   │   ├── /tagging
-│   │   │   ├── llm_analyst.py      # Sends prompt to LLM → raw allele scores
-│   │   │   ├── prompt_builder.py   # Constructs LLM prompt from taxonomy.json + figure metadata
-│   │   │   └── score_validator.py  # Validates LLM scores against vector.schema before PoliVector creation
+│   │   │   ├── llm_analyst.py      # Sends prompt to LLM → raw plank scores [implemented]
+│   │   │   ├── prompt_builder.py   # Constructs LLM prompt from taxonomy.json + figure metadata [implemented]
+│   │   │   └── score_validator.py  # Validates LLM scores against vector.schema before PoliVector creation [implemented]
 │   │   └── requirements.txt        # Python Dependencies
 │   │
 │   └── /shared                # The "Contracts"
-│       ├── taxonomy.json      # 20 alleles (p1–p20), scale 1–5, with definitions
+│       ├── taxonomy.json      # 20 planks (p1–p20), scale 1–5, with definitions
 │       └── vector.schema      # 20D JSON schema; fields d1–d20, range 1.0–5.0
 │
 ├── /data                      # The "Knowledge Base" (The State)
