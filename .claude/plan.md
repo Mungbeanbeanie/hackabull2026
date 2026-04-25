@@ -9,7 +9,7 @@ Ordered by dependency. Each phase unblocks the next.
 - [x] `vector.schema` — 20D JSON schema, fields d1–d20, range 1.0–5.0
 
 ## Phase 2 — Data Models
-- [ ] `PoliVector.java` — 20D policy vector (d1–d20)
+- [x] `PoliVector.java` — 20D policy vector (d1–d20)
 - [ ] `PoliFigure.java` — full politician object (metadata + ID + PoliVector)
 - [ ] `userSupportHistory.java` — user history entry (titleId, timestamp, voteStatus, tags)
 
