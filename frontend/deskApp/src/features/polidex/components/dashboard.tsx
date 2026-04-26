@@ -6,7 +6,7 @@ import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { ElectionsSidebar } from "./elections/elections-sidebar";
 
 import { Politician } from "@/features/polidex/data/politicians";
-import { districtLabel, levelLabel, partyLabel, regionLabel } from "@/features/polidex/lib/display";
+import { districtLabel, levelLabel, locationLabel, partyLabel } from "@/features/polidex/lib/display";
 import { FONT_MONO, FONT_SANS, consistencyColor, consistencyLabel } from "@/features/polidex/lib/style";
 
 import { ImageWithFallback } from "./figma/image-with-fallback";
@@ -89,7 +89,8 @@ export function Dashboard({
           p.name.toLowerCase().includes(q.toLowerCase()) ||
           districtLabel(p.district).toLowerCase().includes(q.toLowerCase()) ||
           p.role.toLowerCase().includes(q.toLowerCase()) ||
-          regionLabel(p.region).toLowerCase().includes(q.toLowerCase()) ||
+          locationLabel(p).toLowerCase().includes(q.toLowerCase()) ||
+          p.state.toLowerCase().includes(q.toLowerCase()) ||
           partyLabel(p.party).toLowerCase().includes(q.toLowerCase())
         )
       ) {
@@ -454,7 +455,7 @@ function Card({
             {partyLabel(politician.party)} - {districtLabel(politician.district)}
           </div>
           <div style={{ fontFamily: FONT_SANS, fontSize: 11, color: "#4B5260", marginTop: 4 }}>
-            {politician.role} - {regionLabel(politician.region)}
+            {politician.role} · {locationLabel(politician)}
           </div>
         </div>
       </div>
