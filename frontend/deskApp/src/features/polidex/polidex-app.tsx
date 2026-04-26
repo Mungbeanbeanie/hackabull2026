@@ -163,7 +163,7 @@ export function PoliDexApp() {
             selectedProfileId={selectedProfile?.politicianId ?? null}
           />
         )}
-        {view === "simulator" && <Simulator list={activePoliticians} />}
+        {view === "simulator" && <Simulator list={activePoliticians} profile={profile} />}
 
         <AnimatePresence mode="wait">
           {selected && (

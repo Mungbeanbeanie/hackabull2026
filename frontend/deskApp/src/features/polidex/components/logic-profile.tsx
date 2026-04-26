@@ -62,8 +62,17 @@ export function LogicProfile({
             <div className="absolute inset-0 bg-white">
               <div className="border-b border-[#E2E5E9] px-6 pb-5 pt-5">
                 <div className="mb-4 flex items-start justify-between">
-                  <div className="h-8 w-8 rounded-md bg-[#F1F3F5]" />
-                  <div style={{ fontFamily: FONT_SANS, fontSize: 12, fontWeight: 500, color: "#8A919E", paddingTop: 4 }}>Profile</div>
+                  {side === "left" ? (
+                    <>
+                      <div style={{ fontFamily: FONT_SANS, fontSize: 12, fontWeight: 500, color: "#8A919E", paddingTop: 4 }}>Profile</div>
+                      <div className="h-8 w-8 rounded-md bg-[#F1F3F5]" />
+                    </>
+                  ) : (
+                    <>
+                      <div className="h-8 w-8 rounded-md bg-[#F1F3F5]" />
+                      <div style={{ fontFamily: FONT_SANS, fontSize: 12, fontWeight: 500, color: "#8A919E", paddingTop: 4 }}>Profile</div>
+                    </>
+                  )}
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="h-14 w-14 rounded-xl bg-[#F1F3F5]" />
@@ -112,14 +121,29 @@ function Header({
   return (
     <div className="border-b border-[#E2E5E9] px-6 pb-5 pt-5">
       <div className="mb-4 flex items-start justify-between">
-        <button
-          onClick={onClose}
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-gray-100"
-          style={{ background: "transparent", border: "none", cursor: "pointer", color: "#8A919E" }}
-        >
-          <ArrowRight size={16} style={{ transform: side === "right" ? "none" : "rotate(180deg)" }} />
-        </button>
-        <div style={{ fontFamily: FONT_SANS, fontSize: 12, fontWeight: 500, color: "#8A919E", paddingTop: 4 }}>Profile</div>
+        {side === "left" ? (
+          <>
+            <div style={{ fontFamily: FONT_SANS, fontSize: 12, fontWeight: 500, color: "#8A919E", paddingTop: 4 }}>Profile</div>
+            <button
+              onClick={onClose}
+              className="flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-gray-100"
+              style={{ background: "transparent", border: "none", cursor: "pointer", color: "#8A919E" }}
+            >
+              <ArrowRight size={16} style={{ transform: "rotate(180deg)" }} />
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={onClose}
+              className="flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-gray-100"
+              style={{ background: "transparent", border: "none", cursor: "pointer", color: "#8A919E" }}
+            >
+              <ArrowRight size={16} />
+            </button>
+            <div style={{ fontFamily: FONT_SANS, fontSize: 12, fontWeight: 500, color: "#8A919E", paddingTop: 4 }}>Profile</div>
+          </>
+        )}
       </div>
       <div className="flex items-center gap-4">
         <div style={{ width: 56, height: 56, borderRadius: 12, overflow: "hidden", background: "#F1F3F5", flexShrink: 0 }}>
@@ -323,9 +347,10 @@ function InfluenceTree({ entity }: { entity: Politician }) {
           const lineWidth = (donor.amount / maxAmount) * 3 + 1;
           const color = tierColor(donor.tier);
           const cx = leftPad + 8;
-          const midX = targetX - 60;
-          const midY = (y + targetY) / 2;
-          const path = `M ${cx + 6} ${y} C ${midX} ${y}, ${midX} ${midY}, ${targetX - 30} ${targetY - 14}`;
+          const routeX = targetX - 44;
+          const targetNodeY = targetY - 14;
+          const laneY = y - 18;
+          const path = `M ${cx + 6} ${y} L ${cx + 20} ${y} L ${cx + 20} ${laneY} L ${routeX} ${laneY} L ${routeX} ${targetNodeY} L ${targetX - 30} ${targetNodeY}`;
 
           return (
             <g key={donor.name}>

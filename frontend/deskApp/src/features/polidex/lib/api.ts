@@ -48,6 +48,17 @@ export function regionSort(results: SearchResult[], state: string, politicians: 
 }
 export type RankedPolitician = { politician: Politician; sim: number };
 export type BackendPolitician = { id: string; name: string; party: string; state: string; office: string; vector: number[]; imageUrl?: string };
+export type SimulationTopic = { id: string; label: string; alleles: string[] };
+export type SimulationParticipant = {
+  id: string;
+  name: string;
+  party: string;
+  district: string;
+  role: string;
+  vector_stated: number[];
+  vector_actual: number[];
+};
+export type SimulationTranscriptTurn = { speakerId: string; text: string; triggeredAlleles: string[] };
 
 export async function searchPoliticians(
   vector: number[],
@@ -103,4 +114,33 @@ export async function checkHealth(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export async function generateSimulationTranscript(input: {
+  participants: SimulationParticipant[];
+  topic: SimulationTopic;
+  mode: "theoretical" | "functional";
+  userProfile?: { vector: number[]; weights: number[]; state?: string };
+}): Promise<{ turns: SimulationTranscriptTurn[] }> {
+  const res = await fetch(`${BACKEND_URL}/api/simulation/transcript`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    throw new Error(`/api/simulation/transcript responded ${res.status}`);
+  }
+  return (await res.json()) as { turns: SimulationTranscriptTurn[] };
+}
+
+export async function synthesizeTranscriptAudio(text: string, voiceName: string): Promise<{ audioBase64: string; mimeType: string }> {
+  const res = await fetch(`${BACKEND_URL}/api/simulation/tts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text, voiceName }),
+  });
+  if (!res.ok) {
+    throw new Error(`/api/simulation/tts responded ${res.status}`);
+  }
+  return (await res.json()) as { audioBase64: string; mimeType: string };
 }
