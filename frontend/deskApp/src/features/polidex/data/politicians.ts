@@ -80,6 +80,18 @@ const PHOTO_BY_ID: Record<string, string> = {
   "sg-tx-29":   `${B}/G/G000587.jpg`, // Sylvia Garcia
   "ve-tx-16":   `${B}/E/E000299.jpg`, // Veronica Escobar
   "ca-tx-32":   `${B}/A/A000378.jpg`, // Colin Allred
+  // State-level officials — Wikipedia thumbnails (no federal bioguide)
+  "am-flag":    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Senator_Ashley_Moody_Official_Portrait.jpg/330px-Senator_Ashley_Moody_Official_Portrait.jpg",
+  "mw-flsd17":  "https://upload.wikimedia.org/wikipedia/commons/b/b2/Senator_Lori_Berman.jpg",
+  "mp-flsen":   "https://upload.wikimedia.org/wikipedia/commons/1/16/Shevrin_Jones.jpg",
+  "ds-flhs3":   "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Anna_Eskamani.jpg/330px-Anna_Eskamani.jpg",
+  "ml-flsen":   "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Florida_State_Senator_Joe_Gruters_%28cropped%29.png/330px-Florida_State_Senator_Joe_Gruters_%28cropped%29.png",
+  "ds-flag2":   "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Official_portrait_of_Attorney_General_James_Uthmeier%2C_2025_%28cropped%29.jpg/330px-Official_portrait_of_Attorney_General_James_Uthmeier%2C_2025_%28cropped%29.jpg",
+  "cs-flsen":   "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Rep_Tracie_Davis.jpg/330px-Rep_Tracie_Davis.jpg",
+  "ds-flhs2":   "https://upload.wikimedia.org/wikipedia/commons/d/d9/Official_Portrait_of_Daniel_Perez.jpg",
+  "ga-tx-gov":  "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/2024-GovernorAbbott-Portrait.jpg/330px-2024-GovernorAbbott-Portrait.jpg",
+  "kp-tx-ag":   "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/K_Paxton.jpg/330px-K_Paxton.jpg",
+  // jc-fl15 (Jay Collins) — no Wikipedia photo found; falls back to FALLBACK_PHOTOS
 };
 
 const META: Record<string, { role: Politician["role"]; region: Politician["region"]; state: string }> = {
