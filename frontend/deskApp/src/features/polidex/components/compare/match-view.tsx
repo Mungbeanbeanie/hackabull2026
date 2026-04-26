@@ -19,12 +19,7 @@ export function MatchView({
   backendOnline?: boolean | null;
 }) {
   if (ranked.length === 0) {
-    const message =
-      backendOnline === false
-        ? "Backend offline — start the Java server to see your matches."
-        : isRanking
-          ? "Ranking politicians…"
-          : "Waiting for backend results…";
+    const message = isRanking ? "Ranking politicians…" : "Complete the quiz to see your matches.";
     return (
       <div className="px-8 py-16 text-center" style={{ color: "#8A919E", fontSize: 14, fontFamily: FONT_SANS }}>
         {message}

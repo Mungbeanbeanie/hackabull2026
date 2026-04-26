@@ -22,7 +22,10 @@ export function PoliDexApp() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(() => loadProfile());
   const [isDataLoaded, setIsDataLoaded] = useState(false);
-  const [rankedResults, setRankedResults] = useState<SearchResult[]>([]);
+  const [rankedResults, setRankedResults] = useState<SearchResult[]>(() => {
+    const p = loadProfile();
+    return p ? localSearch(politicians, p.vector, p.weights, false) : [];
+  });
   const [isRanking, setIsRanking] = useState(false);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
   const [activePoliticians, setActivePoliticians] = useState<Politician[]>(politicians);
@@ -44,14 +47,13 @@ export function PoliDexApp() {
 
   useEffect(() => {
     if (!profile) return;
-    setIsRanking(true);
+    // Seed immediately from local data — never block on backend
+    setRankedResults(localSearch(activePoliticians, profile.vector, profile.weights, false));
+    // Attempt backend upgrade silently in background
     searchPoliticians(profile.vector, profile.weights, false, [])
-      .then((results) => { setRankedResults(results); setIsRanking(false); })
-      .catch(() => {
-        setRankedResults(localSearch(activePoliticians, profile.vector, profile.weights, false));
-        setIsRanking(false);
-      });
-  }, [profile]);
+      .then((results) => { setRankedResults(results); })
+      .catch(() => {});
+  }, [profile, backendOnline, activePoliticians]);
 
   const rankedPoliticians = useMemo((): RankedPolitician[] => {
     if (rankedResults.length === 0) return [];
