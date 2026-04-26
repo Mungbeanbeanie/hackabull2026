@@ -73,6 +73,13 @@ Two modules: 20D Vector Space + Weighted Edge Map.
 - `DataManager.java` — sole gatekeeper for CSV reads/writes (later: MongoDB/SQL)
 - `QuizEngine.java` — presents 20-plank quiz via stdin; maps answers 1–5 to user_vector scores; skipped/invalid → 3.0 neutral, weight 0.5
 - `UserProfile.java` — immutable container for quiz-generated user_vector and weights; passed directly to inference pipeline
+- `manifest.json` — MV3; declares `activeTab`, `storage`, `scripting`; registers content script on `<all_urls>`, service worker, popup
+- `content.js` — `dblclick` listener; captures selected text, fires `{ type: "NAME_LOOKUP", text }` to background; no math or rendering
+- `background.js` — service worker; matches selected text against hardcoded FL politician DB (5 records, expandable to 50); calls `getUserVector` + `computeMatch`; writes `last_match` to `chrome.storage.local`; opens popup
+- `cosine_bridge.js` — exports `computeMatch(userVector, poliVector)`: weighted cosine sim → `{ score: float, topAligned: string[3], topMisaligned: string[3] }`; uses taxonomy plank names for dim labels
+- `user_vector_store.js` — exports `getUserVector()` / `setUserVector(vector)`; wraps `chrome.storage.local` key `"user_vector"`
+- `card.html` — popup markup; sections: `#poli-name`, `#match-score`, `#top-aligned`, `#top-misaligned`, `#policies`, `#fallback`
+- `popup.js` — reads `last_match` from `chrome.storage.local` on `DOMContentLoaded`; binds all fields to card.html; shows fallback if null
 
 ### Stubbed (comment-only, no logic yet)
 - `inference_manager.py` — main Python orchestration; receives Java bridge input, calls weight_calculator + cosine_sim, returns ranked IDs
@@ -91,7 +98,7 @@ Two modules: 20D Vector Space + Weighted Edge Map.
 - `wikimediaApi.java` — structured biographical and political history text for LLM enrichment
 
 ### Not started
-- Frontend: `deskApp`, `extension`
+- Frontend: `deskApp`
 - Data pipeline (no politician records ingested yet; `user_history.csv` exists but empty)
 
 ## Data Flow (target)

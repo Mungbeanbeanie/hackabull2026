@@ -59,14 +59,14 @@ Plan extension and relational edge mapping if time permits
 ├── /frontend                  # The "Interface" Layer
 │   ├── /deskApp               # Desktop dashboard (Electron/web)
 │   └── /extension                 # Chrome Extension — HUD Hover Card
-│       ├── manifest.json              # MV3 config; registers content script, service worker, popup [stub]
+│       ├── manifest.json              # MV3 config; registers content script, service worker, popup [implemented]
 │       ├── /scripts
-│       │   ├── content.js             # Double-click listener only; posts selected text to background [stub]
-│       │   ├── background.js          # Service worker; name lookup + orchestration only [stub]
-│       │   ├── cosine_bridge.js       # Cosine similarity math only; returns % match + dim breakdown [stub]
-│       │   └── user_vector_store.js   # chrome.storage.local get/set for user_vector only [stub]
+│       │   ├── content.js             # Double-click listener only; posts selected text to background [implemented]
+│       │   ├── background.js          # Service worker; name lookup + orchestration only [implemented]
+│       │   ├── cosine_bridge.js       # Cosine similarity math only; returns % match + dim breakdown [implemented]
+│       │   └── user_vector_store.js   # chrome.storage.local get/set for user_vector only [implemented]
 │       └── /ui
-│           ├── card.html              # Hover card markup only; no logic [stub]
-│           └── popup.js               # Card rendering + data binding only; no math or storage [stub]
+│           ├── card.html              # Hover card markup only; no logic [implemented]
+│           └── popup.js               # Card rendering + data binding only; no math or storage [implemented]
 │
 └── docker-compose.yml         # [planned] Run everything in sync
