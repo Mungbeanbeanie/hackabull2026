@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 
 import { UserProfile } from "@/features/polidex/lib/profile";

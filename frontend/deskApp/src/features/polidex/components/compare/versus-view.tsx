@@ -1,3 +1,5 @@
+"use client";
+
 import { motion } from "motion/react";
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer } from "recharts";
 

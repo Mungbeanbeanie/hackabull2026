@@ -1,3 +1,5 @@
+"use client";
+
 import { FONT_SANS } from "@/features/polidex/lib/style";
 
 export function Legend({ swatch, label }: { swatch: string; label: string }) {

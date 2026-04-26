@@ -1,3 +1,7 @@
+"use client";
+
+"use client";
+
 import { useEffect, useMemo, useState } from "react";
 
 import { Compare } from "@/features/polidex/components/compare";
@@ -110,4 +114,3 @@ export function PoliDexApp() {
     </div>
   );
 }
-      <div className="relative flex flex-1" style={{ minHeight: 0 }}>

@@ -1,3 +1,5 @@
+"use client";
+
 import { CSSProperties } from "react";
 
 import { FONT_SANS } from "@/features/polidex/lib/style";

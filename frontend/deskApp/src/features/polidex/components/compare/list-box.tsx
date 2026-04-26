@@ -1,3 +1,5 @@
+"use client";
+
 import { motion } from "motion/react";
 
 import { FONT_SANS } from "@/features/polidex/lib/style";
