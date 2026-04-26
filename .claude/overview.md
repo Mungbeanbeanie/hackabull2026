@@ -31,13 +31,22 @@ Two modules: 20D Vector Space + Weighted Edge Map.
 - Layout: Radial — politician center (T1), immediate ties (T2), donors (T3/T4)
 - Edge thickness = influence volume (w)
 
-## Feature: Trajectory & HUD
-- Career prediction: historical pattern matching + fundraising velocity
-- Browser ext: entity recognition overlay on articles/emails
-- Popup = "Political Nutrition Label":
-  - 20D snapshot
-  - Red Flag: high-w edges conflicting with article topic
-  - Deep-link to full app
+## Feature: Chrome Extension HUD (Hover Card)
+
+### Trigger
+- User double-clicks any name on any webpage
+- Selected text → checked against politician DB (name match)
+- Match found → popup card rendered. No match → silent fail
+
+### Popup Content (in order)
+1. **% Match** — cosine similarity vs user's vector; top aligned/misaligned dimensions shown
+2. **Top 2 Implemented Policies** — derived from legislative vector (voting record, not promises)
+3. **[Stretch]** Mini IV distribution — deprioritized for demo
+
+### Implementation (hackathon scope)
+- Extension always-on; activates only on double-click (no full page scan)
+- Flow: `selected text → name match → pull 20D vector → cosine_sim → render card`
+- Cosine sim runs against stored user_vector (set at install or pulled from main app)
 
 ## Hackathon Scope (24hr hard stop)
 - DB: 20–50 FL high-profile politicians

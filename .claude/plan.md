@@ -61,4 +61,12 @@ Ordered by dependency. Each phase unblocks the next.
 
 ## Phase 12 — Frontend
 - [x] `deskApp` — Still tweak in progress - desktop dashboard (radar chart, scatter plot, edge map)
-- [ ] `extension` — browser extension (entity overlay + political nutrition label popup)
+
+## Phase 13 — Chrome Extension HUD
+- [ ] `manifest.json` — declares permissions: `activeTab`, `storage`, `scripting`; content script on `<all_urls>`
+- [ ] `content.js` — double-click listener; captures selected text, fires name lookup to background
+- [ ] `background.js` — receives selected text, queries politician DB, returns match + 20D vector
+- [ ] `cosine_bridge.js` — runs cosine_sim in-extension against stored user_vector (JS port or fetch to local backend)
+- [ ] `user_vector_store.js` — stores/retrieves user_vector via `chrome.storage.local`; source TBD (see open questions)
+- [ ] `card.html` / `popup.js` — renders hover card: % match, top aligned/misaligned dims, top 2 implemented policies
+- [ ] **[Stretch]** mini IV distribution panel in card
