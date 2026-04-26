@@ -1,14 +1,3 @@
-"use client";
-
-import { useEffect, useMemo, useState } from "react";
-
-import { Compare } from "@/features/polidex/components/compare";
-import { Dashboard } from "@/features/polidex/components/dashboard";
-import { GlobalLoadingScreen } from "@/features/polidex/components/global-loading-screen";
-import { Landing } from "@/features/polidex/components/landing";
-import { LogicProfile } from "@/features/polidex/components/logic-profile";
-"use client";
-
 import { useEffect, useMemo, useState } from "react";
 
 import { Compare } from "@/features/polidex/components/compare";
