@@ -118,7 +118,7 @@ openFecApi          →  donor/PAC data → Edge Map (no LLM tagging)
 ── Query (per request) ────────────────────────────────────────────────────────
 QuizEngine / DemoProfile    →  user_vector (idealized, quiz-generated)
 politician voting history   →  weight_calculator.py → adherence_weights + avg_vector (legislative centroid)
-user_history.csv → userNegPreference → constraint_discoverer.py → exclusion bounds
+MongoDB → userNegPreference → constraint_discoverer.py → exclusion bounds
                                               ↓
                          PythonRunner → InferencePayload → inference_manager.py
                                               ↓                          ↓

@@ -72,10 +72,10 @@ Ordered by dependency. Each phase unblocks the next.
 - [x] **[Stretch]** mini IV distribution panel in card
 
 ## Phase 14 — MongoDB Setup & Environment
-- [ ] verify `MONGODB_URI` in `.env` is picked up by LibraryIndexer + DataManager at boot
-- [ ] verify `GEMINI_API_KEY` in `.env` is available to IngestionRunner → llm_analyst.py subprocess (`genai.Client()` reads this key)
+- [x] verify `MONGODB_URI` in `.env` is picked up by LibraryIndexer + DataManager at boot
+- [x] verify `GEMINI_API_KEY` in `.env` is available to IngestionRunner → llm_analyst.py subprocess (`genai.Client()` reads this key)
 - [ ] confirm LibraryIndexer.loadFromDb() populates RAM index at startup; if empty → SeedData.seed() fires
-- [ ] remove stale `user_history.csv` reference from overview.md — DataManager is MongoDB-backed
+- [x] remove stale `user_history.csv` reference from overview.md — DataManager is MongoDB-backed
 
 ## Phase 15 — Python IPC: CWD Fix + Two Silent Bugs in buildConstraints()
 - [x] `pom.xml` — add `<workingDirectory>../../</workingDirectory>` to exec plugin `<configuration>`; sets JVM CWD to project root when `mvn exec:java` runs from `backend/java-chassis/`; all relative Python paths (`backend/inference-engine/...`) currently resolve to wrong location
