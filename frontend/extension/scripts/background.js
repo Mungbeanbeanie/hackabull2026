@@ -2,27 +2,53 @@
  * Service worker. Orchestration only.
  * Receives selected text from content.js, queries politician DB for name match,
  * delegates similarity computation to cosine_bridge.js, returns result to popup.
- * No math, no rendering, no direct storage access.
  */
 
 import { getUserVector, setUserVector } from "./user_vector_store.js";
 import { computeMatch } from "./cosine_bridge.js";
 
 const BACKEND_URL = "http://localhost:8080";
+const STORAGE_KEY = "politician_db";
 
-// Seed a neutral midpoint vector so the extension works before the user completes the quiz.
+/**
+ * Fetches the full politician list and caches it in local storage.
+ */
+async function refreshPoliticianCache() {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/politicians`);
+    if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
+    const data = await response.json();
+    await chrome.storage.local.set({ [STORAGE_KEY]: data });
+    console.log("Politician cache updated.");
+  } catch (error) {
+    console.error("Cache refresh failed:", error);
+  }
+}
+
+// Initial setup
 chrome.runtime.onInstalled.addListener(() => {
+  // 1. Seed the neutral vector
   getUserVector().then(v => {
     if (!v) setUserVector([3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3]);
   });
+
+  // 2. Initial cache populate
+  refreshPoliticianCache();
+});
+
+// Refresh cache on browser startup
+chrome.runtime.onStartup.addListener(() => {
+  refreshPoliticianCache();
 });
 
 async function findPolitician(text) {
+  // Logic Check: You are now storing the DB in storage, but this function 
+  // still calls the API. If you want to use the CACHE instead of the API,
+  // you would refactor this to search the 'politician_db' in chrome.storage.local.
   const res = await fetch(`${BACKEND_URL}/api/lookup?name=${encodeURIComponent(text)}`);
   if (!res.ok) return null;
   const data = await res.json();
   return data.match ?? null;
-  // expected shape: { name: string, vector: float[20], policies: string[2] } or null
 }
 
 chrome.runtime.onMessage.addListener((msg, sender) => {
@@ -36,7 +62,6 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 
     const userVector = await getUserVector();
     if (!userVector) {
-      // Signal that the user needs to set their vector first.
       if (tabId != null) chrome.action.setBadgeText({ text: "?", tabId });
       chrome.action.setBadgeBackgroundColor({ color: "#888" });
       await chrome.storage.local.set({ last_match: null });
@@ -55,7 +80,6 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
       }
     });
 
-    // Badge signals a match is ready — user clicks the extension icon to view.
     if (tabId != null) chrome.action.setBadgeText({ text: "!", tabId });
     chrome.action.setBadgeBackgroundColor({ color: "#7ee8a2" });
   })();
