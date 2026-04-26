@@ -96,12 +96,12 @@ public class SearchController {
     private List<InferencePayload.Constraint> buildConstraints() throws Exception {
         String boundsJson = negPreference.getExclusionBounds();
         JsonNode root     = MAPPER.readTree(boundsJson);
-        JsonNode bounds   = root.path("bounds");
+        JsonNode bounds   = root.path("constraints");
 
         List<InferencePayload.Constraint> constraints = new ArrayList<>();
         for (JsonNode b : bounds) {
             constraints.add(new InferencePayload.Constraint(
-                b.get("dim").asInt(),
+                b.get("allele").asInt(),
                 b.get("lower").asDouble(),
                 b.get("upper").asDouble()
             ));

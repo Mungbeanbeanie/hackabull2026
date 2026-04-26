@@ -78,9 +78,9 @@ Ordered by dependency. Each phase unblocks the next.
 - [ ] remove stale `user_history.csv` reference from overview.md — DataManager is MongoDB-backed
 
 ## Phase 15 — Python IPC: CWD Fix + Two Silent Bugs in buildConstraints()
-- [ ] `pom.xml` — add `<workingDirectory>../../</workingDirectory>` to exec plugin `<configuration>`; sets JVM CWD to project root when `mvn exec:java` runs from `backend/java-chassis/`; all relative Python paths (`backend/inference-engine/...`) currently resolve to wrong location
-- [ ] `SearchController.java` — fix `root.path("bounds")` → `root.path("constraints")`; `constraint_discoverer.py` returns key `"constraints"`, not `"bounds"`; hate-zone filtering silently produces empty list today
-- [ ] `SearchController.java` — fix `b.get("dim")` → `b.get("allele")`; `constraint_discoverer.py` returns field `"allele"`, not `"dim"`; would NPE if any constraints were ever found
+- [x] `pom.xml` — add `<workingDirectory>../../</workingDirectory>` to exec plugin `<configuration>`; sets JVM CWD to project root when `mvn exec:java` runs from `backend/java-chassis/`; all relative Python paths (`backend/inference-engine/...`) currently resolve to wrong location
+- [x] `SearchController.java` — fix `root.path("bounds")` → `root.path("constraints")`; `constraint_discoverer.py` returns key `"constraints"`, not `"bounds"`; hate-zone filtering silently produces empty list today
+- [x] `SearchController.java` — fix `b.get("dim")` → `b.get("allele")`; `constraint_discoverer.py` returns field `"allele"`, not `"dim"`; would NPE if any constraints were ever found
 
 ## Phase 16 — Frontend Environment Wiring
 - [ ] create `frontend/deskApp/.env.local` with `NEXT_PUBLIC_BACKEND_URL=http://localhost:8080`
