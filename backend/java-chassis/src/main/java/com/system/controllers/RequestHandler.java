@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class RequestHandler {
 
@@ -32,9 +33,10 @@ public class RequestHandler {
     public RequestHandler(SearchController controller, int port) throws IOException {
         this.controller = controller;
         this.server     = HttpServer.create(new InetSocketAddress(port), 0);
-        server.createContext("/api/search", this::handleSearch);
-        server.createContext("/health",     this::handleHealth);
-        server.createContext("/",           ex -> respond(ex, 404, jsonError("not found")));
+        server.createContext("/api/search",      this::handleSearch);
+        server.createContext("/api/politicians", this::handlePoliticians);
+        server.createContext("/health",          this::handleHealth);
+        server.createContext("/",                ex -> respond(ex, 404, jsonError("not found")));
     }
 
     public void start()  { server.start(); }
@@ -44,10 +46,26 @@ public class RequestHandler {
     // ── route handlers ────────────────────────────────────────────────────────
 
     private void handleHealth(HttpExchange ex) throws IOException {
+        if (handlePreflight(ex)) return;
         respond(ex, 200, "{\"status\":\"ok\"}");
     }
 
+    private void handlePoliticians(HttpExchange ex) throws IOException {
+        if (handlePreflight(ex)) return;
+        if (!"GET".equals(ex.getRequestMethod())) {
+            respond(ex, 405, jsonError("method not allowed"));
+            return;
+        }
+        try {
+            String body = MAPPER.writeValueAsString(Map.of("politicians", controller.getAllFigures()));
+            respond(ex, 200, body);
+        } catch (Exception e) {
+            respond(ex, 500, jsonError("internal server error"));
+        }
+    }
+
     private void handleSearch(HttpExchange ex) throws IOException {
+        if (handlePreflight(ex)) return;
         if (!"POST".equals(ex.getRequestMethod())) {
             respond(ex, 405, jsonError("method not allowed"));
             return;
@@ -124,8 +142,24 @@ public class RequestHandler {
 
     // ── utilities ─────────────────────────────────────────────────────────────
 
+    private static void setCorsHeaders(HttpExchange ex) {
+        ex.getResponseHeaders().set("Access-Control-Allow-Origin",  "*");
+        ex.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        ex.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+        ex.getResponseHeaders().set("Access-Control-Max-Age",       "86400");
+    }
+
+    private static boolean handlePreflight(HttpExchange ex) throws IOException {
+        if (!"OPTIONS".equals(ex.getRequestMethod())) return false;
+        setCorsHeaders(ex);
+        ex.sendResponseHeaders(204, -1);
+        ex.close();
+        return true;
+    }
+
     private static void respond(HttpExchange ex, int status, String body) throws IOException {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+        setCorsHeaders(ex);
         ex.getResponseHeaders().set("Content-Type", "application/json");
         ex.sendResponseHeaders(status, bytes.length);
         try (OutputStream os = ex.getResponseBody()) {

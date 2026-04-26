@@ -1,82 +1,76 @@
 /*
-    * The "Gatekeeper." The only file that reads/writes the CSVs (eventually mongoDB) in the /data folder
-    * basically keeps the important data safe from corruption and messy logic
-    * later when move to a real database chng to SqlDatabaseManager.java logic
+    * The "Gatekeeper." The only class that reads/writes user_history in MongoDB.
+    * Keeps history data safe from corruption and messy logic elsewhere.
 */
 
 package com.system.storage;
 
-import java.io.*;
-import java.nio.file.*;
-import java.util.*;
+import com.mongodb.MongoException;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Sorts;
+import org.bson.Document;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.mongodb.client.model.Filters.eq;
 
 public class DataManager {
 
-    private static final String DEFAULT_PATH = "data/cache/user_history.csv";
-    private static final String HISTORY_HEADER = "titleId,timestamp,voteStatus,tags";
-    private final String historyPath;
+    private static final String DEFAULT_URI = "mongodb://localhost:27017";
+    private static final String DB_NAME     = "civic_info";
+    private static final String COLLECTION  = "user_history";
+
+    private final MongoClient              client;
+    private final MongoCollection<Document> collection;
 
     public DataManager() {
-        this.historyPath = DEFAULT_PATH;
+        String uri = System.getenv("MONGODB_URI");
+        if (uri == null || uri.isBlank()) uri = DEFAULT_URI;
+        this.client     = MongoClients.create(uri);
+        this.collection = client.getDatabase(DB_NAME).getCollection(COLLECTION);
     }
 
-    /* package-private — inject path for tests */
-    DataManager(String historyPath) {
-        this.historyPath = historyPath;
+    /* package-private — inject collection for tests */
+    DataManager(MongoCollection<Document> collection) {
+        this.client     = null;
+        this.collection = collection;
     }
 
     public void appendHistoryEntry(String titleId, String timestamp, String voteStatus, List<String> tags) throws IOException {
-        File file = new File(historyPath);
-        boolean isNew = !file.exists() || file.length() == 0;
-
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file, true))) {
-            if (isNew) {
-                writer.write(HISTORY_HEADER);
-                writer.newLine();
-            }
-            String tagStr = (tags == null || tags.isEmpty()) ? "" : String.join("|", tags);
-            writer.write(String.join(",", titleId, timestamp, voteStatus, tagStr));
-            writer.newLine();
+        try {
+            Document doc = new Document("titleId", titleId)
+                    .append("timestamp", timestamp)
+                    .append("voteStatus", voteStatus)
+                    .append("tags", tags != null ? tags : List.of());
+            collection.insertOne(doc);
+        } catch (MongoException e) {
+            throw new IOException("appendHistoryEntry failed: " + e.getMessage(), e);
         }
     }
 
-    // returns last `limit` titleIds with matching voteStatus (most recent first)
+    // returns last `limit` titleIds with matching voteStatus (oldest-to-newest of the tail)
     public List<String> readHistoryIdsByStatus(String voteStatus, int limit) throws IOException {
-        File file = new File(historyPath);
-        if (!file.exists()) return Collections.emptyList();
-
-        List<String> matched = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line;
-            boolean header = true;
-            while ((line = reader.readLine()) != null) {
-                if (header) { header = false; continue; }
-                String[] parts = line.split(",", 4);
-                if (parts.length >= 3 && parts[2].equals(voteStatus)) {
-                    matched.add(parts[0]);
-                }
-            }
+        try {
+            List<String> ids = new ArrayList<>();
+            collection.find(eq("voteStatus", voteStatus))
+                      .sort(Sorts.ascending("_id"))
+                      .forEach(doc -> ids.add(doc.getString("titleId")));
+            int from = Math.max(0, ids.size() - limit);
+            return ids.subList(from, ids.size());
+        } catch (MongoException e) {
+            throw new IOException("readHistoryIdsByStatus failed: " + e.getMessage(), e);
         }
-
-        int from = Math.max(0, matched.size() - limit);
-        return matched.subList(from, matched.size());
     }
 
     public void deleteHistoryEntry(String titleId) throws IOException {
-        File file = new File(historyPath);
-        if (!file.exists()) return;
-
-        Path path = file.toPath();
-        List<String> lines = Files.readAllLines(path);
-        List<String> kept = new ArrayList<>();
-        boolean header = true;
-        for (String line : lines) {
-            if (header) { kept.add(line); header = false; continue; }
-            String[] parts = line.split(",", 2);
-            if (parts.length == 0 || !parts[0].equals(titleId)) {
-                kept.add(line);
-            }
+        try {
+            collection.deleteOne(eq("titleId", titleId));
+        } catch (MongoException e) {
+            throw new IOException("deleteHistoryEntry failed: " + e.getMessage(), e);
         }
-        Files.write(path, kept);
     }
 }

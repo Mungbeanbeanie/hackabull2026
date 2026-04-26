@@ -4,6 +4,7 @@ import { PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer } fro
 
 import { politicians, Politician } from "@/features/poliweb/data/politicians";
 import { taxonomy } from "@/features/poliweb/data/taxonomy";
+import { RankedPolitician } from "@/features/poliweb/lib/api";
 import { cosine } from "@/features/poliweb/lib/math";
 import { UserProfile } from "@/features/poliweb/lib/profile";
 import { FONT_MONO, FONT_SANS } from "@/features/poliweb/lib/style";
@@ -15,9 +16,11 @@ type Mode = "match" | "vsYou" | "vsPol";
 
 export function Compare({
   profile,
+  ranked = [],
   onTakeQuiz,
 }: {
   profile: UserProfile | null;
+  ranked?: RankedPolitician[];
   onTakeQuiz: () => void;
 }) {
   const [mode, setMode] = useState<Mode>(profile ? "match" : "vsPol");
@@ -44,7 +47,7 @@ export function Compare({
       </div>
 
       <div className="flex-1 overflow-y-auto" style={{ background: "#F8F9FA" }}>
-        {mode === "match" && profile && <MatchView profile={profile} />}
+        {mode === "match" && profile && <MatchView profile={profile} ranked={ranked} />}
         {mode === "vsYou" && profile && <VersusView profile={profile} sel={vsYouSel} setSel={setVsYouSel} />}
         {mode === "vsPol" && <PolPolView selected={vsPolSels} setSelected={setVsPolSels} />}
         {!profile && mode !== "vsPol" && (
@@ -96,16 +99,17 @@ function ModeTab({
   );
 }
 
-function MatchView({ profile }: { profile: UserProfile }) {
-  const ranked = useMemo(() => {
+function MatchView({ profile, ranked }: { profile: UserProfile; ranked: RankedPolitician[] }) {
+  const sortedRanked = useMemo(() => {
+    if (ranked.length > 0) return ranked;
     return politicians
       .map((politician) => ({ politician, sim: cosine(profile.vector, politician.vector_actual) }))
       .sort((a, b) => b.sim - a.sim);
-  }, [profile]);
+  }, [profile, ranked]);
 
-  const top = ranked[0];
-  const rest = ranked.slice(1, 7);
-  const worst = ranked[ranked.length - 1];
+  const top = sortedRanked[0];
+  const rest = sortedRanked.slice(1, 7);
+  const worst = sortedRanked[sortedRanked.length - 1];
 
   return (
     <div className="space-y-6 px-5 py-6 md:px-8">

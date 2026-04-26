@@ -3,7 +3,13 @@ import { motion } from "motion/react";
 
 import { FONT_MONO, FONT_SANS } from "@/features/poliweb/lib/style";
 
-export function GlobalLoadingScreen({ onComplete }: { onComplete: () => void }) {
+export function GlobalLoadingScreen({
+  onComplete,
+  backendOnline,
+}: {
+  onComplete: () => void;
+  backendOnline: boolean | null;
+}) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -54,7 +60,11 @@ export function GlobalLoadingScreen({ onComplete }: { onComplete: () => void }) 
             transition={{ duration: 0.3 }}
           >
             {progress < 30
-              ? "Connecting to open states APIs..."
+              ? backendOnline === null
+                ? "Connecting to backend..."
+                : backendOnline
+                  ? "Backend connected."
+                  : "Backend offline — demo mode."
               : progress < 60
                 ? "Loading policy vectors..."
                 : progress < 90
