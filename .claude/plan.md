@@ -98,5 +98,5 @@ Ordered by dependency. Each phase unblocks the next.
 - [ ] `background.js` — read name-match DB from `chrome.storage.local` politician_db first; fall back to bundled 5-record stub if fetch fails
 
 ## Phase 19 — Profile Sync: App → Extension
-- [ ] deskApp Compare view — add "Export to Extension" action that copies base64 profile code to clipboard (reuse existing `exportProfileCode` from `profile.ts`)
-- [ ] extension popup — add input field; user pastes code → `setUserVector(parsed.vector)` via `user_vector_store.js`; reuse `importProfileCode` from `profile.ts` logic (port to JS)
+- [x] deskApp Compare view — add "Export to Extension" action that copies base64 profile code to clipboard (reuse existing `exportProfileCode` from `profile.ts`)
+- [x] extension popup — add input field; user pastes code → `setUserVector(parsed.vector)` via `user_vector_store.js`; reuse `importProfileCode` from `profile.ts` logic (port to JS)

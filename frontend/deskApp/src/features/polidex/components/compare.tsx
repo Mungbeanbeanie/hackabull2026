@@ -95,7 +95,7 @@ export function Compare({
                   className="rounded-md border border-[#D8DEE7] bg-white px-2.5 py-1.5"
                   style={{ fontFamily: FONT_SANS, fontSize: 10, color: "#0D0F12" }}
                 >
-                  Copy My Code
+                  Export to Extension
                 </button>
               )}
             </div>
