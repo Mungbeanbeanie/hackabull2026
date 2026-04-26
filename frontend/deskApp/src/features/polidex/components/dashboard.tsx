@@ -14,7 +14,7 @@ import { ImageWithFallback } from "./figma/image-with-fallback";
 type Sort = "drift" | "adherence" | "name" | "office";
 type PartyFilter = "ALL" | "R" | "D" | "I";
 type LevelFilter = "ALL" | "Federal" | "State";
-type RegionFilter = "ALL" | "North FL" | "Central FL" | "South FL" | "Statewide";
+type StateFilter = "ALL" | "AL" | "AK" | "AZ" | "AR" | "CA" | "CO" | "CT" | "DE" | "FL" | "GA" | "HI" | "ID" | "IL" | "IN" | "IA" | "KS" | "KY" | "LA" | "ME" | "MD" | "MA" | "MI" | "MN" | "MS" | "MO" | "MT" | "NE" | "NV" | "NH" | "NJ" | "NM" | "NY" | "NC" | "ND" | "OH" | "OK" | "OR" | "PA" | "RI" | "SC" | "SD" | "TN" | "TX" | "UT" | "VT" | "VA" | "WA" | "WV" | "WI" | "WY";
 type RoleFilter = "ALL" | Politician["role"];
 type ConsistencyFilter = "ALL" | "HIGH" | "MID" | "LOW";
 type DriftFilter = "ALL" | "LOW" | "MID" | "HIGH";
@@ -45,7 +45,7 @@ export function Dashboard({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [party, setParty] = useState<PartyFilter>("ALL");
   const [level, setLevel] = useState<LevelFilter>("ALL");
-  const [region, setRegion] = useState<RegionFilter>("ALL");
+  const [stateFilter, setStateFilter] = useState<StateFilter>("ALL");
   const [role, setRole] = useState<RoleFilter>("ALL");
   const [exposure, setExposure] = useState<ExposureFilter>("ALL");
   const [consistency, setConsistency] = useState<ConsistencyFilter>("ALL");
@@ -56,7 +56,7 @@ export function Dashboard({
   const activeFilterCount =
     Number(party !== "ALL") +
     Number(level !== "ALL") +
-    Number(region !== "ALL") +
+    Number(stateFilter !== "ALL") +
     Number(role !== "ALL") +
     Number(exposure !== "ALL") +
     Number(consistency !== "ALL") +
@@ -67,7 +67,7 @@ export function Dashboard({
     let result = list.filter((p) => {
       if (party !== "ALL" && p.party !== party) return false;
       if (level !== "ALL" && levelLabel(p.role) !== level) return false;
-      if (region !== "ALL" && p.region !== region) return false;
+      if (stateFilter !== "ALL" && p.state !== stateFilter) return false;
       if (role !== "ALL" && p.role !== role) return false;
       if (exposure === "LOCAL" && p.region === "Statewide") return false;
       if (exposure === "STATEWIDE" && p.region !== "Statewide") return false;
@@ -104,7 +104,7 @@ export function Dashboard({
     if (sort === "office") result = [...result].sort((a, b) => a.role.localeCompare(b.role));
 
     return result;
-  }, [list, q, party, level, region, role, exposure, consistency, drift, donors, sort]);
+  }, [list, q, party, level, stateFilter, role, exposure, consistency, drift, donors, sort]);
 
   return (
     <div className="flex min-w-0 flex-1 flex-col bg-white">
@@ -206,16 +206,62 @@ export function Dashboard({
                   onChange={(value) => setLevel(value as LevelFilter)}
                 />
                 <SelectFilter
-                  label="Region"
-                  value={region}
+                  label="State"
+                  value={stateFilter}
                   options={[
-                    { value: "ALL", label: "All regions" },
-                    { value: "North FL", label: "North Florida" },
-                    { value: "Central FL", label: "Central Florida" },
-                    { value: "South FL", label: "South Florida" },
-                    { value: "Statewide", label: "Statewide" },
+                    { value: "ALL", label: "All states" },
+                    { value: "AL", label: "Alabama" },
+                    { value: "AK", label: "Alaska" },
+                    { value: "AZ", label: "Arizona" },
+                    { value: "AR", label: "Arkansas" },
+                    { value: "CA", label: "California" },
+                    { value: "CO", label: "Colorado" },
+                    { value: "CT", label: "Connecticut" },
+                    { value: "DE", label: "Delaware" },
+                    { value: "FL", label: "Florida" },
+                    { value: "GA", label: "Georgia" },
+                    { value: "HI", label: "Hawaii" },
+                    { value: "ID", label: "Idaho" },
+                    { value: "IL", label: "Illinois" },
+                    { value: "IN", label: "Indiana" },
+                    { value: "IA", label: "Iowa" },
+                    { value: "KS", label: "Kansas" },
+                    { value: "KY", label: "Kentucky" },
+                    { value: "LA", label: "Louisiana" },
+                    { value: "ME", label: "Maine" },
+                    { value: "MD", label: "Maryland" },
+                    { value: "MA", label: "Massachusetts" },
+                    { value: "MI", label: "Michigan" },
+                    { value: "MN", label: "Minnesota" },
+                    { value: "MS", label: "Mississippi" },
+                    { value: "MO", label: "Missouri" },
+                    { value: "MT", label: "Montana" },
+                    { value: "NE", label: "Nebraska" },
+                    { value: "NV", label: "Nevada" },
+                    { value: "NH", label: "New Hampshire" },
+                    { value: "NJ", label: "New Jersey" },
+                    { value: "NM", label: "New Mexico" },
+                    { value: "NY", label: "New York" },
+                    { value: "NC", label: "North Carolina" },
+                    { value: "ND", label: "North Dakota" },
+                    { value: "OH", label: "Ohio" },
+                    { value: "OK", label: "Oklahoma" },
+                    { value: "OR", label: "Oregon" },
+                    { value: "PA", label: "Pennsylvania" },
+                    { value: "RI", label: "Rhode Island" },
+                    { value: "SC", label: "South Carolina" },
+                    { value: "SD", label: "South Dakota" },
+                    { value: "TN", label: "Tennessee" },
+                    { value: "TX", label: "Texas" },
+                    { value: "UT", label: "Utah" },
+                    { value: "VT", label: "Vermont" },
+                    { value: "VA", label: "Virginia" },
+                    { value: "WA", label: "Washington" },
+                    { value: "WV", label: "West Virginia" },
+                    { value: "WI", label: "Wisconsin" },
+                    { value: "WY", label: "Wyoming" },
                   ]}
-                  onChange={(value) => setRegion(value as RegionFilter)}
+                  onChange={(value) => setStateFilter(value as StateFilter)}
                 />
                 <SelectFilter
                   label="Office"
@@ -292,7 +338,7 @@ export function Dashboard({
                   onClick={() => {
                     setParty("ALL");
                     setLevel("ALL");
-                    setRegion("ALL");
+                    setStateFilter("ALL");
                     setRole("ALL");
                     setExposure("ALL");
                     setConsistency("ALL");

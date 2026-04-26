@@ -10,6 +10,7 @@ export type Election = {
   title: string;
   electionDay: string;
   location: string;
+  state: string;
   importantDates: ElectionDate[];
   candidateIds: string[];
 };
