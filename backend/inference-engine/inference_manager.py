@@ -26,22 +26,19 @@ TOP_N = 10
 
 def main():
     try:
-        payload           = json.loads(sys.stdin.read())
-        user_vector       = payload["user_vector"]
-        adherence_weights = payload["adherence_weights"]
-        use_adherence     = bool(payload.get("use_adherence", False))
-        candidates        = payload["candidates"]
-        constraints       = payload["constraints"]
-        seen_ids          = set(payload.get("seen_ids", []))
+        payload       = json.loads(sys.stdin.read())
+        user_vector   = payload["user_vector"]
+        use_adherence = bool(payload.get("use_adherence", False))
+        candidates    = payload["candidates"]
+        constraints   = payload["constraints"]
+        seen_ids      = set(payload.get("seen_ids", []))
     except (json.JSONDecodeError, KeyError) as e:
         print(json.dumps({"error": f"invalid input: {e}"}), file=sys.stderr)
         sys.exit(1)
 
-    if len(user_vector) != VECTOR_LENGTH or len(adherence_weights) != VECTOR_LENGTH:
-        print(json.dumps({"error": f"user_vector and adherence_weights must be length {VECTOR_LENGTH}"}), file=sys.stderr)
+    if len(user_vector) != VECTOR_LENGTH:
+        print(json.dumps({"error": f"user_vector must be length {VECTOR_LENGTH}"}), file=sys.stderr)
         sys.exit(1)
-
-    weights = adherence_weights if use_adherence else [1.0] * VECTOR_LENGTH
 
     # exclude candidates whose allele value falls inside a hate-zone bound
     def in_hate_zone(vec):
@@ -55,10 +52,14 @@ def main():
         if c["id"] not in seen_ids and not in_hate_zone(c["vector"])
     ]
 
-    # score survivors
+    # score survivors — use per-candidate adherence_weights when toggle is on
     scored = []
     for c in survivors:
         try:
+            if use_adherence:
+                weights = c.get("adherence_weights") or [1.0] * VECTOR_LENGTH
+            else:
+                weights = [1.0] * VECTOR_LENGTH
             score = weighted_cosine(user_vector, c["vector"], weights)
             scored.append({"id": c["id"], "score": score})
         except ValueError:
