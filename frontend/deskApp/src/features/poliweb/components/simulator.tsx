@@ -237,8 +237,9 @@ export function Simulator({ list }: { list: Politician[] }) {
   const [activeTurn, setActiveTurn] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const [isExporting, setIsExporting] = useState(false);
+  const [exportJob, setExportJob] = useState<"webm" | "mp4" | null>(null);
   const [exportUrl, setExportUrl] = useState<string | null>(null);
+  const [exportMimeType, setExportMimeType] = useState<"video/webm" | "video/mp4" | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
 
   const exportCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -258,6 +259,7 @@ export function Simulator({ list }: { list: Politician[] }) {
 
   const activeSpeakerId = selectedTurn?.speakerId ?? participants[0]?.id ?? null;
   const activeSpeaker = participants.find((p) => p.id === activeSpeakerId) ?? null;
+  const isExporting = exportJob !== null;
 
   useEffect(() => {
     if (!isRunning || turns.length === 0) return;
@@ -316,6 +318,11 @@ export function Simulator({ list }: { list: Politician[] }) {
   const goNextTurn = () => {
     setIsRunning(false);
     setActiveTurn((prev) => Math.min(turns.length - 1, prev + 1));
+  };
+
+  const loadParticipantImages = async () => {
+    const imageEntries = await Promise.all(participants.map(async (p) => [p.id, await loadImage(p.photo)] as const));
+    return new Map<string, HTMLImageElement | null>(imageEntries);
   };
 
   const drawStageFrame = ({
@@ -465,7 +472,7 @@ export function Simulator({ list }: { list: Politician[] }) {
     }
 
     setExportError(null);
-    setIsExporting(true);
+    setExportJob("webm");
     setIsRunning(false);
 
     const chunks: Blob[] = [];
@@ -484,13 +491,12 @@ export function Simulator({ list }: { list: Politician[] }) {
     if (!ctx) {
       recorder.stop();
       await stopped;
-      setIsExporting(false);
+      setExportJob(null);
       setExportError("Unable to initialize export renderer.");
       return;
     }
 
-    const imageEntries = await Promise.all(participants.map(async (p) => [p.id, await loadImage(p.photo)] as const));
-    const imageMap = new Map<string, HTMLImageElement | null>(imageEntries);
+    const imageMap = await loadParticipantImages();
 
     const frameDelay = Math.max(600, Math.round(1200 / playbackSpeed));
 
@@ -512,7 +518,131 @@ export function Simulator({ list }: { list: Politician[] }) {
 
     if (exportUrl) URL.revokeObjectURL(exportUrl);
     setExportUrl(nextUrl);
-    setIsExporting(false);
+    setExportMimeType("video/webm");
+    setExportJob(null);
+  };
+
+  const exportSimulationMp4 = async () => {
+    if (turns.length === 0 || participants.length === 0) return;
+    if (typeof window === "undefined") return;
+
+    const canvas = exportCanvasRef.current;
+    if (!canvas) return;
+
+    if (typeof window.VideoEncoder === "undefined" || typeof window.VideoFrame === "undefined") {
+      setExportError("MP4 export requires WebCodecs support (Chrome or Edge recommended).");
+      return;
+    }
+
+    setExportError(null);
+    setExportJob("mp4");
+    setIsRunning(false);
+
+    try {
+      const { Muxer, ArrayBufferTarget } = await import("mp4-muxer");
+
+      const fps = 30;
+      const frameDurationUs = Math.round(1_000_000 / fps);
+      const config: VideoEncoderConfig = {
+        codec: "avc1.42001E",
+        width: STAGE_W,
+        height: STAGE_H,
+        bitrate: 4_000_000,
+        framerate: fps,
+      };
+
+      const supported = await window.VideoEncoder.isConfigSupported(config);
+      if (!supported.supported) {
+        setExportError("This browser cannot encode H.264 for MP4 export.");
+        setExportJob(null);
+        return;
+      }
+
+      const target = new ArrayBufferTarget();
+      const muxer = new Muxer({
+        target,
+        video: {
+          codec: "avc",
+          width: STAGE_W,
+          height: STAGE_H,
+          frameRate: fps,
+        },
+        fastStart: "in-memory",
+      });
+
+      let encodeError: string | null = null;
+      const encoder = new window.VideoEncoder({
+        output: (chunk, meta) => {
+          muxer.addVideoChunk(chunk, meta);
+        },
+        error: (error) => {
+          encodeError = error.message;
+        },
+      });
+
+      const encoderConfig = supported.config ?? config;
+      encoder.configure(encoderConfig);
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        encoder.close();
+        setExportError("Unable to initialize export renderer.");
+        setExportJob(null);
+        return;
+      }
+
+      const imageMap = await loadParticipantImages();
+      const turnDelayMs = Math.max(600, Math.round(1200 / playbackSpeed));
+
+      let frameIndex = 0;
+      let timestampUs = 0;
+
+      for (let index = 0; index < turns.length; index++) {
+        const frameTurn = turns[index];
+        setActiveTurn(index);
+
+        const frameCount = Math.max(1, Math.round((turnDelayMs / 1000) * fps));
+        for (let localFrame = 0; localFrame < frameCount; localFrame++) {
+          drawStageFrame({ ctx, frameTurn, images: imageMap });
+          const frame = new window.VideoFrame(canvas, { timestamp: timestampUs });
+          encoder.encode(frame, { keyFrame: frameIndex % fps === 0 });
+          frame.close();
+          frameIndex += 1;
+          timestampUs += frameDurationUs;
+        }
+      }
+
+      const finalTurn = turns[turns.length - 1] ?? null;
+      const finalFrames = Math.round(0.7 * fps);
+      for (let localFrame = 0; localFrame < finalFrames; localFrame++) {
+        drawStageFrame({ ctx, frameTurn: finalTurn, images: imageMap });
+        const frame = new window.VideoFrame(canvas, { timestamp: timestampUs });
+        encoder.encode(frame, { keyFrame: frameIndex % fps === 0 });
+        frame.close();
+        frameIndex += 1;
+        timestampUs += frameDurationUs;
+      }
+
+      await encoder.flush();
+      encoder.close();
+
+      if (encodeError) {
+        setExportError(`MP4 encoding failed: ${encodeError}`);
+        setExportJob(null);
+        return;
+      }
+
+      muxer.finalize();
+      const nextUrl = URL.createObjectURL(new Blob([target.buffer], { type: "video/mp4" }));
+
+      if (exportUrl) URL.revokeObjectURL(exportUrl);
+      setExportUrl(nextUrl);
+      setExportMimeType("video/mp4");
+    } catch {
+      setExportError("MP4 export is not available in this browser environment.");
+    } finally {
+      setExportJob(null);
+    }
   };
 
   return (
@@ -718,14 +848,24 @@ export function Simulator({ list }: { list: Politician[] }) {
               <span>Total {turns.length}</span>
             </div>
 
-            <Button
-              onClick={exportSimulationVideo}
-              disabled={turns.length === 0 || isExporting}
-              className="h-9 bg-[#25364A] text-white hover:bg-[#1C2A3B]"
-              style={{ fontFamily: FONT_SANS, fontSize: 12 }}
-            >
-              {isExporting ? "Rendering video..." : "Export Playback Video"}
-            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                onClick={exportSimulationVideo}
+                disabled={turns.length === 0 || isExporting}
+                className="h-9 bg-[#25364A] text-white hover:bg-[#1C2A3B]"
+                style={{ fontFamily: FONT_SANS, fontSize: 12 }}
+              >
+                {exportJob === "webm" ? "Rendering WebM..." : "Export WebM"}
+              </Button>
+              <Button
+                onClick={exportSimulationMp4}
+                disabled={turns.length === 0 || isExporting}
+                className="h-9 bg-[#1E4460] text-white hover:bg-[#16374E]"
+                style={{ fontFamily: FONT_SANS, fontSize: 12 }}
+              >
+                {exportJob === "mp4" ? "Rendering MP4..." : "Export MP4"}
+              </Button>
+            </div>
             {exportError && (
               <div style={{ fontFamily: FONT_SANS, fontSize: 11, color: "#A53131" }}>{exportError}</div>
             )}
@@ -877,11 +1017,16 @@ export function Simulator({ list }: { list: Politician[] }) {
                   Render the current simulation to a playbackable video, then preview and download it.
                 </div>
                 {exportUrl ? (
-                  <video
-                    controls
-                    src={exportUrl}
-                    className="w-full rounded-lg border border-[#D7DCE3]"
-                  />
+                  <>
+                    <video
+                      controls
+                      src={exportUrl}
+                      className="w-full rounded-lg border border-[#D7DCE3]"
+                    />
+                    <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#6E7686" }}>
+                      Format: {exportMimeType === "video/mp4" ? "MP4 (H.264)" : "WebM"}
+                    </div>
+                  </>
                 ) : (
                   <div className="rounded-lg border border-dashed border-[#C9D2DE] bg-[#F8FAFC] p-4" style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#6E7686" }}>
                     No video rendered yet.
@@ -890,7 +1035,7 @@ export function Simulator({ list }: { list: Politician[] }) {
 
                 <a
                   href={exportUrl ?? "#"}
-                  download="simulator-playback.webm"
+                  download={exportMimeType === "video/mp4" ? "simulator-playback.mp4" : "simulator-playback.webm"}
                   onClick={(event) => {
                     if (!exportUrl) event.preventDefault();
                   }}
