@@ -30,6 +30,12 @@ public class DataManager {
     public DataManager() {
         String uri = System.getenv("MONGODB_URI");
         if (uri == null || uri.isBlank()) uri = System.getProperty("MONGODB_URI", DEFAULT_URI);
+        // If the URI contains obvious placeholders (from .env.example) or is an SRV URI with placeholders,
+        // fall back to the local default to avoid DNS lookup failures during local development.
+        if (uri.contains("<") || uri.contains(">") || uri.contains("<cluster>") || (uri.startsWith("mongodb+srv://") && uri.contains("<"))) {
+            System.err.println("[DataManager] WARNING: MONGODB_URI appears to contain placeholders; falling back to " + DEFAULT_URI);
+            uri = DEFAULT_URI;
+        }
         this.client     = MongoClients.create(uri);
         this.collection = client.getDatabase(DB_NAME).getCollection(COLLECTION);
     }

@@ -42,6 +42,11 @@ public class LibraryIndexer {
     public LibraryIndexer() {
         String uri = System.getenv("MONGODB_URI");
         if (uri == null || uri.isBlank()) uri = System.getProperty("MONGODB_URI", DEFAULT_URI);
+        // Detect placeholder values and fall back to local default during development.
+        if (uri.contains("<") || uri.contains(">") || uri.contains("<cluster>") || (uri.startsWith("mongodb+srv://") && uri.contains("<"))) {
+            System.err.println("[LibraryIndexer] WARNING: MONGODB_URI appears to contain placeholders; falling back to " + DEFAULT_URI);
+            uri = DEFAULT_URI;
+        }
         this.client     = MongoClients.create(uri);
         this.collection = client.getDatabase(DB_NAME).getCollection(COLLECTION);
         loadFromDb();

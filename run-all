@@ -32,6 +32,7 @@ function parseArgs(argv) {
     backendPort: 8080,
     frontendPort: 3000,
     skipInstall: false,
+    frontendOnly: false,
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -44,6 +45,8 @@ function parseArgs(argv) {
       out.skipInstall = true;
     } else if (a === "-h" || a === "--help") {
       out.help = true;
+    } else if (a === "--frontend-only" || a === "--frontendOnly") {
+      out.frontendOnly = true;
     } else {
       // tolerate unknown args for forward-compat
     }
@@ -151,8 +154,12 @@ async function main() {
   // Dependency checks (node is already running, but keep parity with PS1)
   assertCmd("node", "Install Node.js 18+ from https://nodejs.org/ (then reopen your terminal).");
   assertCmd("npm", "Install Node.js 18+ from https://nodejs.org/ (includes npm).");
-  assertCmd("java", "Install Java 17+ (Temurin recommended) from https://adoptium.net/ and ensure 'java' is on PATH.");
-  assertCmd("mvn", "Install Maven 3.8+ from https://maven.apache.org/download.cgi and ensure 'mvn' is on PATH.");
+  if (!args.frontendOnly) {
+    assertCmd("java", "Install Java 17+ (Temurin recommended) from https://adoptium.net/ and ensure 'java' is on PATH.");
+    assertCmd("mvn", "Install Maven 3.8+ from https://maven.apache.org/download.cgi and ensure 'mvn' is on PATH.");
+  } else {
+    info("Frontend-only mode: skipping Java/Maven checks and backend start.");
+  }
 
   loadDotEnv(path.join(repoRoot, "backend", "java-chassis", ".env"));
   process.env.PORT = String(args.backendPort);
@@ -190,15 +197,27 @@ async function main() {
   process.on("exit", () => shutdown());
 
   try {
-    backend = startProc("backend", backendDir, "mvn", ["exec:java"]);
-    const backendHealthy = await waitForHttp(
-      `http://localhost:${args.backendPort}/health`,
-      60,
-    );
-    if (!backendHealthy) {
-      warn("Backend did not become healthy at /health within timeout.");
+    if (!args.frontendOnly) {
+      // Ensure the Java sources are compiled before running so classes exist on the classpath.
+      backend = startProc("backend", backendDir, "mvn", ["compile", "exec:java"]);
+      const backendHealthy = await waitForHttp(
+        `http://localhost:${args.backendPort}/health`,
+        60,
+      );
+      if (!backendHealthy) {
+        warn("Backend did not become healthy at /health within timeout.");
+      } else {
+        info(`Backend healthy on http://localhost:${args.backendPort}`);
+      }
+    }
+
+    // Configure frontend env: prefer existing NEXT_PUBLIC_BACKEND_URL when in frontend-only mode,
+    // otherwise point at the locally-started backend.
+    const extraEnv = {};
+    if (args.frontendOnly) {
+      if (process.env.NEXT_PUBLIC_BACKEND_URL) extraEnv.NEXT_PUBLIC_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
     } else {
-      info(`Backend healthy on http://localhost:${args.backendPort}`);
+      extraEnv.NEXT_PUBLIC_BACKEND_URL = `http://localhost:${args.backendPort}`;
     }
 
     frontend = startProc(
@@ -206,7 +225,7 @@ async function main() {
       frontendDir,
       "npm",
       ["run", "dev", "--", "-p", String(args.frontendPort)],
-      { NEXT_PUBLIC_BACKEND_URL: `http://localhost:${args.backendPort}` },
+      extraEnv,
     );
     const frontendUp = await waitForHttp(`http://localhost:${args.frontendPort}`, 60);
     if (!frontendUp) {
