@@ -47,7 +47,16 @@ public class RequestHandler {
 
     private void handleHealth(HttpExchange ex) throws IOException {
         if (handlePreflight(ex)) return;
-        respond(ex, 200, "{\"status\":\"ok\"}");
+
+        boolean geminiConfigured = hasConfig("GEMINI_API_KEY") || hasConfig("GOOGLE_API_KEY");
+        boolean elevenConfigured = hasConfig("ELEVENLABS_API_KEY");
+
+        String body = MAPPER.writeValueAsString(Map.of(
+            "status", "ok",
+            "geminiConfigured", geminiConfigured,
+            "elevenlabsConfigured", elevenConfigured
+        ));
+        respond(ex, 200, body);
     }
 
     private void handlePoliticians(HttpExchange ex) throws IOException {
@@ -169,5 +178,13 @@ public class RequestHandler {
 
     private static String jsonError(String message) {
         return "{\"error\":\"" + message + "\"}";
+    }
+
+    private static boolean hasConfig(String key) {
+        String value = System.getProperty(key);
+        if (value == null || value.isBlank()) {
+            value = System.getenv(key);
+        }
+        return value != null && !value.isBlank();
     }
 }

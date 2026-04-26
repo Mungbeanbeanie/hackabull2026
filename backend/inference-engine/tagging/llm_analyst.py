@@ -11,9 +11,14 @@ sys.path.insert(0, os.path.dirname(__file__))
 from prompt_builder import build_prompt
 import score_validator
 
-_MODEL = "gemini-3-flash"
+_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
-_client = genai.Client()
+
+def _get_client() -> genai.Client:
+    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        raise RuntimeError("Gemini API key missing. Set GEMINI_API_KEY (or GOOGLE_API_KEY).")
+    return genai.Client(api_key=api_key)
 
 
 def _extract_json(text: str) -> str:
@@ -37,7 +42,7 @@ def analyze(figure_metadata: dict) -> dict:
     prompt = build_prompt(figure_metadata)
 
     # 2. Call Gemini (JSON mode)
-    response = _client.models.generate_content(
+    response = _get_client().models.generate_content(
         model=_MODEL,
         contents=prompt,
         config=types.GenerateContentConfig(

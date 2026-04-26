@@ -93,24 +93,24 @@ function marketColor(score: number): string {
 function getStageSlots(count: number): StageSlot[] {
   if (count <= 2) {
     return [
-      { leftPercent: 30, topPercent: 50 },
-      { leftPercent: 70, topPercent: 50 },
+      { leftPercent: 24, topPercent: 50 },
+      { leftPercent: 76, topPercent: 50 },
     ];
   }
 
   if (count === 3) {
     return [
-      { leftPercent: 50, topPercent: 24 },
-      { leftPercent: 30, topPercent: 72 },
-      { leftPercent: 70, topPercent: 72 },
+      { leftPercent: 50, topPercent: 15 },
+      { leftPercent: 22, topPercent: 78 },
+      { leftPercent: 78, topPercent: 78 },
     ];
   }
 
   return [
-    { leftPercent: 28, topPercent: 30 },
-    { leftPercent: 72, topPercent: 30 },
-    { leftPercent: 28, topPercent: 74 },
-    { leftPercent: 72, topPercent: 74 },
+    { leftPercent: 22, topPercent: 22 },
+    { leftPercent: 78, topPercent: 22 },
+    { leftPercent: 22, topPercent: 78 },
+    { leftPercent: 78, topPercent: 78 },
   ];
 }
 
@@ -882,7 +882,7 @@ export function Simulator({ list }: Readonly<{ list: Politician[] }>) {
           <div className="relative min-h-[320px] overflow-hidden rounded-xl border border-[#E2E5E9] bg-[#10161C]">
             <div className="absolute left-0 top-0 h-full w-full opacity-30" style={{ backgroundImage: "radial-gradient(circle at 30% 30%, #2A7F62 0%, transparent 40%), radial-gradient(circle at 70% 70%, #B13A2C 0%, transparent 45%)" }} />
 
-            <div className="absolute left-1/2 top-1/2 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/25 bg-white/10 backdrop-blur-sm">
+            <div className="absolute left-1/2 top-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/25 bg-white/10 backdrop-blur-sm">
               <div className="flex h-full w-full flex-col items-center justify-center px-2 text-center">
                 <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#D0D8E3", letterSpacing: "0.08em" }}>
                   {mode === "theoretical" ? "VTHEORETICAL" : "VLEGISLATIVE"}
