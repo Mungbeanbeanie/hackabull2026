@@ -57,8 +57,8 @@ Ordered by dependency. Each phase unblocks the next.
 - [x] `SearchController.java` — route queries (full-library / neighborhood / catalog)
 
 ## Phase 11 — HTTP Layer
-- [ ] `RequestHandler.java` — inbound HTTP gateway; validate request, delegate to SearchController
+- [x] `RequestHandler.java` — inbound HTTP gateway; validate request, delegate to SearchController
 
 ## Phase 12 — Frontend
-- [ ] `deskApp` — desktop dashboard (radar chart, scatter plot, edge map)
+- [x] `deskApp` — Still tweak in progress - desktop dashboard (radar chart, scatter plot, edge map)
 - [ ] `extension` — browser extension (entity overlay + political nutrition label popup)
