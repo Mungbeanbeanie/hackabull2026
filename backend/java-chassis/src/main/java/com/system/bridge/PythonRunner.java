@@ -21,6 +21,12 @@ public class PythonRunner {
         ProcessBuilder pb = new ProcessBuilder(List.of(PYTHON_CMD, scriptPath));
         pb.redirectErrorStream(false);
 
+        // Mirror selected JVM system properties into subprocess env.
+        // EnvLoader puts .env keys into System properties, while Python SDKs read OS env vars.
+        mapPropertyToEnv(pb, "GEMINI_API_KEY");
+        mapPropertyToEnv(pb, "GOOGLE_API_KEY");
+        mapPropertyToEnv(pb, "ELEVENLABS_API_KEY");
+
         Process process;
         try {
             process = pb.start();
@@ -68,6 +74,13 @@ public class PythonRunner {
     // Typed convenience wrapper for inference_manager.py
     public InferencePayload.Response run(InferencePayload.Request payload) {
         return InferencePayload.Response.fromJson(run(INFERENCE_SCRIPT, payload.toJson()));
+    }
+
+    private static void mapPropertyToEnv(ProcessBuilder pb, String key) {
+        String value = System.getProperty(key);
+        if (value != null && !value.isBlank()) {
+            pb.environment().put(key, value);
+        }
     }
 
 
