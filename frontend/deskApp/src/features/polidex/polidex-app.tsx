@@ -21,6 +21,7 @@ export function PoliDexApp() {
   const [profile, setProfile] = useState<UserProfile | null>(() => loadProfile());
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [rankedResults, setRankedResults] = useState<SearchResult[]>([]);
+  const [isRanking, setIsRanking] = useState(false);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
   const [activePoliticians, setActivePoliticians] = useState<Politician[]>(politicians);
 
@@ -41,9 +42,10 @@ export function PoliDexApp() {
 
   useEffect(() => {
     if (!profile) return;
+    setIsRanking(true);
     searchPoliticians(profile.vector, profile.weights, false, [])
-      .then(setRankedResults)
-      .catch((err) => console.error("backend search failed:", err));
+      .then((results) => { setRankedResults(results); setIsRanking(false); })
+      .catch((err) => { console.error("backend search failed:", err); setIsRanking(false); });
   }, [profile]);
 
   const rankedPoliticians = useMemo((): RankedPolitician[] => {
@@ -99,7 +101,7 @@ export function PoliDexApp() {
         {view === "dashboard" && (
           <Dashboard list={activePoliticians} selectedId={selectedId} onSelect={setSelectedId} isLoading={!isDataLoaded} />
         )}
-        {view === "compare" && <Compare profile={profile} ranked={rankedPoliticians} onTakeQuiz={() => setView("quiz")} />}
+        {view === "compare" && <Compare profile={profile} ranked={rankedPoliticians} isRanking={isRanking} backendOnline={backendOnline} onTakeQuiz={() => setView("quiz")} />}
         {view === "simulator" && <Simulator list={activePoliticians} />}
 
         <LogicProfile entity={selected} onClose={() => setSelectedId(null)} />

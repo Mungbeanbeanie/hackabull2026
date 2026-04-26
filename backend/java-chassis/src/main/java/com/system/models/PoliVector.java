@@ -5,6 +5,7 @@
 
 package com.system.models;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Objects;
 
 public final class PoliVector {
@@ -20,6 +21,7 @@ public final class PoliVector {
         this.d16 = d16; this.d17 = d17; this.d18 = d18; this.d19 = d19; this.d20 = d20;
     }
 
+    @JsonValue
     public float[] toArray() {
         return new float[]{d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, d13, d14, d15, d16, d17, d18, d19, d20};
     }

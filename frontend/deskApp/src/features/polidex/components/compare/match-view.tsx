@@ -7,11 +7,25 @@ import { FONT_SANS } from "@/features/polidex/lib/style";
 import { ImageWithFallback } from "../figma/image-with-fallback";
 import { MatchRow } from "./match-row";
 
-export function MatchView({ ranked }: { ranked: RankedPolitician[] }) {
+export function MatchView({
+  ranked,
+  isRanking = false,
+  backendOnline = null,
+}: {
+  ranked: RankedPolitician[];
+  isRanking?: boolean;
+  backendOnline?: boolean | null;
+}) {
   if (ranked.length === 0) {
+    const message =
+      backendOnline === false
+        ? "Backend offline — start the Java server to see your matches."
+        : isRanking
+          ? "Ranking politicians…"
+          : "Waiting for backend results…";
     return (
       <div className="px-8 py-16 text-center" style={{ color: "#8A919E", fontSize: 14, fontFamily: FONT_SANS }}>
-        Waiting for backend results…
+        {message}
       </div>
     );
   }

@@ -16,10 +16,14 @@ type Mode = "match" | "vsYou" | "vsPol";
 export function Compare({
   profile,
   ranked = [],
+  isRanking = false,
+  backendOnline = null,
   onTakeQuiz,
 }: {
   profile: UserProfile | null;
   ranked?: RankedPolitician[];
+  isRanking?: boolean;
+  backendOnline?: boolean | null;
   onTakeQuiz: () => void;
 }) {
   const [mode, setMode] = useState<Mode>(profile ? "match" : "vsPol");
@@ -46,7 +50,7 @@ export function Compare({
       </div>
 
       <div className="flex-1 overflow-y-auto" style={{ background: "#F8F9FA" }}>
-        {mode === "match" && profile && <MatchView ranked={ranked} />}
+        {mode === "match" && profile && <MatchView ranked={ranked} isRanking={isRanking} backendOnline={backendOnline} />}
         {mode === "vsYou" && profile && <VersusView profile={profile} sel={vsYouSel} setSel={setVsYouSel} ranked={ranked} />}
         {mode === "vsPol" && <PolPolView selected={vsPolSels} setSelected={setVsPolSels} />}
         {!profile && mode !== "vsPol" && (

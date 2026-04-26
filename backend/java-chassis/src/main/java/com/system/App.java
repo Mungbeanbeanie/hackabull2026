@@ -18,6 +18,7 @@ public class App {
 
         DataManager       dataManager  = new DataManager();
         LibraryIndexer    indexer      = new LibraryIndexer();
+        if (indexer.size() == 0) SeedData.seed(indexer);
         PythonRunner      python       = new PythonRunner();
         userNegPreference negPref      = new userNegPreference(dataManager, indexer, python);
         SearchController  controller   = new SearchController(indexer, negPref, python);
