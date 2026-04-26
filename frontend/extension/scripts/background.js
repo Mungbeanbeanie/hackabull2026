@@ -88,8 +88,9 @@ async function findPolitician(text) {
   try {
     const result = await chrome.storage.local.get(STORAGE_KEY);
     const stored = result[STORAGE_KEY];
-    // Defensively ensure we always have a real array — stored may be an object or undefined from old cache formats
-    const db = (Array.isArray(stored) && stored.length > 0) ? stored : STUB_DB;
+    const liveDb = (Array.isArray(stored) && stored.length > 0) ? stored : [];
+    // Always append STUB_DB so hardcoded politicians are searchable regardless of cache state
+    const db = [...liveDb, ...STUB_DB];
 
     const normalized = text.trim().toLowerCase();
     return db.find(p => {
