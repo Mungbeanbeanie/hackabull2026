@@ -5,8 +5,15 @@
  * No math, no rendering, no direct storage access.
  */
 
-import { getUserVector } from "./user_vector_store.js";
+import { getUserVector, setUserVector } from "./user_vector_store.js";
 import { computeMatch } from "./cosine_bridge.js";
+
+// Seed a neutral midpoint vector so the extension works before the user completes the quiz.
+chrome.runtime.onInstalled.addListener(() => {
+  getUserVector().then(v => {
+    if (!v) setUserVector([3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3]);
+  });
+});
 
 // Hardcoded FL politician records for hackathon demo scope (20-50 target).
 // Shape: { name, aliases, vector: float[20], policies: string[2] }
@@ -51,15 +58,23 @@ function findPolitician(text) {
   ) ?? null;
 }
 
-chrome.runtime.onMessage.addListener((msg) => {
+chrome.runtime.onMessage.addListener((msg, sender) => {
   if (msg.type !== "NAME_LOOKUP") return;
 
   (async () => {
+    const tabId = sender.tab?.id;
+
     const match = findPolitician(msg.text);
     if (!match) return;
 
     const userVector = await getUserVector();
-    if (!userVector) return;
+    if (!userVector) {
+      // Signal that the user needs to set their vector first.
+      if (tabId != null) chrome.action.setBadgeText({ text: "?", tabId });
+      chrome.action.setBadgeBackgroundColor({ color: "#888" });
+      await chrome.storage.local.set({ last_match: null });
+      return;
+    }
 
     const result = computeMatch(userVector, match.vector);
 
@@ -73,6 +88,8 @@ chrome.runtime.onMessage.addListener((msg) => {
       }
     });
 
-    chrome.action.openPopup?.();
+    // Badge signals a match is ready — user clicks the extension icon to view.
+    if (tabId != null) chrome.action.setBadgeText({ text: "!", tabId });
+    chrome.action.setBadgeBackgroundColor({ color: "#7ee8a2" });
   })();
 });

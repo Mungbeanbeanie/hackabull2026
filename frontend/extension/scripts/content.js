@@ -6,7 +6,12 @@
 
 document.addEventListener("dblclick", () => {
   const selected = window.getSelection().toString().trim();
-  if (selected) {
+  if (!selected) return;
+
+  try {
     chrome.runtime.sendMessage({ type: "NAME_LOOKUP", text: selected });
+  } catch {
+    // Extension was reloaded while this tab was open; context is stale.
+    // The listener will be re-injected on next page load — no action needed.
   }
 });

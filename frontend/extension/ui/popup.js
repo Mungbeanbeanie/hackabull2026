@@ -6,22 +6,29 @@
  */
 
 document.addEventListener("DOMContentLoaded", () => {
-  chrome.storage.local.get("last_match", ({ last_match }) => {
-    if (!last_match) {
-      document.getElementById("fallback").style.display = "block";
-      return;
-    }
+  // Read badge before clearing so we can distinguish "no vector" from "no match yet".
+  chrome.action.getBadgeText({}, badgeText => {
+    chrome.action.setBadgeText({ text: "" });
 
-    document.getElementById("poli-name").textContent = last_match.name;
-    document.getElementById("match-score").textContent = `${last_match.score}% Match`;
+    chrome.storage.local.get("last_match", ({ last_match }) => {
+      if (!last_match) {
+        const fallback = document.getElementById("fallback");
+        fallback.style.display = "block";
+        if (badgeText === "?") fallback.textContent = "Set your vector in the quiz first, then double-click a name.";
+        return;
+      }
 
-    const fill = (id, items) => {
-      const el = document.getElementById(id);
-      el.innerHTML = items.map(t => `<li>${t}</li>`).join("");
-    };
+      document.getElementById("poli-name").textContent = last_match.name;
+      document.getElementById("match-score").textContent = `${last_match.score}% Match`;
 
-    fill("top-aligned", last_match.topAligned);
-    fill("top-misaligned", last_match.topMisaligned);
-    fill("policies", last_match.policies);
+      const fill = (id, items) => {
+        const el = document.getElementById(id);
+        el.innerHTML = items.map(t => `<li>${t}</li>`).join("");
+      };
+
+      fill("top-aligned", last_match.topAligned);
+      fill("top-misaligned", last_match.topMisaligned);
+      fill("policies", last_match.policies);
+    });
   });
 });
