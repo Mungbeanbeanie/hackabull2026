@@ -1,6 +1,6 @@
 /*
     * Logic manager for user support history — does NOT store data directly
-    * All reads/writes to user_history.csv go through DataManager exclusively
+    * All reads/writes go through DataManager (MongoDB civic_info.user_history)
     *
     * Responsibilities:
     *   - Add a new history entry (titleId, timestamp, voteStatus, tags) via DataManager
