@@ -41,7 +41,7 @@ public class LibraryIndexer {
 
     public LibraryIndexer() {
         String uri = System.getenv("MONGODB_URI");
-        if (uri == null || uri.isBlank()) uri = DEFAULT_URI;
+        if (uri == null || uri.isBlank()) uri = System.getProperty("MONGODB_URI", DEFAULT_URI);
         this.client     = MongoClients.create(uri);
         this.collection = client.getDatabase(DB_NAME).getCollection(COLLECTION);
         loadFromDb();

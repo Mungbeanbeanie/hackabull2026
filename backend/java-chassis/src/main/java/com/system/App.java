@@ -7,9 +7,30 @@ import com.system.managers.SearchController;
 import com.system.sampler.userNegPreference;
 import com.system.storage.DataManager;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 public class App {
 
+    // Loads backend/java-chassis/.env into JVM system properties so getProperty() fallbacks resolve
+    private static void loadEnv() {
+        Path envFile = Path.of("backend/java-chassis/.env");
+        if (!Files.exists(envFile)) return;
+        try {
+            Files.lines(envFile).forEach(line -> {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#") || !line.contains("=")) return;
+                String[] parts = line.split("=", 2);
+                System.setProperty(parts[0].trim(), parts[1].trim());
+            });
+        } catch (Exception e) {
+            System.err.println("[App] Failed to load .env: " + e.getMessage());
+        }
+    }
+
     public static void main(String[] args) throws Exception {
+        loadEnv();
+
         int port = 8080;
         String envPort = System.getenv("PORT");
         if (envPort != null && !envPort.isBlank()) {
