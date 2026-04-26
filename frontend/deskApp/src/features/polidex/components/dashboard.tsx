@@ -1,6 +1,6 @@
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { ChevronDown, Search, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 
 import { Politician } from "@/features/polidex/data/politicians";
 import { districtLabel, levelLabel, partyLabel, regionLabel } from "@/features/polidex/lib/display";
@@ -39,9 +39,7 @@ export function Dashboard({
   const isLoading = externalIsLoading || isMountLoading;
 
   const [q, setQ] = useState("");
-  const [filtersOpen, setFiltersOpen] = useState(true);
-  const [representationOpen, setRepresentationOpen] = useState(true);
-  const [behaviorOpen, setBehaviorOpen] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [party, setParty] = useState<PartyFilter>("ALL");
   const [level, setLevel] = useState<LevelFilter>("ALL");
   const [region, setRegion] = useState<RegionFilter>("ALL");
@@ -150,7 +148,7 @@ export function Dashboard({
           </div>
         </div>
 
-        <div className="mt-3">
+        <div className="relative mt-3">
           <button
             onClick={() => setFiltersOpen((v) => !v)}
             className="flex items-center gap-2 rounded-md border border-[#E2E5E9] bg-[#F8F9FA] px-3 py-2"
@@ -163,117 +161,155 @@ export function Dashboard({
           </button>
 
           {filtersOpen && (
-            <div className="mt-3 space-y-3">
-              <FilterSection title="Representation" open={representationOpen} onToggle={() => setRepresentationOpen((prev) => !prev)}>
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-6">
-                  <SelectFilter
-                    label="Party"
-                    value={party}
-                    options={[
-                      { value: "ALL", label: "All parties" },
-                      { value: "R", label: "Republican" },
-                      { value: "D", label: "Democrat" },
-                      { value: "I", label: "Independent" },
-                    ]}
-                    onChange={(value) => setParty(value as PartyFilter)}
-                  />
-                  <SelectFilter
-                    label="Level"
-                    value={level}
-                    options={[
-                      { value: "ALL", label: "All levels" },
-                      { value: "Federal", label: "Federal" },
-                      { value: "State", label: "State" },
-                    ]}
-                    onChange={(value) => setLevel(value as LevelFilter)}
-                  />
-                  <SelectFilter
-                    label="Region"
-                    value={region}
-                    options={[
-                      { value: "ALL", label: "All regions" },
-                      { value: "North FL", label: "North Florida" },
-                      { value: "Central FL", label: "Central Florida" },
-                      { value: "South FL", label: "South Florida" },
-                      { value: "Statewide", label: "Statewide" },
-                    ]}
-                    onChange={(value) => setRegion(value as RegionFilter)}
-                  />
-                  <SelectFilter
-                    label="Office"
-                    value={role}
-                    options={[
-                      { value: "ALL", label: "All offices" },
-                      { value: "U.S. Senate", label: "U.S. Senate" },
-                      { value: "U.S. House", label: "U.S. House" },
-                      { value: "Governor", label: "Governor" },
-                      { value: "State Senate", label: "State Senate" },
-                      { value: "State House", label: "State House" },
-                      { value: "Statewide", label: "Statewide" },
-                    ]}
-                    onChange={(value) => setRole(value as RoleFilter)}
-                  />
-                  <SelectFilter
-                    label="Coverage"
-                    value={exposure}
-                    options={[
-                      { value: "ALL", label: "Any coverage" },
-                      { value: "LOCAL", label: "District only" },
-                      { value: "STATEWIDE", label: "Statewide only" },
-                    ]}
-                    onChange={(value) => setExposure(value as ExposureFilter)}
-                  />
-                  <SelectFilter
-                    label="Sort"
-                    value={sort}
-                    options={[
-                      { value: "drift", label: "Biggest gap" },
-                      { value: "adherence", label: "Most consistent" },
-                      { value: "office", label: "Office" },
-                      { value: "name", label: "Name A-Z" },
-                    ]}
-                    onChange={(value) => setSort(value as Sort)}
-                  />
+            <div
+              className="absolute left-0 z-20 mt-3 w-full rounded-xl border border-[#E2E5E9] bg-white p-4 shadow-[0_18px_46px_rgba(13,15,18,0.12)] lg:w-[min(860px,calc(100vw-4rem))]"
+              role="dialog"
+              aria-label="All filters"
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <div style={{ fontFamily: FONT_SANS, fontSize: 14, fontWeight: 500, color: "#0D0F12" }}>All Filters</div>
+                  <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#8A919E" }}>Refine the list with representation and behavior signals.</div>
                 </div>
-              </FilterSection>
+                <button
+                  onClick={() => setFiltersOpen(false)}
+                  className="rounded-md border border-[#E2E5E9] bg-[#F8F9FA] p-1.5"
+                  aria-label="Close filters"
+                >
+                  <X size={14} color="#4B5260" />
+                </button>
+              </div>
 
-              <FilterSection title="Behavior" open={behaviorOpen} onToggle={() => setBehaviorOpen((prev) => !prev)}>
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-4">
-                  <SelectFilter
-                    label="Consistency"
-                    value={consistency}
-                    options={[
-                      { value: "ALL", label: "All bands" },
-                      { value: "HIGH", label: "High (96%+)" },
-                      { value: "MID", label: "Mid (92-95%)" },
-                      { value: "LOW", label: "Low (<92%)" },
-                    ]}
-                    onChange={(value) => setConsistency(value as ConsistencyFilter)}
-                  />
-                  <SelectFilter
-                    label="Promise Drift"
-                    value={drift}
-                    options={[
-                      { value: "ALL", label: "All drift bands" },
-                      { value: "LOW", label: "Low drift" },
-                      { value: "MID", label: "Medium drift" },
-                      { value: "HIGH", label: "High drift" },
-                    ]}
-                    onChange={(value) => setDrift(value as DriftFilter)}
-                  />
-                  <SelectFilter
-                    label="Donor Volume"
-                    value={donors}
-                    options={[
-                      { value: "ALL", label: "Any funding" },
-                      { value: "LOW", label: "Low donor volume" },
-                      { value: "MID", label: "Medium donor volume" },
-                      { value: "HIGH", label: "High donor volume" },
-                    ]}
-                    onChange={(value) => setDonors(value as DonorFilter)}
-                  />
-                </div>
-              </FilterSection>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <SelectFilter
+                  label="Party"
+                  value={party}
+                  options={[
+                    { value: "ALL", label: "All parties" },
+                    { value: "R", label: "Republican" },
+                    { value: "D", label: "Democrat" },
+                    { value: "I", label: "Independent" },
+                  ]}
+                  onChange={(value) => setParty(value as PartyFilter)}
+                />
+                <SelectFilter
+                  label="Level"
+                  value={level}
+                  options={[
+                    { value: "ALL", label: "All levels" },
+                    { value: "Federal", label: "Federal" },
+                    { value: "State", label: "State" },
+                  ]}
+                  onChange={(value) => setLevel(value as LevelFilter)}
+                />
+                <SelectFilter
+                  label="Region"
+                  value={region}
+                  options={[
+                    { value: "ALL", label: "All regions" },
+                    { value: "North FL", label: "North Florida" },
+                    { value: "Central FL", label: "Central Florida" },
+                    { value: "South FL", label: "South Florida" },
+                    { value: "Statewide", label: "Statewide" },
+                  ]}
+                  onChange={(value) => setRegion(value as RegionFilter)}
+                />
+                <SelectFilter
+                  label="Office"
+                  value={role}
+                  options={[
+                    { value: "ALL", label: "All offices" },
+                    { value: "U.S. Senate", label: "U.S. Senate" },
+                    { value: "U.S. House", label: "U.S. House" },
+                    { value: "Governor", label: "Governor" },
+                    { value: "State Senate", label: "State Senate" },
+                    { value: "State House", label: "State House" },
+                    { value: "Statewide", label: "Statewide" },
+                  ]}
+                  onChange={(value) => setRole(value as RoleFilter)}
+                />
+                <SelectFilter
+                  label="Coverage"
+                  value={exposure}
+                  options={[
+                    { value: "ALL", label: "Any coverage" },
+                    { value: "LOCAL", label: "District only" },
+                    { value: "STATEWIDE", label: "Statewide only" },
+                  ]}
+                  onChange={(value) => setExposure(value as ExposureFilter)}
+                />
+                <SelectFilter
+                  label="Consistency"
+                  value={consistency}
+                  options={[
+                    { value: "ALL", label: "All bands" },
+                    { value: "HIGH", label: "High (96%+)" },
+                    { value: "MID", label: "Mid (92-95%)" },
+                    { value: "LOW", label: "Low (<92%)" },
+                  ]}
+                  onChange={(value) => setConsistency(value as ConsistencyFilter)}
+                />
+                <SelectFilter
+                  label="Promise Drift"
+                  value={drift}
+                  options={[
+                    { value: "ALL", label: "All drift bands" },
+                    { value: "LOW", label: "Low drift" },
+                    { value: "MID", label: "Medium drift" },
+                    { value: "HIGH", label: "High drift" },
+                  ]}
+                  onChange={(value) => setDrift(value as DriftFilter)}
+                />
+                <SelectFilter
+                  label="Donor Volume"
+                  value={donors}
+                  options={[
+                    { value: "ALL", label: "Any funding" },
+                    { value: "LOW", label: "Low donor volume" },
+                    { value: "MID", label: "Medium donor volume" },
+                    { value: "HIGH", label: "High donor volume" },
+                  ]}
+                  onChange={(value) => setDonors(value as DonorFilter)}
+                />
+                <SelectFilter
+                  label="Sort"
+                  value={sort}
+                  options={[
+                    { value: "drift", label: "Biggest gap" },
+                    { value: "adherence", label: "Most consistent" },
+                    { value: "office", label: "Office" },
+                    { value: "name", label: "Name A-Z" },
+                  ]}
+                  onChange={(value) => setSort(value as Sort)}
+                />
+              </div>
+
+              <div className="mt-4 flex items-center justify-end gap-2">
+                <button
+                  onClick={() => {
+                    setParty("ALL");
+                    setLevel("ALL");
+                    setRegion("ALL");
+                    setRole("ALL");
+                    setExposure("ALL");
+                    setConsistency("ALL");
+                    setDrift("ALL");
+                    setDonors("ALL");
+                    setSort("drift");
+                  }}
+                  className="rounded-md border border-[#E2E5E9] bg-white px-3 py-2"
+                  style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#4B5260" }}
+                >
+                  Clear all
+                </button>
+                <button
+                  onClick={() => setFiltersOpen(false)}
+                  className="rounded-md border border-[#0D0F12] bg-[#0D0F12] px-3 py-2"
+                  style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#FFFFFF" }}
+                >
+                  Done
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -441,32 +477,6 @@ function donationBand(politician: Politician): DonorFilter {
   if (total < 70000) return "LOW";
   if (total < 140000) return "MID";
   return "HIGH";
-}
-
-function FilterSection({
-  title,
-  open,
-  onToggle,
-  children,
-}: {
-  title: string;
-  open: boolean;
-  onToggle: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <div className="rounded-md border border-[#E2E5E9] bg-[#FBFCFD] p-2.5">
-      <button
-        onClick={onToggle}
-        className="flex w-full items-center justify-between"
-        style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#334155" }}
-      >
-        <span>{title}</span>
-        <ChevronDown size={14} style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 140ms" }} />
-      </button>
-      {open && <div className="mt-2">{children}</div>}
-    </div>
-  );
 }
 
 function SelectFilter<T extends string>({

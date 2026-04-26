@@ -12,7 +12,7 @@ import { Simulator } from "@/features/polidex/components/simulator";
 import { TopNav } from "@/features/polidex/components/top-nav";
 import { Politician, politicians } from "@/features/polidex/data/politicians";
 import { BackendPolitician, RankedPolitician, SearchResult, checkHealth, fetchPoliticians, searchPoliticians } from "@/features/polidex/lib/api";
-import { UserProfile, clearProfile, loadProfile } from "@/features/polidex/lib/profile";
+import { UserProfile, clearProfile, importProfileCode, loadProfile, saveProfile } from "@/features/polidex/lib/profile";
 import { View } from "@/features/polidex/types";
 
 export function PoliDexApp() {
@@ -58,6 +58,14 @@ export function PoliDexApp() {
 
   const selected = activePoliticians.find((p) => p.id === selectedId) ?? null;
 
+  const handleProfileImport = (code: string) => {
+    const next = importProfileCode(code);
+    if (!next) return false;
+    saveProfile(next);
+    setProfile(next);
+    return true;
+  };
+
   if (view === "landing") {
     return <Landing onInit={() => setView("loading")} />;
   }
@@ -75,7 +83,15 @@ export function PoliDexApp() {
   }
 
   if (view === "quiz") {
-    return <Quiz onCancel={() => setView("dashboard")} onDone={(nextProfile) => { setProfile(nextProfile); setView("compare"); }} />;
+    return (
+      <Quiz
+        onCancel={() => setView("dashboard")}
+        onDone={(nextProfile) => {
+          setProfile(nextProfile);
+          setView("compare");
+        }}
+      />
+    );
   }
 
   return (
@@ -99,7 +115,14 @@ export function PoliDexApp() {
         {view === "dashboard" && (
           <Dashboard list={activePoliticians} selectedId={selectedId} onSelect={setSelectedId} isLoading={!isDataLoaded} />
         )}
-        {view === "compare" && <Compare profile={profile} ranked={rankedPoliticians} onTakeQuiz={() => setView("quiz")} />}
+        {view === "compare" && (
+          <Compare
+            profile={profile}
+            ranked={rankedPoliticians}
+            onTakeQuiz={() => setView("quiz")}
+            onImportProfile={handleProfileImport}
+          />
+        )}
         {view === "simulator" && <Simulator list={activePoliticians} />}
 
         <LogicProfile entity={selected} onClose={() => setSelectedId(null)} />

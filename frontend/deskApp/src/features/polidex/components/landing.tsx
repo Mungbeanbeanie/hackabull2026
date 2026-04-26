@@ -2,7 +2,6 @@ import { useState } from "react";
 import { motion } from "motion/react";
 
 import { politicians } from "@/features/polidex/data/politicians";
-import { districtLabel, partyLabel } from "@/features/polidex/lib/display";
 import { FONT_MONO, FONT_SANS } from "@/features/polidex/lib/style";
 
 import { ImageWithFallback } from "./figma/image-with-fallback";
@@ -18,6 +17,7 @@ export function Landing({ onInit }: { onInit: () => void }) {
 
   const cardW = 132;
   const gap = 32;
+  const railPoliticians = politicians.slice(0, 12);
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-hidden bg-white" style={{ fontFamily: FONT_SANS }}>
@@ -32,7 +32,7 @@ export function Landing({ onInit }: { onInit: () => void }) {
         }}
       />
 
-      <div className="relative mt-8" style={{ height: 40, overflow: "hidden", display: "flex" }}>
+      <div className="relative z-10 pt-8" style={{ paddingTop: 28 }}>
         <div
           style={{
             position: "absolute",
@@ -60,50 +60,84 @@ export function Landing({ onInit }: { onInit: () => void }) {
 
         <motion.div
           animate={{ x: ["-50%", "0%"] }}
-          transition={{ duration: politicians.length * 5, ease: "linear", repeat: Infinity }}
+          transition={{ duration: railPoliticians.length * 10, ease: "linear", repeat: Infinity }}
           style={{ display: "flex", willChange: "transform", width: "max-content" }}
         >
-          <div style={{ display: "flex", gap: 48, paddingRight: 48 }}>
-            {politicians.map((p, i) => {
-              const fullParty = partyLabel(p.party);
-              return (
-                <div key={`top1-${p.id}-${i}`} style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
-                  <div
-                    style={{
-                      fontFamily: FONT_MONO,
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: "#8A919E",
-                      letterSpacing: "0.06em",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {p.name} - <span style={{ color: "#0D0F12" }}>{fullParty} {districtLabel(p.district)} {p.role}</span>
-                  </div>
+          <div style={{ display: "flex", gap, paddingLeft: 24, paddingRight: 24 }}>
+            {railPoliticians.map((p, i) => (
+              <div key={`top1-${p.id}-${i}`} style={{ flexShrink: 0, width: cardW }}>
+                <div
+                  style={{
+                    width: cardW,
+                    height: 168,
+                    borderRadius: 12,
+                    overflow: "hidden",
+                    border: "1px solid #E2E5E9",
+                    background: "#F8F9FA",
+                    boxShadow: "0 8px 24px rgba(13,15,18,0.06)",
+                  }}
+                >
+                  <ImageWithFallback
+                    src={p.photo}
+                    alt={p.name}
+                    loading="lazy"
+                    className="h-full w-full"
+                    style={{ objectFit: "cover", filter: "grayscale(0.2) contrast(1.04)" }}
+                  />
                 </div>
-              );
-            })}
+                <div
+                  style={{
+                    marginTop: 8,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: "#0D0F12",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {p.name}
+                </div>
+              </div>
+            ))}
           </div>
-          <div style={{ display: "flex", gap: 48, paddingRight: 48 }}>
-            {politicians.map((p, i) => {
-              const fullParty = partyLabel(p.party);
-              return (
-                <div key={`top2-${p.id}-${i}`} style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
-                  <div
-                    style={{
-                      fontFamily: FONT_MONO,
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: "#8A919E",
-                      letterSpacing: "0.06em",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {p.name} - <span style={{ color: "#0D0F12" }}>{fullParty} {districtLabel(p.district)} {p.role}</span>
-                  </div>
+          <div style={{ display: "flex", gap, paddingLeft: 24, paddingRight: 24 }}>
+            {railPoliticians.map((p, i) => (
+              <div key={`top2-${p.id}-${i}`} style={{ flexShrink: 0, width: cardW }}>
+                <div
+                  style={{
+                    width: cardW,
+                    height: 168,
+                    borderRadius: 12,
+                    overflow: "hidden",
+                    border: "1px solid #E2E5E9",
+                    background: "#F8F9FA",
+                    boxShadow: "0 8px 24px rgba(13,15,18,0.06)",
+                  }}
+                >
+                  <ImageWithFallback
+                    src={p.photo}
+                    alt={p.name}
+                    loading="lazy"
+                    className="h-full w-full"
+                    style={{ objectFit: "cover", filter: "grayscale(0.2) contrast(1.04)" }}
+                  />
                 </div>
-              );
-            })}
+                <div
+                  style={{
+                    marginTop: 8,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: "#0D0F12",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {p.name}
+                </div>
+              </div>
+            ))}
           </div>
         </motion.div>
       </div>
@@ -118,18 +152,6 @@ export function Landing({ onInit }: { onInit: () => void }) {
           <div style={{ marginBottom: 16, display: "flex", justifyContent: "center" }}>
             <BrandLogo size="lg" />
           </div>
-          <div
-            style={{
-              fontFamily: FONT_MONO,
-              fontSize: 11,
-              color: "#8A919E",
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              marginBottom: 18,
-            }}
-          >
-            PoliDex
-          </div>
           <h1
             style={{
               fontSize: "clamp(2rem, 5vw, 2.75rem)",
@@ -137,12 +159,14 @@ export function Landing({ onInit }: { onInit: () => void }) {
               lineHeight: 1.15,
               color: "#0D0F12",
               maxWidth: 760,
+              marginLeft: "auto",
+              marginRight: "auto",
               marginBottom: 18,
             }}
           >
             See the gap between what they <em style={{ fontStyle: "italic", color: "#1565C0" }}>say</em> and what they <em style={{ fontStyle: "italic", color: "#C84B00" }}>do</em>.
           </h1>
-          <p style={{ fontSize: 14, color: "#4B5260", lineHeight: 1.6, maxWidth: 520, marginBottom: 32 }}>
+          <p style={{ fontSize: 14, color: "#4B5260", lineHeight: 1.6, maxWidth: 520, marginLeft: "auto", marginRight: "auto", marginBottom: 32 }}>
             A clinical dashboard for civic analysis. Compare promises against voting records,
             surface the donors driving each decision, and read every politician at a glance.
           </p>
@@ -206,11 +230,11 @@ export function Landing({ onInit }: { onInit: () => void }) {
 
         <motion.div
           animate={{ x: ["0%", "-50%"] }}
-          transition={{ duration: politicians.length * 5, ease: "linear", repeat: Infinity }}
+          transition={{ duration: railPoliticians.length * 8, ease: "linear", repeat: Infinity }}
           style={{ display: "flex", willChange: "transform", width: "max-content" }}
         >
           <div style={{ display: "flex", gap, paddingLeft: 24, paddingRight: 24 }}>
-            {politicians.map((p, i) => (
+            {railPoliticians.map((p, i) => (
               <div key={`bot1-${p.id}-${i}`} style={{ flexShrink: 0, width: cardW }}>
                 <div
                   style={{
@@ -244,14 +268,11 @@ export function Landing({ onInit }: { onInit: () => void }) {
                 >
                   {p.name}
                 </div>
-                <div style={{ fontSize: 11, color: "#8A919E", marginTop: 2 }}>
-                  {partyLabel(p.party)} - {districtLabel(p.district)}
-                </div>
               </div>
             ))}
           </div>
           <div style={{ display: "flex", gap, paddingLeft: 24, paddingRight: 24 }}>
-            {politicians.map((p, i) => (
+            {railPoliticians.map((p, i) => (
               <div key={`bot2-${p.id}-${i}`} style={{ flexShrink: 0, width: cardW }}>
                 <div
                   style={{
@@ -284,9 +305,6 @@ export function Landing({ onInit }: { onInit: () => void }) {
                   }}
                 >
                   {p.name}
-                </div>
-                <div style={{ fontSize: 11, color: "#8A919E", marginTop: 2 }}>
-                  {partyLabel(p.party)} - {districtLabel(p.district)}
                 </div>
               </div>
             ))}

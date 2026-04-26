@@ -8,7 +8,7 @@ import { taxonomy } from "@/features/polidex/data/taxonomy";
 import { RankedPolitician } from "@/features/polidex/lib/api";
 import { districtLabel, levelLabel, partyLabel, regionLabel } from "@/features/polidex/lib/display";
 import { cosine } from "@/features/polidex/lib/math";
-import { UserProfile } from "@/features/polidex/lib/profile";
+import { UserProfile, exportProfileCode } from "@/features/polidex/lib/profile";
 import { FONT_MONO, FONT_SANS, consistencyLabel } from "@/features/polidex/lib/style";
 
 import { ImageWithFallback } from "./figma/image-with-fallback";
@@ -20,14 +20,35 @@ export function Compare({
   profile,
   ranked = [],
   onTakeQuiz,
+  onImportProfile,
 }: {
   profile: UserProfile | null;
   ranked?: RankedPolitician[];
   onTakeQuiz: () => void;
+  onImportProfile: (code: string) => boolean;
 }) {
   const [mode, setMode] = useState<Mode>(profile ? "match" : "vsPol");
   const [vsYouSel, setVsYouSel] = useState<string>(politicians[0].id);
   const [vsPolSels, setVsPolSels] = useState<string[]>([politicians[0].id, politicians[6].id]);
+  const [profileCodeInput, setProfileCodeInput] = useState("");
+  const [profileMessage, setProfileMessage] = useState<string | null>(null);
+  const profileCode = profile ? exportProfileCode(profile) : null;
+
+  const handleCopyCode = async () => {
+    if (!profileCode) return;
+    try {
+      await navigator.clipboard.writeText(profileCode);
+      setProfileMessage("Profile code copied.");
+    } catch {
+      setProfileMessage("Could not copy profile code.");
+    }
+  };
+
+  const handleImportCode = () => {
+    const ok = onImportProfile(profileCodeInput);
+    setProfileMessage(ok ? "Profile restored from code." : "Invalid profile code.");
+    if (ok) setProfileCodeInput("");
+  };
 
   return (
     <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-white">
@@ -37,14 +58,45 @@ export function Compare({
           See where your views overlap with politicians, or stack multiple politicians side by side.
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <InfoTooltip content="Take the quiz to unlock personal matches" disabled={!!profile}>
-            <ModeTab active={mode === "match"} onClick={() => setMode("match")} label="Best Matches For Me" />
-          </InfoTooltip>
-          <InfoTooltip content="Take the quiz to unlock vs mode" disabled={!!profile}>
-            <ModeTab active={mode === "vsYou"} onClick={() => setMode("vsYou")} label="Me vs Politician" />
-          </InfoTooltip>
-          <ModeTab active={mode === "vsPol"} onClick={() => setMode("vsPol")} label="Compare Politicians" />
+        <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <InfoTooltip content="Take the quiz to unlock personal matches" disabled={!!profile}>
+              <ModeTab active={mode === "match"} onClick={() => setMode("match")} label="Best Matches For Me" />
+            </InfoTooltip>
+            <InfoTooltip content="Take the quiz to unlock vs mode" disabled={!!profile}>
+              <ModeTab active={mode === "vsYou"} onClick={() => setMode("vsYou")} label="Me vs Politician" />
+            </InfoTooltip>
+            <ModeTab active={mode === "vsPol"} onClick={() => setMode("vsPol")} label="Compare Politicians" />
+          </div>
+
+          <div className="flex flex-col gap-1 xl:items-end">
+            <div className="flex items-center gap-1.5">
+              <input
+                value={profileCodeInput}
+                onChange={(event) => setProfileCodeInput(event.target.value)}
+                placeholder="Code"
+                className="w-[170px] rounded-md border border-[#D8DEE7] bg-white px-2.5 py-1.5 outline-none"
+                style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#1B2533" }}
+              />
+              <button
+                onClick={handleImportCode}
+                className="rounded-md border border-[#0D0F12] bg-[#0D0F12] px-2.5 py-1.5"
+                style={{ fontFamily: FONT_SANS, fontSize: 10, color: "#FFFFFF" }}
+              >
+                Restore
+              </button>
+              {profileCode && (
+                <button
+                  onClick={handleCopyCode}
+                  className="rounded-md border border-[#D8DEE7] bg-white px-2.5 py-1.5"
+                  style={{ fontFamily: FONT_SANS, fontSize: 10, color: "#0D0F12" }}
+                >
+                  Copy My Code
+                </button>
+              )}
+            </div>
+            {profileMessage && <div style={{ fontFamily: FONT_SANS, fontSize: 10, color: "#6A7280" }}>{profileMessage}</div>}
+          </div>
         </div>
       </div>
 
@@ -668,19 +720,32 @@ function PolPolView({
     setSelected(updated);
   };
 
-  const handleAdd = () => {
-    if (selected.length < 4) {
-      const remaining = politicians.find((p) => !selected.includes(p.id)) ?? politicians[0];
-      setSelected([...selected, remaining.id]);
-    }
-  };
-
   const handleRemove = (index: number) => {
     if (selected.length > 2) {
       const updated = [...selected];
       updated.splice(index, 1);
       setSelected(updated);
     }
+  };
+
+  const [addPoliticianQuery, setAddPoliticianQuery] = useState("");
+
+  const addPoliticianByName = () => {
+    if (selected.length >= 4) return;
+    const query = addPoliticianQuery.trim().toLowerCase();
+    if (!query) return;
+
+    const match = politicians.find((politician) => {
+      if (selected.includes(politician.id)) return false;
+      const haystack = [politician.name, politician.role, districtLabel(politician.district), partyLabel(politician.party)]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+
+    if (!match) return;
+    setSelected([...selected, match.id]);
+    setAddPoliticianQuery("");
   };
 
   const data = taxonomy.map((topic, i) => {
@@ -744,25 +809,20 @@ function PolPolView({
         ))}
 
         {selected.length < 4 && (
-          <div className="flex flex-1 flex-col justify-end">
-            <button
-              onClick={handleAdd}
-              style={{
-                fontFamily: FONT_SANS,
-                fontSize: 13,
-                padding: "10px 14px",
-                borderRadius: 8,
-                background: "#FFFFFF",
-                border: "1px dashed #C5CBD3",
-                color: "#4B5260",
-                cursor: "pointer",
-                height: "fit-content",
-                alignSelf: "flex-start",
-                marginTop: "auto",
+          <div className="rounded-xl border border-dashed border-[#C5CBD3] bg-white p-5 md:col-span-2 lg:col-span-2" style={{ minHeight: 124 }}>
+            <input
+              value={addPoliticianQuery}
+              onChange={(event) => setAddPoliticianQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  addPoliticianByName();
+                }
               }}
-            >
-              + Add politician
-            </button>
+              placeholder="Add politician"
+              className="h-11 w-full rounded-md border border-[#D8DEE7] bg-white px-3 outline-none"
+              style={{ fontFamily: FONT_SANS, fontSize: 13, color: "#0D0F12" }}
+            />
           </div>
         )}
       </motion.div>
