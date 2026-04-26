@@ -7,12 +7,21 @@ import { Dashboard } from "@/features/polidex/components/dashboard";
 import { GlobalLoadingScreen } from "@/features/polidex/components/global-loading-screen";
 import { Landing } from "@/features/polidex/components/landing";
 import { LogicProfile } from "@/features/polidex/components/logic-profile";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+
+import { Compare } from "@/features/polidex/components/compare";
+import { Dashboard } from "@/features/polidex/components/dashboard";
+import { GlobalLoadingScreen } from "@/features/polidex/components/global-loading-screen";
+import { Landing } from "@/features/polidex/components/landing";
+import { LogicProfile } from "@/features/polidex/components/logic-profile";
 import { Quiz } from "@/features/polidex/components/quiz";
 import { Simulator } from "@/features/polidex/components/simulator";
 import { TopNav } from "@/features/polidex/components/top-nav";
 import { Politician, politicians } from "@/features/polidex/data/politicians";
-import { BackendPolitician, RankedPolitician, SearchResult, checkHealth, fetchPoliticians, searchPoliticians } from "@/features/polidex/lib/api";
-import { UserProfile, clearProfile, importProfileCode, loadProfile, saveProfile } from "@/features/polidex/lib/profile";
+import { BackendPolitician, RankedPolitician, SearchResult, checkHealth, fetchPoliticians, localSearch, searchPoliticians } from "@/features/polidex/lib/api";
+import { UserProfile, clearProfile, loadProfile } from "@/features/polidex/lib/profile";
 import { View } from "@/features/polidex/types";
 
 export function PoliDexApp() {
@@ -21,6 +30,7 @@ export function PoliDexApp() {
   const [profile, setProfile] = useState<UserProfile | null>(() => loadProfile());
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [rankedResults, setRankedResults] = useState<SearchResult[]>([]);
+  const [isRanking, setIsRanking] = useState(false);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
   const [activePoliticians, setActivePoliticians] = useState<Politician[]>(politicians);
 
@@ -41,9 +51,13 @@ export function PoliDexApp() {
 
   useEffect(() => {
     if (!profile) return;
+    setIsRanking(true);
     searchPoliticians(profile.vector, profile.weights, false, [])
-      .then(setRankedResults)
-      .catch((err) => console.error("backend search failed:", err));
+      .then((results) => { setRankedResults(results); setIsRanking(false); })
+      .catch(() => {
+        setRankedResults(localSearch(activePoliticians, profile.vector, profile.weights, false));
+        setIsRanking(false);
+      });
   }, [profile]);
 
   const rankedPoliticians = useMemo((): RankedPolitician[] => {
@@ -57,14 +71,6 @@ export function PoliDexApp() {
   }, [rankedResults, activePoliticians]);
 
   const selected = activePoliticians.find((p) => p.id === selectedId) ?? null;
-
-  const handleProfileImport = (code: string) => {
-    const next = importProfileCode(code);
-    if (!next) return false;
-    saveProfile(next);
-    setProfile(next);
-    return true;
-  };
 
   if (view === "landing") {
     return <Landing onInit={() => setView("loading")} />;
@@ -83,15 +89,7 @@ export function PoliDexApp() {
   }
 
   if (view === "quiz") {
-    return (
-      <Quiz
-        onCancel={() => setView("dashboard")}
-        onDone={(nextProfile) => {
-          setProfile(nextProfile);
-          setView("compare");
-        }}
-      />
-    );
+    return <Quiz onCancel={() => setView("dashboard")} onDone={(nextProfile) => { setProfile(nextProfile); setView("compare"); }} />;
   }
 
   return (
@@ -115,14 +113,7 @@ export function PoliDexApp() {
         {view === "dashboard" && (
           <Dashboard list={activePoliticians} selectedId={selectedId} onSelect={setSelectedId} isLoading={!isDataLoaded} />
         )}
-        {view === "compare" && (
-          <Compare
-            profile={profile}
-            ranked={rankedPoliticians}
-            onTakeQuiz={() => setView("quiz")}
-            onImportProfile={handleProfileImport}
-          />
-        )}
+        {view === "compare" && <Compare profile={profile} ranked={rankedPoliticians} isRanking={isRanking} backendOnline={backendOnline} onTakeQuiz={() => setView("quiz")} />}
         {view === "simulator" && <Simulator list={activePoliticians} />}
 
         <LogicProfile entity={selected} onClose={() => setSelectedId(null)} />
@@ -130,3 +121,4 @@ export function PoliDexApp() {
     </div>
   );
 }
+      <div className="relative flex flex-1" style={{ minHeight: 0 }}>
