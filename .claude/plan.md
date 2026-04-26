@@ -83,7 +83,7 @@ Ordered by dependency. Each phase unblocks the next.
 - [x] `SearchController.java` — fix `b.get("dim")` → `b.get("allele")`; `constraint_discoverer.py` returns field `"allele"`, not `"dim"`; would NPE if any constraints were ever found
 
 ## Phase 16 — Frontend Environment Wiring
-- [ ] create `frontend/deskApp/.env.local` with `NEXT_PUBLIC_BACKEND_URL=http://localhost:8080`
+- [x] create `frontend/deskApp/.env.local` with `NEXT_PUBLIC_BACKEND_URL=http://localhost:8080`
 - [ ] verify GlobalLoadingScreen correctly reflects `backendOnline` state
 - [ ] confirm localSearch fallback uses `vector_stated` when backend offline — intentional for demo resilience
 
