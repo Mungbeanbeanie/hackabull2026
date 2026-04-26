@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { taxonomy } from "@/features/polidex/data/taxonomy";
-import { UserProfile, saveProfile } from "@/features/polidex/lib/profile";
+import { FlRegion, UserProfile, saveProfile } from "@/features/polidex/lib/profile";
 import { FONT_SANS } from "@/features/polidex/lib/style";
 
 const QUESTIONS = taxonomy.map((topic) => ({
@@ -50,13 +50,14 @@ export function Quiz({
   onDone: (profile: UserProfile) => void;
   onCancel: () => void;
 }) {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(-1);
+  const [region, setRegion] = useState<FlRegion | undefined>(undefined);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [importance, setImportance] = useState<Record<string, number>>({});
 
-  const current = QUESTIONS[step];
-  const value = answers[current.id] ?? 3;
-  const importanceValue = importance[current.id] ?? 0.5;
+  const current = step >= 0 ? QUESTIONS[step] : null;
+  const value = current ? (answers[current.id] ?? 3) : 3;
+  const importanceValue = current ? (importance[current.id] ?? 0.5) : 0.5;
 
   const submit = () => {
     const vector = QUESTIONS.map((q) => answers[q.id] ?? 3);
@@ -65,6 +66,7 @@ export function Quiz({
     const profile: UserProfile = {
       vector,
       weights,
+      region,
       updatedAt: new Date().toISOString(),
     };
 
@@ -73,10 +75,13 @@ export function Quiz({
   };
 
   const next = () => {
-    if (!(current.id in answers)) {
+    if (step === -1) {
+      setStep(0);
+      return;
+    }
+    if (current && !(current.id in answers)) {
       setAnswers((prev) => ({ ...prev, [current.id]: 3 }));
     }
-
     if (step < QUESTIONS.length - 1) {
       setStep((prev) => prev + 1);
     } else {
@@ -103,19 +108,67 @@ export function Quiz({
             &larr; Cancel
           </button>
           <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#8A919E" }}>
-            Question {step + 1} of {QUESTIONS.length}
+            {step === -1 ? "Location" : `Question ${step + 1} of ${QUESTIONS.length}`}
           </div>
         </div>
 
         <div style={{ height: 4, background: "#F1F3F5", borderRadius: 2, overflow: "hidden", marginBottom: 36 }}>
           <motion.div
-            animate={{ width: `${((step + 1) / QUESTIONS.length) * 100}%` }}
+            animate={{ width: `${((step + 2) / (QUESTIONS.length + 1)) * 100}%` }}
             transition={{ duration: 0.3 }}
             style={{ height: "100%", background: "#0D0F12", borderRadius: 2 }}
           />
         </div>
 
         <AnimatePresence mode="wait">
+          {step === -1 ? (
+            <motion.div
+              key="location"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.22 }}
+            >
+              <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#1565C0", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
+                About You
+              </div>
+              <h2 style={{ fontFamily: FONT_SANS, fontSize: 26, fontWeight: 400, color: "#0D0F12", lineHeight: 1.3, marginBottom: 28 }}>
+                Where do you live in Florida?
+              </h2>
+              <div className="flex flex-col gap-3">
+                {(["North FL", "Central FL", "South FL"] as FlRegion[]).map((r) => {
+                  const active = region === r;
+                  return (
+                    <button
+                      key={r}
+                      onClick={() => setRegion(r)}
+                      style={{
+                        padding: "14px 20px",
+                        borderRadius: 10,
+                        border: active ? "2px solid #0D0F12" : "1px solid #E2E5E9",
+                        background: active ? "#0D0F12" : "#FFFFFF",
+                        color: active ? "#FFFFFF" : "#0D0F12",
+                        fontFamily: FONT_SANS,
+                        fontSize: 14,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        textAlign: "left",
+                        transition: "all 150ms",
+                      }}
+                    >
+                      {r}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => { setRegion(undefined); setStep(0); }}
+                style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#8A919E", background: "transparent", border: "none", cursor: "pointer", marginTop: 20, padding: 0 }}
+              >
+                Skip
+              </button>
+            </motion.div>
+          ) : current && (
           <motion.div
             key={current.id}
             initial={{ opacity: 0, y: 10 }}
@@ -222,12 +275,13 @@ export function Quiz({
               </div>
             </div>
           </motion.div>
+          )}
         </AnimatePresence>
 
         <div className="mt-10 flex items-center justify-between">
           <button
-            disabled={step === 0}
-            onClick={() => setStep((prev) => Math.max(0, prev - 1))}
+            disabled={step === -1}
+            onClick={() => setStep((prev) => Math.max(-1, prev - 1))}
             style={{
               fontFamily: FONT_SANS,
               fontSize: 13,

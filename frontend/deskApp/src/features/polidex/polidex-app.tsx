@@ -13,18 +13,18 @@ import { Quiz } from "@/features/polidex/components/quiz";
 import { Simulator } from "@/features/polidex/components/simulator";
 import { TopNav } from "@/features/polidex/components/top-nav";
 import { Politician, politicians } from "@/features/polidex/data/politicians";
-import { BackendPolitician, RankedPolitician, SearchResult, checkHealth, fetchPoliticians, localSearch, searchPoliticians } from "@/features/polidex/lib/api";
-import { UserProfile, clearProfile, loadProfile, importProfileCode, saveProfile } from "@/features/polidex/lib/profile";
+import { BackendPolitician, RankedPolitician, SearchResult, checkHealth, fetchPoliticians, localSearch, regionSort, searchPoliticians } from "@/features/polidex/lib/api";
+import { UserProfile, clearProfile, loadProfile, importProfileCode, saveProfile, DEMO_PROFILE } from "@/features/polidex/lib/profile";
 import { View } from "@/features/polidex/types";
 
 export function PoliDexApp() {
   const [view, setView] = useState<View>("landing");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(() => loadProfile());
+  const [profile, setProfile] = useState<UserProfile | null>(() => loadProfile() ?? DEMO_PROFILE);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [rankedResults, setRankedResults] = useState<SearchResult[]>(() => {
-    const p = loadProfile();
-    return p ? localSearch(politicians, p.vector, p.weights, false) : [];
+    const p = loadProfile() ?? DEMO_PROFILE;
+    return localSearch(politicians, p.vector, p.weights, false);
   });
   const [isRanking, setIsRanking] = useState(false);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
@@ -46,10 +46,15 @@ export function PoliDexApp() {
   useEffect(() => {
     if (!profile) return;
     // Seed immediately from local data — never block on backend
-    setRankedResults(localSearch(activePoliticians, profile.vector, profile.weights, false));
+    const base = localSearch(activePoliticians, profile.vector, profile.weights, false);
+    const sorted = profile.region ? regionSort(base, profile.region, activePoliticians) : base;
+    setRankedResults(sorted);
     // Attempt backend upgrade silently in background
     searchPoliticians(profile.vector, profile.weights, false, [])
-      .then((results) => { setRankedResults(results); })
+      .then((results) => {
+        const backendSorted = profile.region ? regionSort(results, profile.region, activePoliticians) : results;
+        setRankedResults(backendSorted);
+      })
       .catch(() => {});
   }, [profile, backendOnline, activePoliticians]);
 
