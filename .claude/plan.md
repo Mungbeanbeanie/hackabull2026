@@ -84,7 +84,7 @@ Ordered by dependency. Each phase unblocks the next.
 
 ## Phase 16 — Frontend Environment Wiring
 - [x] create `frontend/deskApp/.env.local` with `NEXT_PUBLIC_BACKEND_URL=http://localhost:8080`
-- [ ] verify GlobalLoadingScreen correctly reflects `backendOnline` state
+- [x] verify GlobalLoadingScreen correctly reflects `backendOnline` state
 - [ ] confirm localSearch fallback uses `vector_stated` when backend offline — intentional for demo resilience
 
 ## Phase 17 — Adherence Toggle Correctness
