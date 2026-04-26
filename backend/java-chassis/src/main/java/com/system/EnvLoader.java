@@ -11,7 +11,9 @@ import java.nio.file.Path;
 public class EnvLoader {
 
     public static void load() {
-        Path envFile = Path.of("backend/java-chassis/.env");
+        // Try CWD-relative first (exec:java keeps CWD = module dir), then project-root-relative (exec:exec)
+        Path envFile = Path.of(".env");
+        if (!Files.exists(envFile)) envFile = Path.of("backend/java-chassis/.env");
         if (!Files.exists(envFile)) return;
         try {
             Files.lines(envFile).forEach(rawLine -> {
