@@ -58,6 +58,12 @@ Plan extension and relational edge mapping if time permits
 │
 ├── /frontend                  # The "Interface" Layer
 │   ├── /deskApp               # Desktop dashboard (Electron/web)
-│   └── /extension             # Browser extension (entity overlay)
+│   └── /extension             # Chrome Extension — HUD Hover Card
+│       ├── manifest.json          # Declares permissions (activeTab, storage, scripting); registers content script [planned]
+│       ├── content.js             # Double-click listener only; captures selected text, posts to background [planned]
+│       ├── background.js          # Name lookup against politician DB; returns matched figure + 20D vector [planned]
+│       ├── cosine_bridge.js       # Cosine similarity against stored user_vector; returns % match + dim breakdown [planned]
+│       ├── user_vector_store.js   # Read/write user_vector via chrome.storage.local only; no other logic [planned]
+│       └── card.html / popup.js   # Renders hover card: % match, top dims, top 2 implemented policies [planned]
 │
 └── docker-compose.yml         # [planned] Run everything in sync

@@ -1,1 +1,1 @@
-export type View = "landing" | "loading" | "dashboard" | "quiz" | "compare";
+export type View = "landing" | "loading" | "dashboard" | "quiz" | "compare" | "simulator";

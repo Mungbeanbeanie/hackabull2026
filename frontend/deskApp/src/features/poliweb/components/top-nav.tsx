@@ -57,6 +57,9 @@ export function TopNav({
         <InfoTooltip content="Compare views">
           <NavTab active={view === "compare"} onClick={() => setView("compare")} label="Compare" />
         </InfoTooltip>
+        <InfoTooltip content="Simulate a vector-grounded debate">
+          <NavTab active={view === "simulator"} onClick={() => setView("simulator")} label="Simulator" />
+        </InfoTooltip>
       </div>
 
       <div className="flex items-center gap-2">
