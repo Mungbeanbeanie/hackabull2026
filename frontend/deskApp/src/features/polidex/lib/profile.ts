@@ -1,7 +1,18 @@
+export type FlRegion = "North FL" | "Central FL" | "South FL";
+
 export type UserProfile = {
   vector: number[];
   weights: number[];
+  region?: FlRegion;
   updatedAt: string;
+};
+
+// Young FL moderate independent — leans left on climate, healthcare, civil liberties, reproductive rights
+export const DEMO_PROFILE: UserProfile = {
+  vector:  [2.5, 3.0, 2.0, 2.0, 3.0, 2.5, 1.5, 2.0, 2.0, 1.5, 2.0, 3.0, 1.5, 1.5, 2.0, 2.5, 2.5, 2.0, 1.5, 3.0],
+  weights: [1.0, 1.0, 1.0, 1.4, 1.0, 1.2, 1.8, 1.0, 1.5, 1.6, 1.0, 1.0, 1.3, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+  region: "Central FL",
+  updatedAt: "2026-04-26T00:00:00.000Z",
 };
 
 const KEY = "polidex:profile";
@@ -49,6 +60,7 @@ export function exportProfileCode(profile: UserProfile): string {
   const payload = JSON.stringify({
     vector: profile.vector,
     weights: profile.weights,
+    region: profile.region,
     updatedAt: profile.updatedAt,
   });
   const encoded = toBase64Url(payload);
@@ -84,9 +96,13 @@ export function importProfileCode(code: string): UserProfile | null {
       return null;
     }
 
+    const FL_REGIONS: FlRegion[] = ["North FL", "Central FL", "South FL"];
+    const region = FL_REGIONS.includes(parsed.region as FlRegion) ? (parsed.region as FlRegion) : undefined;
+
     return {
       vector,
       weights,
+      region,
       updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : new Date().toISOString(),
     };
   } catch {
