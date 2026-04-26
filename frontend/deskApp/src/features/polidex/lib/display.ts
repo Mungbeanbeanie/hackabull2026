@@ -1,5 +1,10 @@
 import { Politician } from "@/features/polidex/data/politicians";
 
+const STATE_NAMES: Record<string, string> = {
+  FL: "Florida",
+  TX: "Texas",
+};
+
 export function partyLabel(party: Politician["party"]): string {
   if (party === "R") return "Republican";
   if (party === "D") return "Democrat";
@@ -9,18 +14,28 @@ export function partyLabel(party: Politician["party"]): string {
 export function districtLabel(district: string): string {
   if (district === "FL-Gov") return "Florida Governor";
   if (district === "FL-Sen") return "Florida U.S. Senate";
+  if (district === "TX-Gov") return "Texas Governor";
+  if (district === "TX-Sen") return "Texas U.S. Senate";
 
-  const stateSenate = district.match(/^FL-Sen-(\d+)$/);
-  if (stateSenate) return `Florida State Senate District ${stateSenate[1]}`;
+  const flStateSenate = district.match(/^FL-Sen-(\d+)$/);
+  if (flStateSenate) return `Florida State Senate District ${flStateSenate[1]}`;
 
-  const usHouse = district.match(/^FL-(\d+)$/);
-  if (usHouse) return `Florida U.S. House District ${usHouse[1]}`;
+  const flHouse = district.match(/^FL-(\d+)$/);
+  if (flHouse) return `Florida U.S. House District ${flHouse[1]}`;
 
-  return district.replace(/^FL\b/g, "Florida");
+  const txHouse = district.match(/^TX-(\d+)$/);
+  if (txHouse) return `Texas U.S. House District ${txHouse[1]}`;
+
+  return district;
 }
 
 export function regionLabel(region: Politician["region"]): string {
   return region.replace(" FL", " Florida");
+}
+
+export function locationLabel(p: Politician): string {
+  if (p.region !== "Statewide") return regionLabel(p.region);
+  return STATE_NAMES[p.state] ?? p.state;
 }
 
 export function levelLabel(role: Politician["role"]): "Federal" | "State" {

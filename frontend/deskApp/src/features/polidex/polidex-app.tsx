@@ -34,13 +34,11 @@ export function PoliDexApp() {
     checkHealth().then(setBackendOnline);
     fetchPoliticians()
       .then((backendList: BackendPolitician[]) => {
-        const merged = backendList
-          .map((bp) => {
-            const base = politicians.find((p) => p.id === bp.id);
-            return base ? { ...base, vector_actual: bp.vector, photo: bp.imageUrl ?? base.photo } : null;
-          })
-          .filter((p): p is Politician => p !== null);
-        if (merged.length > 0) setActivePoliticians(merged);
+        const patched = politicians.map((p) => {
+          const bp = backendList.find((b) => b.id === p.id);
+          return bp ? { ...p, vector_actual: bp.vector, photo: bp.imageUrl ?? p.photo } : p;
+        });
+        setActivePoliticians(patched);
       })
       .catch(() => {});
   }, []);

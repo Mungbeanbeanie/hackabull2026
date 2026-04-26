@@ -15,6 +15,12 @@ const PARTY_COLOR: Record<string, string> = {
   I: "#6B7280",
 };
 
+const PARTY_BG: Record<string, string> = {
+  R: "#FEF2F2",
+  D: "#EFF6FF",
+  I: "#F9FAFB",
+};
+
 export function ElectionCard({ election, onSelect }: { election: Election; onSelect: (id: string) => void }) {
   const [candidates, setCandidates] = useState<BackendPolitician[]>([]);
 
@@ -28,7 +34,15 @@ export function ElectionCard({ election, onSelect }: { election: Election; onSel
         .map((id) => {
           const p = politicians.find((pol) => pol.id === id);
           if (!p) return null;
-          return { id: p.id, name: p.name, party: p.party, state: "FL", office: p.role, vector: p.vector_stated, imageUrl: p.photo } as BackendPolitician;
+          return {
+            id: p.id,
+            name: p.name,
+            party: p.party,
+            state: p.state,
+            office: p.role,
+            vector: p.vector_stated,
+            imageUrl: p.photo,
+          } as BackendPolitician;
         })
         .filter((p): p is BackendPolitician => p !== null);
       setCandidates(local);
@@ -38,93 +52,136 @@ export function ElectionCard({ election, onSelect }: { election: Election; onSel
   return (
     <div
       style={{
-        borderRadius: 12,
+        borderRadius: 14,
         border: "1px solid #E2E5E9",
         background: "#FFFFFF",
-        padding: 16,
         marginBottom: 12,
+        overflow: "hidden",
+        boxShadow: "0 1px 4px rgba(13,15,18,0.04)",
       }}
     >
-      <div style={{ fontFamily: FONT_SANS, fontSize: 14, fontWeight: 500, color: "#0D0F12" }}>
-        {election.title}
-      </div>
-      <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#8A919E", marginTop: 3, letterSpacing: "0.04em" }}>
-        {election.location} &middot; {election.electionDay}
+      {/* Header */}
+      <div style={{ padding: "14px 16px 12px" }}>
+        <div style={{ fontFamily: FONT_SANS, fontSize: 14, fontWeight: 600, color: "#0D0F12", letterSpacing: "-0.01em" }}>
+          {election.title}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+          <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#8A919E", letterSpacing: "0.03em" }}>
+            {election.location}
+          </span>
+          <span style={{ width: 3, height: 3, borderRadius: "50%", background: "#D1D5DB", flexShrink: 0 }} />
+          <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#4B5260", fontWeight: 500, letterSpacing: "0.03em" }}>
+            {election.electionDay}
+          </span>
+        </div>
       </div>
 
-      <ul style={{ marginTop: 10, listStyle: "none", padding: 0, display: "flex", flexDirection: "column", gap: 4 }}>
-        {election.importantDates.map((d) => (
-          <li
-            key={d.label}
-            style={{
-              fontFamily: FONT_MONO,
-              fontSize: 10,
-              color: "#4B5260",
-              display: "flex",
-              justifyContent: "space-between",
-            }}
-          >
-            <span>{d.label}</span>
-            <span style={{ color: "#8A919E" }}>{d.date}</span>
-          </li>
-        ))}
-      </ul>
-
-      {candidates.length > 0 && (
-        <div style={{ display: "flex", gap: 8, overflowX: "auto", marginTop: 12, paddingBottom: 4 }}>
-          {candidates.map((candidate) => (
-            <button
-              key={candidate.id}
-              onClick={() => onSelect(candidate.id)}
-              style={{
-                borderRadius: 10,
-                border: "1px solid #E2E5E9",
-                padding: "8px 6px",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 4,
-                minWidth: 72,
-                background: "#F8F9FA",
-                cursor: "pointer",
-              }}
-            >
-              <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, position: "relative" }}>
-                <ImageWithFallback
-                  src={candidate.imageUrl ?? ""}
-                  alt={candidate.name}
-                  loading="lazy"
-                  className="h-full w-full"
-                  style={{ objectFit: "cover" }}
-                />
+      {/* Key dates */}
+      <div style={{ borderTop: "1px solid #F3F4F6", borderBottom: "1px solid #F3F4F6", padding: "10px 16px", background: "#FAFAFA" }}>
+        <div style={{ display: "flex", gap: 16, overflowX: "auto" }}>
+          {election.importantDates.map((d) => (
+            <div key={d.label} style={{ flexShrink: 0 }}>
+              <div style={{ fontFamily: FONT_MONO, fontSize: 9, color: "#8A919E", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                {d.label}
               </div>
-              <div
-                style={{
-                  fontFamily: FONT_SANS,
-                  fontSize: 10,
-                  color: "#0D0F12",
-                  textAlign: "center",
-                  width: 60,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {candidate.name.split(" ").pop()}
+              <div style={{ fontFamily: FONT_SANS, fontSize: 11, color: "#0D0F12", fontWeight: 500, marginTop: 2 }}>
+                {d.date}
               </div>
-              <div
-                style={{
-                  fontFamily: FONT_MONO,
-                  fontSize: 9,
-                  color: PARTY_COLOR[candidate.party] ?? "#6B7280",
-                  fontWeight: 600,
-                  letterSpacing: "0.04em",
-                }}
-              >
-                {candidate.party}
-              </div>
-            </button>
+            </div>
           ))}
+        </div>
+      </div>
+
+      {/* Candidates */}
+      {candidates.length > 0 && (
+        <div style={{ padding: "12px 16px" }}>
+          <div style={{ fontFamily: FONT_MONO, fontSize: 9, color: "#8A919E", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
+            Candidates
+          </div>
+          <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 2 }}>
+            {candidates.map((candidate) => (
+              <button
+                key={candidate.id}
+                onClick={() => onSelect(candidate.id)}
+                style={{
+                  flexShrink: 0,
+                  width: 100,
+                  borderRadius: 12,
+                  border: `1px solid ${PARTY_COLOR[candidate.party] ?? "#E2E5E9"}22`,
+                  background: PARTY_BG[candidate.party] ?? "#F9FAFB",
+                  padding: "10px 8px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 6,
+                  cursor: "pointer",
+                  transition: "box-shadow 150ms, transform 150ms",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 4px 12px ${PARTY_COLOR[candidate.party] ?? "#000"}22`;
+                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
+                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+                }}
+              >
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: "50%",
+                    overflow: "hidden",
+                    position: "relative",
+                    border: `2px solid ${PARTY_COLOR[candidate.party] ?? "#E2E5E9"}44`,
+                    background: "#F1F3F5",
+                    flexShrink: 0,
+                  }}
+                >
+                  <ImageWithFallback
+                    src={candidate.imageUrl ?? ""}
+                    alt={candidate.name}
+                    loading="lazy"
+                    className="h-full w-full"
+                    style={{ objectFit: "cover" }}
+                  />
+                </div>
+                <div style={{ textAlign: "center", width: "100%" }}>
+                  <div
+                    style={{
+                      fontFamily: FONT_SANS,
+                      fontSize: 11,
+                      fontWeight: 500,
+                      color: "#0D0F12",
+                      lineHeight: 1.3,
+                      overflow: "hidden",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                    }}
+                  >
+                    {candidate.name}
+                  </div>
+                  <div
+                    style={{
+                      display: "inline-block",
+                      marginTop: 4,
+                      fontFamily: FONT_MONO,
+                      fontSize: 9,
+                      fontWeight: 700,
+                      color: PARTY_COLOR[candidate.party] ?? "#6B7280",
+                      letterSpacing: "0.06em",
+                      background: `${PARTY_COLOR[candidate.party] ?? "#6B7280"}15`,
+                      borderRadius: 4,
+                      padding: "2px 5px",
+                    }}
+                  >
+                    {candidate.party === "R" ? "REP" : candidate.party === "D" ? "DEM" : "IND"}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
