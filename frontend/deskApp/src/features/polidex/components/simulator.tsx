@@ -378,6 +378,12 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
     }
   };
 
+  const clearAudioCaches = () => {
+    turnAudioCacheRef.current.forEach((url) => URL.revokeObjectURL(url));
+    turnAudioCacheRef.current.clear();
+    speakSeqCacheRef.current.clear();
+  };
+
   const playOnce = async (url: string) => {
     const player = audioRef.current;
     if (!player) return;
@@ -503,9 +509,7 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
 
   useEffect(() => {
     return () => {
-      turnAudioCacheRef.current.forEach((url) => URL.revokeObjectURL(url));
-      turnAudioCacheRef.current.clear();
-      speakSeqCacheRef.current.clear();
+      clearAudioCaches();
     };
   }, []);
 
@@ -518,6 +522,12 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
     setTranscriptLoading(true);
     setAudioError(null);
     setExportError(null);
+
+    // A new generation must not reuse cached audio from prior turns.
+    runTokenRef.current++;
+    stopAudio();
+    clearAudioCaches();
+
     try {
       const generated = await generateSimulationTranscript({
         participants: participants.map((participant) => ({
@@ -571,6 +581,7 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
     setIsRunning(false);
     runTokenRef.current++;
     stopAudio();
+    clearAudioCaches();
     setTurns([]);
     setActiveTurn(0);
     setExportError(null);
