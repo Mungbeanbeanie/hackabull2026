@@ -2,20 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { Compare } from "@/features/poliweb/components/compare";
-import { Dashboard } from "@/features/poliweb/components/dashboard";
-import { GlobalLoadingScreen } from "@/features/poliweb/components/global-loading-screen";
-import { Landing } from "@/features/poliweb/components/landing";
-import { LogicProfile } from "@/features/poliweb/components/logic-profile";
-import { Quiz } from "@/features/poliweb/components/quiz";
-import { Simulator } from "@/features/poliweb/components/simulator";
-import { TopNav } from "@/features/poliweb/components/top-nav";
-import { Politician, politicians } from "@/features/poliweb/data/politicians";
-import { BackendPolitician, RankedPolitician, SearchResult, checkHealth, fetchPoliticians, searchPoliticians } from "@/features/poliweb/lib/api";
-import { UserProfile, clearProfile, loadProfile } from "@/features/poliweb/lib/profile";
-import { View } from "@/features/poliweb/types";
+import { Compare } from "@/features/polidex/components/compare";
+import { Dashboard } from "@/features/polidex/components/dashboard";
+import { GlobalLoadingScreen } from "@/features/polidex/components/global-loading-screen";
+import { Landing } from "@/features/polidex/components/landing";
+import { LogicProfile } from "@/features/polidex/components/logic-profile";
+import { Quiz } from "@/features/polidex/components/quiz";
+import { Simulator } from "@/features/polidex/components/simulator";
+import { TopNav } from "@/features/polidex/components/top-nav";
+import { Politician, politicians } from "@/features/polidex/data/politicians";
+import { BackendPolitician, RankedPolitician, SearchResult, checkHealth, fetchPoliticians, searchPoliticians } from "@/features/polidex/lib/api";
+import { UserProfile, clearProfile, loadProfile } from "@/features/polidex/lib/profile";
+import { View } from "@/features/polidex/types";
 
-export function PoliWebApp() {
+export function PoliDexApp() {
   const [view, setView] = useState<View>("landing");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(() => loadProfile());

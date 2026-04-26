@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 
-import { politicians } from "@/features/poliweb/data/politicians";
-import { FONT_MONO, FONT_SANS } from "@/features/poliweb/lib/style";
+import { politicians } from "@/features/polidex/data/politicians";
+import { districtLabel, partyLabel } from "@/features/polidex/lib/display";
+import { FONT_MONO, FONT_SANS } from "@/features/polidex/lib/style";
 
 import { ImageWithFallback } from "./figma/image-with-fallback";
 import { BrandLogo } from "./ui/brand-logo";
@@ -64,7 +65,7 @@ export function Landing({ onInit }: { onInit: () => void }) {
         >
           <div style={{ display: "flex", gap: 48, paddingRight: 48 }}>
             {politicians.map((p, i) => {
-              const fullParty = p.party === "R" ? "Republican" : p.party === "D" ? "Democrat" : "Independent";
+              const fullParty = partyLabel(p.party);
               return (
                 <div key={`top1-${p.id}-${i}`} style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
                   <div
@@ -77,7 +78,7 @@ export function Landing({ onInit }: { onInit: () => void }) {
                       textTransform: "uppercase",
                     }}
                   >
-                    {p.name} - <span style={{ color: "#0D0F12" }}>{fullParty} {p.district} {p.role}</span>
+                    {p.name} - <span style={{ color: "#0D0F12" }}>{fullParty} {districtLabel(p.district)} {p.role}</span>
                   </div>
                 </div>
               );
@@ -85,7 +86,7 @@ export function Landing({ onInit }: { onInit: () => void }) {
           </div>
           <div style={{ display: "flex", gap: 48, paddingRight: 48 }}>
             {politicians.map((p, i) => {
-              const fullParty = p.party === "R" ? "Republican" : p.party === "D" ? "Democrat" : "Independent";
+              const fullParty = partyLabel(p.party);
               return (
                 <div key={`top2-${p.id}-${i}`} style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
                   <div
@@ -98,7 +99,7 @@ export function Landing({ onInit }: { onInit: () => void }) {
                       textTransform: "uppercase",
                     }}
                   >
-                    {p.name} - <span style={{ color: "#0D0F12" }}>{fullParty} {p.district} {p.role}</span>
+                    {p.name} - <span style={{ color: "#0D0F12" }}>{fullParty} {districtLabel(p.district)} {p.role}</span>
                   </div>
                 </div>
               );
@@ -127,7 +128,7 @@ export function Landing({ onInit }: { onInit: () => void }) {
               marginBottom: 18,
             }}
           >
-            PoliWeb
+            PoliDex
           </div>
           <h1
             style={{
@@ -244,7 +245,7 @@ export function Landing({ onInit }: { onInit: () => void }) {
                   {p.name}
                 </div>
                 <div style={{ fontSize: 11, color: "#8A919E", marginTop: 2 }}>
-                  {p.party === "R" ? "Republican" : p.party === "D" ? "Democrat" : "Independent"} - {p.district}
+                  {partyLabel(p.party)} - {districtLabel(p.district)}
                 </div>
               </div>
             ))}
@@ -285,7 +286,7 @@ export function Landing({ onInit }: { onInit: () => void }) {
                   {p.name}
                 </div>
                 <div style={{ fontSize: 11, color: "#8A919E", marginTop: 2 }}>
-                  {p.party === "R" ? "Republican" : p.party === "D" ? "Democrat" : "Independent"} - {p.district}
+                  {partyLabel(p.party)} - {districtLabel(p.district)}
                 </div>
               </div>
             ))}
