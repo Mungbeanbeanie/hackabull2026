@@ -2,12 +2,41 @@
   "name": "deskapp",
   "version": "0.1.0",
   "private": true,
+  "main": "electron/main.js",
   "scripts": {
     "dev": "./node_modules/.bin/next dev",
     "build": "./node_modules/.bin/next build",
     "start": "./node_modules/.bin/next start",
     "lint": "eslint",
-    "test": "npm run lint && npm run build"
+    "test": "npm run lint && npm run build",
+    "electron:dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron:preview": "next build && concurrently \"next start\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron:build": "next build && electron-builder"
+  },
+  "build": {
+    "appId": "com.polidex.deskapp",
+    "productName": "Polidex",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      ".next/**/*",
+      "public/**/*",
+      "node_modules/**/*",
+      "package.json",
+      "next.config.ts"
+    ],
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.utilities"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -31,9 +60,13 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^9.2.1",
+    "electron": "^41.3.0",
+    "electron-builder": "^26.8.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wait-on": "^9.0.5"
   }
 }
