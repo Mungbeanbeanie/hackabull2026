@@ -11,7 +11,7 @@ import { Quiz } from "@/features/polidex/components/quiz";
 import { Simulator } from "@/features/polidex/components/simulator";
 import { TopNav } from "@/features/polidex/components/top-nav";
 import { Politician, politicians } from "@/features/polidex/data/politicians";
-import { BackendPolitician, RankedPolitician, SearchResult, checkHealth, fetchPoliticians, searchPoliticians } from "@/features/polidex/lib/api";
+import { BackendPolitician, RankedPolitician, SearchResult, checkHealth, fetchPoliticians, localSearch, searchPoliticians } from "@/features/polidex/lib/api";
 import { UserProfile, clearProfile, loadProfile } from "@/features/polidex/lib/profile";
 import { View } from "@/features/polidex/types";
 
@@ -45,7 +45,10 @@ export function PoliDexApp() {
     setIsRanking(true);
     searchPoliticians(profile.vector, profile.weights, false, [])
       .then((results) => { setRankedResults(results); setIsRanking(false); })
-      .catch((err) => { console.error("backend search failed:", err); setIsRanking(false); });
+      .catch(() => {
+        setRankedResults(localSearch(activePoliticians, profile.vector, profile.weights, false));
+        setIsRanking(false);
+      });
   }, [profile]);
 
   const rankedPoliticians = useMemo((): RankedPolitician[] => {
