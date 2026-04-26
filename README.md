@@ -193,12 +193,23 @@ The Java chassis starts on `http://localhost:8080`. On first boot it seeds the p
 ```bash
 cd frontend/deskApp
 npm install
+```
+
+**Option A — Native desktop window (recommended):**
+
+```bash
+npm run electron:dev
+```
+
+Opens the app in an Electron window. Next.js dev server and Electron launch concurrently; Electron waits for the server before opening.
+
+**Option B — Browser:**
+
+```bash
 npm run dev
 ```
 
 Open `http://localhost:3000` in your browser.
-
-> **Electron packaging:** To bundle as a standalone desktop app, wrap the Next.js output in an Electron shell pointing to `http://localhost:3000`. The app is designed for local-first use — no accounts, no cloud dependency required. All inference runs locally through the Java backend.
 
 ### 4. Load the Chrome Extension
 
