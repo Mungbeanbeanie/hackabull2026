@@ -5,6 +5,7 @@ import { politicians } from "@/features/poliweb/data/politicians";
 import { FONT_MONO, FONT_SANS } from "@/features/poliweb/lib/style";
 
 import { ImageWithFallback } from "./figma/image-with-fallback";
+import { BrandLogo } from "./ui/brand-logo";
 
 export function Landing({ onInit }: { onInit: () => void }) {
   const [phase, setPhase] = useState<"idle" | "clicked">("idle");
@@ -113,6 +114,9 @@ export function Landing({ onInit }: { onInit: () => void }) {
           viewport={{ once: true, amount: 0.6 }}
           transition={{ duration: 0.6 }}
         >
+          <div style={{ marginBottom: 16, display: "flex", justifyContent: "center" }}>
+            <BrandLogo size="lg" />
+          </div>
           <div
             style={{
               fontFamily: FONT_MONO,

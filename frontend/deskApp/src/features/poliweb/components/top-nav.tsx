@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 
 import { UserProfile } from "@/features/poliweb/lib/profile";
-import { FONT_MONO, FONT_SANS } from "@/features/poliweb/lib/style";
+import { FONT_SANS } from "@/features/poliweb/lib/style";
 import { View } from "@/features/poliweb/types";
 
+import { BrandLogo } from "./ui/brand-logo";
 import { InfoTooltip } from "./ui/info-tooltip";
 
 export function TopNav({
@@ -31,23 +32,7 @@ export function TopNav({
         className="flex items-center gap-3 bg-transparent p-0"
         style={{ border: "none", cursor: "pointer" }}
       >
-        <div
-          style={{
-            width: 26,
-            height: 26,
-            borderRadius: 7,
-            background: "#0D0F12",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontFamily: FONT_MONO,
-            fontSize: 12,
-            color: "white",
-          }}
-        >
-          P
-        </div>
-        <div style={{ fontSize: 15, fontWeight: 500, color: "#0D0F12" }}>PoliWeb</div>
+        <BrandLogo size="sm" />
       </button>
 
       <div className="hidden items-center gap-2 sm:flex">
