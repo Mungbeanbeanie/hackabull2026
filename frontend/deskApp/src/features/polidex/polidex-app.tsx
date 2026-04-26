@@ -14,7 +14,7 @@ import { Simulator } from "@/features/polidex/components/simulator";
 import { TopNav } from "@/features/polidex/components/top-nav";
 import { Politician, politicians } from "@/features/polidex/data/politicians";
 import { BackendPolitician, RankedPolitician, SearchResult, checkHealth, fetchPoliticians, localSearch, searchPoliticians } from "@/features/polidex/lib/api";
-import { UserProfile, clearProfile, loadProfile } from "@/features/polidex/lib/profile";
+import { UserProfile, clearProfile, loadProfile, importProfileCode, saveProfile } from "@/features/polidex/lib/profile";
 import { View } from "@/features/polidex/types";
 
 export function PoliDexApp() {
@@ -65,6 +65,14 @@ export function PoliDexApp() {
 
   const selected = activePoliticians.find((p) => p.id === selectedId) ?? null;
 
+  const handleImportProfile = (code: string): boolean => {
+    const imported = importProfileCode(code);
+    if (!imported) return false;
+    saveProfile(imported);
+    setProfile(imported);
+    return true;
+  };
+
   if (view === "landing") {
     return <Landing onInit={() => setView("loading")} />;
   }
@@ -106,7 +114,7 @@ export function PoliDexApp() {
         {view === "dashboard" && (
           <Dashboard list={activePoliticians} selectedId={selectedId} onSelect={setSelectedId} isLoading={!isDataLoaded} />
         )}
-        {view === "compare" && <Compare profile={profile} ranked={rankedPoliticians} isRanking={isRanking} backendOnline={backendOnline} onTakeQuiz={() => setView("quiz")} />}
+        {view === "compare" && <Compare profile={profile} ranked={rankedPoliticians} isRanking={isRanking} backendOnline={backendOnline} onTakeQuiz={() => setView("quiz")} onImportProfile={handleImportProfile} />}
         {view === "simulator" && <Simulator list={activePoliticians} />}
 
         <LogicProfile entity={selected} onClose={() => setSelectedId(null)} />

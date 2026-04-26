@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import { useState } from "react";
 
 import { politicians } from "@/features/polidex/data/politicians";

@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
