@@ -4,8 +4,8 @@ cd /d "%~dp0"
 
 REM One-command launcher (Windows)
 REM - Requires: Node.js 18+, Java 17+, Maven 3.8+
-REM - Uses: backend/java-chassis/.env (if present)
+REM - Canonical launcher is the cross-platform ./run-all (Node script)
 
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0run-all.ps1" %*
+node "%~dp0run-all" %*
 
 endlocal
