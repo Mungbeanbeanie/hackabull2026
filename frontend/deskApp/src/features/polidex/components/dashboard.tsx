@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
+import { ElectionsSidebar } from "./elections/elections-sidebar";
 
 import { Politician } from "@/features/polidex/data/politicians";
 import { districtLabel, levelLabel, partyLabel, regionLabel } from "@/features/polidex/lib/display";
@@ -317,27 +318,30 @@ export function Dashboard({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-6 md:px-8" style={{ background: "#F8F9FA" }}>
-        <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(260px,1fr))]">
-          {isLoading ? (
-            Array.from({ length: 12 }).map((_, i) => <SkeletonCard key={i} />)
-          ) : (
-            <>
-              {filtered.map((politician, i) => (
-                <Card
-                  key={politician.id}
-                  politician={politician}
-                  selected={politician.id === selectedId}
-                  onClick={() => onSelect(politician.id)}
-                  index={i}
-                />
-              ))}
-              {filtered.length === 0 && (
-                <div style={{ fontFamily: FONT_MONO, fontSize: 12, color: "#8A919E" }}>No entities match the current filters.</div>
-              )}
-            </>
-          )}
+      <div className="flex flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto px-5 py-6 md:px-8" style={{ background: "#F8F9FA" }}>
+          <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(260px,1fr))]">
+            {isLoading ? (
+              Array.from({ length: 12 }).map((_, i) => <SkeletonCard key={i} />)
+            ) : (
+              <>
+                {filtered.map((politician, i) => (
+                  <Card
+                    key={politician.id}
+                    politician={politician}
+                    selected={politician.id === selectedId}
+                    onClick={() => onSelect(politician.id)}
+                    index={i}
+                  />
+                ))}
+                {filtered.length === 0 && (
+                  <div style={{ fontFamily: FONT_MONO, fontSize: 12, color: "#8A919E" }}>No entities match the current filters.</div>
+                )}
+              </>
+            )}
+          </div>
         </div>
+        <ElectionsSidebar onSelect={onSelect} />
       </div>
     </div>
   );

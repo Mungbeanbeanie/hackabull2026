@@ -46,8 +46,11 @@ async function findPolitician(text) {
 
   const normalizedText = text.trim().toLowerCase();
   
-  // Find exact or partial name match within the local system
-  const match = db.find(p => p.name.toLowerCase() === normalizedText);
+  // Match if any word in the politician's full name equals the selected token
+  const match = db.find(p => {
+    const lower = p.name.toLowerCase();
+    return lower === normalizedText || lower.split(/\s+/).some(part => part === normalizedText);
+  });
   
   return match || null;
 }
@@ -69,36 +72,53 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
   if (msg.type !== "NAME_LOOKUP") return;
 
   (async () => {
-    const tabId = sender.tab?.id;
+    try {
+      const tabId = sender.tab?.id;
+      console.log("[HUD] NAME_LOOKUP received:", msg.text, "tabId:", tabId);
 
-    // Now searching local storage/stub instead of hitting /api/lookup
-    const match = await findPolitician(msg.text);
-    if (!match) return;
+      const match = await findPolitician(msg.text);
+      console.log("[HUD] findPolitician result:", match ? match.name : "NO MATCH");
+      if (!match) return;
 
-    const userVector = await getUserVector();
-    if (!userVector) {
-      if (tabId != null) chrome.action.setBadgeText({ text: "?", tabId });
-      chrome.action.setBadgeBackgroundColor({ color: "#888" });
-      await chrome.storage.local.set({ last_match: null });
-      return;
-    }
-
-    const result = computeMatch(userVector, match.vector);
-
-    await chrome.storage.local.set({
-      last_match: {
-        name: match.name,
-        score: result.score,
-        topAligned: result.topAligned,
-        topMisaligned: result.topMisaligned,
-        policies: match.policies
+      const userVector = await getUserVector();
+      console.log("[HUD] userVector:", userVector ? "found" : "MISSING");
+      if (!userVector) {
+        if (tabId != null) chrome.action.setBadgeText({ text: "?", tabId });
+        chrome.action.setBadgeBackgroundColor({ color: "#888" });
+        await chrome.storage.local.set({ last_match: null });
+        return;
       }
-    });
 
-    if (tabId != null) chrome.action.setBadgeText({ text: "!", tabId });
-    chrome.action.setBadgeBackgroundColor({ color: "#7ee8a2" });
+      const result = computeMatch(userVector, match.vector);
+      console.log("[HUD] computeMatch score:", result.score);
 
-    try { await chrome.action.openPopup(); } catch {}
+      await chrome.storage.local.set({
+        last_match: {
+          name: match.name,
+          score: result.score,
+          topAligned: result.topAligned,
+          topMisaligned: result.topMisaligned,
+          policies: match.policies
+        }
+      });
+
+      if (tabId != null) {
+        chrome.action.setBadgeText({ text: "!", tabId });
+        chrome.tabs.sendMessage(tabId, {
+          type: "SHOW_CARD",
+          data: {
+            name: match.name,
+            score: result.score,
+            topAligned: result.topAligned,
+            topMisaligned: result.topMisaligned,
+            policies: match.policies || []
+          }
+        }, () => { if (chrome.runtime.lastError) console.warn("[HUD] sendMessage error:", chrome.runtime.lastError.message); });
+      }
+      chrome.action.setBadgeBackgroundColor({ color: "#7ee8a2" });
+    } catch (err) {
+      console.error("[HUD] flow error:", err);
+    }
   })();
 
   return true; // Keep channel open for async response if needed
