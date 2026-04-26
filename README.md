@@ -113,12 +113,7 @@ The Java chassis orchestrates all system state and HTTP traffic. Stateless math 
 - Double-click any politician name on **any webpage** to instantly surface their alignment card
 - Card shows: % match vs your vector, top aligned and misaligned policy dimensions, top implemented policies derived from legislative record
 - Extension syncs your profile vector from the main app via a paste-in import field
-- Falls back to a bundled politician database if the local backend is offline
 - Built on Manifest V3 with a service worker, content script, and popup architecture
-
-### Position Simulator
-- Drag sliders to explore hypothetical positions and watch the ranking update in real time
-- Lets users understand which policy dimensions drive their alignment score
 
 ---
 
@@ -207,7 +202,7 @@ Open `http://localhost:3000` in your browser.
 | Backend Orchestration | Java 17, Maven |
 | Database | MongoDB (sync driver 5.2), k-d tree RAM index |
 | Inference Engine | Python 3, custom stateless math modules |
-| LLM Tagging | Claude Haiku (Anthropic) |
+| LLM Tagging | Gemini 3.0-flash |
 | Chrome Extension | Manifest V3, Service Worker, vanilla JS |
 | External APIs | OpenStates, Congress.gov, Google Civic Info, OpenFEC, Legiscan, Wikimedia |
 
@@ -251,7 +246,7 @@ hackabull2026/
 
 ## AI & Frameworks
 
-- **Claude Haiku** (Anthropic) — LLM tagging pipeline: converts raw legislative text from OpenStates into validated 20D PoliVectors via `llm_analyst.py` → `score_validator.py`
+- **Gemini 3.0-flash** — LLM tagging pipeline: converts raw legislative text from OpenStates into validated 20D PoliVectors via `llm_analyst.py` → `score_validator.py`
 - **Claude Code** — AI-assisted development throughout the build. Commits made with Claude Code assistance are tagged `CLAUDE CODE` in the commit history.
 - **Recharts** — radar charts and bar graphs for policy visualization across 20 dimensions
 - **Framer Motion** — UI transitions and the adherence toggle animation (dot moving from stated → actual position)
