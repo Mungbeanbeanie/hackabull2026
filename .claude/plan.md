@@ -95,7 +95,7 @@ Ordered by dependency. Each phase unblocks the next.
 
 ## Phase 18 — Extension DB Sync
 - [x] `background.js` — add fetch from `http://localhost:8080/api/politicians` on service worker startup; cache in `chrome.storage.local` under key `"politician_db"`
-- [ ] `background.js` — read name-match DB from `chrome.storage.local` politician_db first; fall back to bundled 5-record stub if fetch fails
+- [x] `background.js` — read name-match DB from `chrome.storage.local` politician_db first; fall back to bundled 5-record stub if fetch fails
 
 ## Phase 19 — Profile Sync: App → Extension
 - [x] deskApp Compare view — add "Export to Extension" action that copies base64 profile code to clipboard (reuse existing `exportProfileCode` from `profile.ts`)
