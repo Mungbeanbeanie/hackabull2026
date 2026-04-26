@@ -55,9 +55,9 @@ export function Quiz({
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [importance, setImportance] = useState<Record<string, number>>({});
 
-  const current = QUESTIONS[step];
-  const value = answers[current.id] ?? 3;
-  const importanceValue = importance[current.id] ?? 0.5;
+  const current = step >= 0 ? QUESTIONS[step] : null;
+  const value = current ? (answers[current.id] ?? 3) : 3;
+  const importanceValue = current ? (importance[current.id] ?? 0.5) : 0.5;
 
   const submit = () => {
     const vector = QUESTIONS.map((q) => answers[q.id] ?? 3);
@@ -79,7 +79,7 @@ export function Quiz({
       setStep(0);
       return;
     }
-    if (!(current.id in answers)) {
+    if (current && !(current.id in answers)) {
       setAnswers((prev) => ({ ...prev, [current.id]: 3 }));
     }
     if (step < QUESTIONS.length - 1) {
@@ -168,7 +168,7 @@ export function Quiz({
                 Skip
               </button>
             </motion.div>
-          ) : (
+          ) : current && (
           <motion.div
             key={current.id}
             initial={{ opacity: 0, y: 10 }}
