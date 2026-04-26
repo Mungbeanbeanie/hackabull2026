@@ -1,14 +1,12 @@
 "use client";
 
-"use client";
-
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { AnimatePresence } from "motion/react";
 
 import { Compare } from "@/features/polidex/components/compare";
 import { Dashboard } from "@/features/polidex/components/dashboard";
 import { GlobalLoadingScreen } from "@/features/polidex/components/global-loading-screen";
 import { Landing } from "@/features/polidex/components/landing";
-import { LogicProfile } from "@/features/polidex/components/logic-profile";
 import { Quiz } from "@/features/polidex/components/quiz";
 import { Simulator } from "@/features/polidex/components/simulator";
 import { TopNav } from "@/features/polidex/components/top-nav";
@@ -17,16 +15,26 @@ import { BackendPolitician, RankedPolitician, SearchResult, checkHealth, fetchPo
 import { UserProfile, clearProfile, loadProfile, importProfileCode, saveProfile, DEMO_PROFILE } from "@/features/polidex/lib/profile";
 import { View } from "@/features/polidex/types";
 
+type ProfileSide = "left" | "right";
+
+type SelectedProfile = {
+  politicianId: string;
+  side: ProfileSide;
+} | null;
+
+const LazyLogicProfile = lazy(() =>
+  import("@/features/polidex/components/logic-profile").then((module) => ({ default: module.LogicProfile })),
+);
+
 export function PoliDexApp() {
   const [view, setView] = useState<View>("landing");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<SelectedProfile>(null);
   const [profile, setProfile] = useState<UserProfile | null>(() => loadProfile() ?? DEMO_PROFILE);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [rankedResults, setRankedResults] = useState<SearchResult[]>(() => {
     const p = loadProfile() ?? DEMO_PROFILE;
     return localSearch(politicians, p.vector, p.weights, false);
   });
-  const [isRanking, setIsRanking] = useState(false);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
   const [activePoliticians, setActivePoliticians] = useState<Politician[]>(politicians);
 
@@ -34,9 +42,10 @@ export function PoliDexApp() {
     checkHealth().then(setBackendOnline);
     fetchPoliticians()
       .then((backendList: BackendPolitician[]) => {
+        const backendById = new Map(backendList.map((backendPolitician) => [backendPolitician.id, backendPolitician]));
         const patched = politicians.map((p) => {
-          const bp = backendList.find((b) => b.id === p.id);
-          return bp ? { ...p, vector_actual: bp.vector, photo: bp.imageUrl ?? p.photo } : p;
+          const backendPolitician = backendById.get(p.id);
+          return backendPolitician ? { ...p, vector_actual: backendPolitician.vector, photo: backendPolitician.imageUrl ?? p.photo } : p;
         });
         setActivePoliticians(patched);
       })
@@ -45,11 +54,11 @@ export function PoliDexApp() {
 
   useEffect(() => {
     if (!profile) return;
-    // Seed immediately from local data — never block on backend
+
     const base = localSearch(activePoliticians, profile.vector, profile.weights, false);
     const sorted = profile.state ? regionSort(base, profile.state, activePoliticians) : base;
     setRankedResults(sorted);
-    // Attempt backend upgrade silently in background
+
     searchPoliticians(profile.vector, profile.weights, false, [])
       .then((results) => {
         const backendSorted = profile.state ? regionSort(results, profile.state, activePoliticians) : results;
@@ -68,7 +77,14 @@ export function PoliDexApp() {
       .filter((x): x is { politician: Politician; sim: number } => x !== null);
   }, [rankedResults, activePoliticians]);
 
-  const selected = activePoliticians.find((p) => p.id === selectedId) ?? null;
+  const selected = activePoliticians.find((p) => p.id === selectedProfile?.politicianId) ?? null;
+
+  const handleOpenProfile = (politicianId: string, side: ProfileSide) => {
+    setSelectedProfile((current) => {
+      if (current?.politicianId === politicianId) return null;
+      return { politicianId, side };
+    });
+  };
 
   const handleImportProfile = (code: string): boolean => {
     const imported = importProfileCode(code);
@@ -110,19 +126,45 @@ export function PoliDexApp() {
           setProfile(null);
         }}
         onHome={() => {
-          setSelectedId(null);
+          setSelectedProfile(null);
           setView("landing");
         }}
       />
 
       <div className="relative flex flex-1" style={{ minHeight: 0 }}>
         {view === "dashboard" && (
-          <Dashboard list={activePoliticians} selectedId={selectedId} onSelect={setSelectedId} isLoading={!isDataLoaded} />
+          <Dashboard
+            list={activePoliticians}
+            selectedId={selectedProfile?.politicianId ?? null}
+            onSelect={handleOpenProfile}
+            isLoading={!isDataLoaded}
+          />
         )}
-        {view === "compare" && <Compare profile={profile} ranked={rankedPoliticians} isRanking={isRanking} backendOnline={backendOnline} onTakeQuiz={() => setView("quiz")} onImportProfile={handleImportProfile} />}
+        {view === "compare" && (
+          <Compare
+            profile={profile}
+            ranked={rankedPoliticians}
+            backendOnline={backendOnline}
+            onTakeQuiz={() => setView("quiz")}
+            onImportProfile={handleImportProfile}
+            onOpenProfile={handleOpenProfile}
+            selectedProfileId={selectedProfile?.politicianId ?? null}
+          />
+        )}
         {view === "simulator" && <Simulator list={activePoliticians} />}
 
-        <LogicProfile entity={selected} onClose={() => setSelectedId(null)} />
+        <AnimatePresence mode="wait">
+          {selected && (
+            <Suspense fallback={null}>
+              <LazyLogicProfile
+                key={`${selectedProfile?.politicianId ?? "none"}-${selectedProfile?.side ?? "right"}`}
+                entity={selected}
+                side={selectedProfile?.side ?? "right"}
+                onClose={() => setSelectedProfile(null)}
+              />
+            </Suspense>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

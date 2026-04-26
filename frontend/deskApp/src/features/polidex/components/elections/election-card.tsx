@@ -5,6 +5,7 @@ import { Election } from "@/features/polidex/types";
 import { BackendPolitician, fetchCandidatesForElection } from "@/features/polidex/lib/api";
 import { politicians } from "@/features/polidex/data/politicians";
 import { ImageWithFallback } from "@/features/polidex/components/figma/image-with-fallback";
+import { resolveProfileSide } from "@/features/polidex/components/compare/utils";
 
 const FONT_SANS = "Inter, system-ui, sans-serif";
 const FONT_MONO = "ui-monospace, 'Fira Mono', monospace";
@@ -21,7 +22,7 @@ const PARTY_BG: Record<string, string> = {
   I: "#F9FAFB",
 };
 
-export function ElectionCard({ election, onSelect }: { election: Election; onSelect: (id: string) => void }) {
+export function ElectionCard({ election, onSelect }: Readonly<{ election: Election; onSelect: (id: string, side: "left" | "right") => void }>) {
   const [candidates, setCandidates] = useState<BackendPolitician[]>([]);
 
   useEffect(() => {
@@ -102,7 +103,7 @@ export function ElectionCard({ election, onSelect }: { election: Election; onSel
             {candidates.map((candidate) => (
               <button
                 key={candidate.id}
-                onClick={() => onSelect(candidate.id)}
+                onClick={(event) => onSelect(candidate.id, resolveProfileSide(event.clientX))}
                 style={{
                   flexShrink: 0,
                   width: 100,
@@ -176,7 +177,7 @@ export function ElectionCard({ election, onSelect }: { election: Election; onSel
                       padding: "2px 5px",
                     }}
                   >
-                    {candidate.party === "R" ? "REP" : candidate.party === "D" ? "DEM" : "IND"}
+                    {toPartyShortLabel(candidate.party)}
                   </div>
                 </div>
               </button>
@@ -186,4 +187,10 @@ export function ElectionCard({ election, onSelect }: { election: Election; onSel
       )}
     </div>
   );
+}
+
+function toPartyShortLabel(party: string) {
+  if (party === "R") return "REP";
+  if (party === "D") return "DEM";
+  return "IND";
 }

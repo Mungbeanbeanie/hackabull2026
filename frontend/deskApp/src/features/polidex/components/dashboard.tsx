@@ -1,15 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type MouseEvent, Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
-import { ElectionsSidebar } from "./elections/elections-sidebar";
+import { ChevronDown, Search, SlidersHorizontal } from "lucide-react";
 
 import { Politician } from "@/features/polidex/data/politicians";
 import { districtLabel, levelLabel, locationLabel, partyLabel } from "@/features/polidex/lib/display";
 import { FONT_MONO, FONT_SANS, consistencyColor, consistencyLabel } from "@/features/polidex/lib/style";
+import { resolveProfileSide } from "./compare/utils";
+import { SelectFilter } from "./ui/select-filter";
 
 import { ImageWithFallback } from "./figma/image-with-fallback";
+
+const ElectionsSidebar = lazy(() =>
+  import("./elections/elections-sidebar").then((module) => ({ default: module.ElectionsSidebar })),
+);
 
 type Sort = "drift" | "adherence" | "name" | "office";
 type PartyFilter = "ALL" | "R" | "D" | "I";
@@ -20,18 +25,19 @@ type ConsistencyFilter = "ALL" | "HIGH" | "MID" | "LOW";
 type DriftFilter = "ALL" | "LOW" | "MID" | "HIGH";
 type DonorFilter = "ALL" | "LOW" | "MID" | "HIGH";
 type ExposureFilter = "ALL" | "LOCAL" | "STATEWIDE";
+type ProfileSide = "left" | "right";
 
 export function Dashboard({
   list,
   selectedId,
   onSelect,
   isLoading: externalIsLoading,
-}: {
+}: Readonly<{
   list: Politician[];
   selectedId: string | null;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, side: ProfileSide) => void;
   isLoading?: boolean;
-}) {
+}>) {
   const [isMountLoading, setIsMountLoading] = useState(true);
 
   useEffect(() => {
@@ -113,17 +119,7 @@ export function Dashboard({
         <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-baseline lg:justify-between">
           <div>
             <div style={{ fontFamily: FONT_SANS, fontSize: 22, fontWeight: 300, color: "#0D0F12" }}>Politicians</div>
-            <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#8A919E", marginTop: 2 }}>
-              Showing {filtered.length} of {list.length} - sorted by{" "}
-              {sort === "drift"
-                ? "biggest gap between promises and votes"
-                : sort === "adherence"
-                  ? "most consistent"
-                  : sort === "office"
-                    ? "office"
-                    : "name"}
-              .
-            </div>
+            <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#8A919E", marginTop: 2 }}>Showing {filtered.length} of {list.length}</div>
           </div>
           <div
             className="flex w-full items-center gap-2 lg:w-[260px]"
@@ -152,132 +148,139 @@ export function Dashboard({
           </div>
         </div>
 
-        <div className="relative mt-3">
-          <button
-            onClick={() => setFiltersOpen((v) => !v)}
-            className="flex items-center gap-2 rounded-md border border-[#E2E5E9] bg-[#F8F9FA] px-3 py-2"
-            style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#1C2431" }}
-          >
-            <SlidersHorizontal size={14} />
-            Filters
-            {activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-            <ChevronDown size={14} style={{ transform: filtersOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 160ms" }} />
-          </button>
+        <div className="mt-3 space-y-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-6">
+            <SelectFilter
+              label="Party"
+              value={party}
+              size="sm"
+              options={[
+                { value: "ALL", label: "All parties" },
+                { value: "R", label: "Republican" },
+                { value: "D", label: "Democrat" },
+                { value: "I", label: "Independent" },
+              ]}
+              onChange={setParty}
+            />
+            <SelectFilter
+              label="Level"
+              value={level}
+              size="sm"
+              options={[
+                { value: "ALL", label: "All levels" },
+                { value: "Federal", label: "Federal" },
+                { value: "State", label: "State" },
+              ]}
+              onChange={setLevel}
+            />
+            <SelectFilter
+              label="State"
+              value={stateFilter}
+              size="sm"
+              options={[
+                { value: "ALL", label: "All states" },
+                { value: "AL", label: "Alabama" },
+                { value: "AK", label: "Alaska" },
+                { value: "AZ", label: "Arizona" },
+                { value: "AR", label: "Arkansas" },
+                { value: "CA", label: "California" },
+                { value: "CO", label: "Colorado" },
+                { value: "CT", label: "Connecticut" },
+                { value: "DE", label: "Delaware" },
+                { value: "FL", label: "Florida" },
+                { value: "GA", label: "Georgia" },
+                { value: "HI", label: "Hawaii" },
+                { value: "ID", label: "Idaho" },
+                { value: "IL", label: "Illinois" },
+                { value: "IN", label: "Indiana" },
+                { value: "IA", label: "Iowa" },
+                { value: "KS", label: "Kansas" },
+                { value: "KY", label: "Kentucky" },
+                { value: "LA", label: "Louisiana" },
+                { value: "ME", label: "Maine" },
+                { value: "MD", label: "Maryland" },
+                { value: "MA", label: "Massachusetts" },
+                { value: "MI", label: "Michigan" },
+                { value: "MN", label: "Minnesota" },
+                { value: "MS", label: "Mississippi" },
+                { value: "MO", label: "Missouri" },
+                { value: "MT", label: "Montana" },
+                { value: "NE", label: "Nebraska" },
+                { value: "NV", label: "Nevada" },
+                { value: "NH", label: "New Hampshire" },
+                { value: "NJ", label: "New Jersey" },
+                { value: "NM", label: "New Mexico" },
+                { value: "NY", label: "New York" },
+                { value: "NC", label: "North Carolina" },
+                { value: "ND", label: "North Dakota" },
+                { value: "OH", label: "Ohio" },
+                { value: "OK", label: "Oklahoma" },
+                { value: "OR", label: "Oregon" },
+                { value: "PA", label: "Pennsylvania" },
+                { value: "RI", label: "Rhode Island" },
+                { value: "SC", label: "South Carolina" },
+                { value: "SD", label: "South Dakota" },
+                { value: "TN", label: "Tennessee" },
+                { value: "TX", label: "Texas" },
+                { value: "UT", label: "Utah" },
+                { value: "VT", label: "Vermont" },
+                { value: "VA", label: "Virginia" },
+                { value: "WA", label: "Washington" },
+                { value: "WV", label: "West Virginia" },
+                { value: "WI", label: "Wisconsin" },
+                { value: "WY", label: "Wyoming" },
+              ]}
+              onChange={setStateFilter}
+            />
+            <SelectFilter
+              label="Office"
+              value={role}
+              size="sm"
+              options={[
+                { value: "ALL", label: "All offices" },
+                { value: "U.S. Senate", label: "U.S. Senate" },
+                { value: "U.S. House", label: "U.S. House" },
+                { value: "Governor", label: "Governor" },
+                { value: "State Senate", label: "State Senate" },
+                { value: "State House", label: "State House" },
+                { value: "Statewide", label: "Statewide" },
+              ]}
+              onChange={setRole}
+            />
+            <SelectFilter
+              label="Sort"
+              value={sort}
+              size="sm"
+              options={[
+                { value: "drift", label: "Biggest gap" },
+                { value: "adherence", label: "Most consistent" },
+                { value: "office", label: "Office" },
+                { value: "name", label: "Name A-Z" },
+              ]}
+              onChange={setSort}
+            />
+            <button
+              onClick={() => setFiltersOpen((value) => !value)}
+              className="mt-5 flex h-[42px] items-center justify-center gap-2 rounded-lg border border-[#E2E5E9] bg-[#F8F9FA] px-3"
+              style={{ fontFamily: FONT_SANS, fontSize: 11, color: "#1C2431" }}
+            >
+              <SlidersHorizontal size={13} />
+              Filters
+              {activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+              <ChevronDown size={13} style={{ transform: filtersOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 160ms" }} />
+            </button>
+          </div>
 
           {filtersOpen && (
-            <div
-              className="absolute left-0 z-20 mt-3 w-full rounded-xl border border-[#E2E5E9] bg-white p-4 shadow-[0_18px_46px_rgba(13,15,18,0.12)] lg:w-[min(860px,calc(100vw-4rem))]"
-              role="dialog"
-              aria-label="All filters"
-            >
+            <dialog className="w-full rounded-xl border border-[#E2E5E9] bg-white p-4 shadow-[0_8px_24px_rgba(13,15,18,0.08)]" aria-label="All filters" open>
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <div style={{ fontFamily: FONT_SANS, fontSize: 14, fontWeight: 500, color: "#0D0F12" }}>All Filters</div>
-                  <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#8A919E" }}>Refine the list with representation and behavior signals.</div>
+                  <div style={{ fontFamily: FONT_SANS, fontSize: 14, fontWeight: 500, color: "#0D0F12" }}>Advanced Filters</div>
+                  <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#8A919E" }}>Refine representation and behavior signals.</div>
                 </div>
-                <button
-                  onClick={() => setFiltersOpen(false)}
-                  className="rounded-md border border-[#E2E5E9] bg-[#F8F9FA] p-1.5"
-                  aria-label="Close filters"
-                >
-                  <X size={14} color="#4B5260" />
-                </button>
               </div>
 
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <SelectFilter
-                  label="Party"
-                  value={party}
-                  options={[
-                    { value: "ALL", label: "All parties" },
-                    { value: "R", label: "Republican" },
-                    { value: "D", label: "Democrat" },
-                    { value: "I", label: "Independent" },
-                  ]}
-                  onChange={(value) => setParty(value as PartyFilter)}
-                />
-                <SelectFilter
-                  label="Level"
-                  value={level}
-                  options={[
-                    { value: "ALL", label: "All levels" },
-                    { value: "Federal", label: "Federal" },
-                    { value: "State", label: "State" },
-                  ]}
-                  onChange={(value) => setLevel(value as LevelFilter)}
-                />
-                <SelectFilter
-                  label="State"
-                  value={stateFilter}
-                  options={[
-                    { value: "ALL", label: "All states" },
-                    { value: "AL", label: "Alabama" },
-                    { value: "AK", label: "Alaska" },
-                    { value: "AZ", label: "Arizona" },
-                    { value: "AR", label: "Arkansas" },
-                    { value: "CA", label: "California" },
-                    { value: "CO", label: "Colorado" },
-                    { value: "CT", label: "Connecticut" },
-                    { value: "DE", label: "Delaware" },
-                    { value: "FL", label: "Florida" },
-                    { value: "GA", label: "Georgia" },
-                    { value: "HI", label: "Hawaii" },
-                    { value: "ID", label: "Idaho" },
-                    { value: "IL", label: "Illinois" },
-                    { value: "IN", label: "Indiana" },
-                    { value: "IA", label: "Iowa" },
-                    { value: "KS", label: "Kansas" },
-                    { value: "KY", label: "Kentucky" },
-                    { value: "LA", label: "Louisiana" },
-                    { value: "ME", label: "Maine" },
-                    { value: "MD", label: "Maryland" },
-                    { value: "MA", label: "Massachusetts" },
-                    { value: "MI", label: "Michigan" },
-                    { value: "MN", label: "Minnesota" },
-                    { value: "MS", label: "Mississippi" },
-                    { value: "MO", label: "Missouri" },
-                    { value: "MT", label: "Montana" },
-                    { value: "NE", label: "Nebraska" },
-                    { value: "NV", label: "Nevada" },
-                    { value: "NH", label: "New Hampshire" },
-                    { value: "NJ", label: "New Jersey" },
-                    { value: "NM", label: "New Mexico" },
-                    { value: "NY", label: "New York" },
-                    { value: "NC", label: "North Carolina" },
-                    { value: "ND", label: "North Dakota" },
-                    { value: "OH", label: "Ohio" },
-                    { value: "OK", label: "Oklahoma" },
-                    { value: "OR", label: "Oregon" },
-                    { value: "PA", label: "Pennsylvania" },
-                    { value: "RI", label: "Rhode Island" },
-                    { value: "SC", label: "South Carolina" },
-                    { value: "SD", label: "South Dakota" },
-                    { value: "TN", label: "Tennessee" },
-                    { value: "TX", label: "Texas" },
-                    { value: "UT", label: "Utah" },
-                    { value: "VT", label: "Vermont" },
-                    { value: "VA", label: "Virginia" },
-                    { value: "WA", label: "Washington" },
-                    { value: "WV", label: "West Virginia" },
-                    { value: "WI", label: "Wisconsin" },
-                    { value: "WY", label: "Wyoming" },
-                  ]}
-                  onChange={(value) => setStateFilter(value as StateFilter)}
-                />
-                <SelectFilter
-                  label="Office"
-                  value={role}
-                  options={[
-                    { value: "ALL", label: "All offices" },
-                    { value: "U.S. Senate", label: "U.S. Senate" },
-                    { value: "U.S. House", label: "U.S. House" },
-                    { value: "Governor", label: "Governor" },
-                    { value: "State Senate", label: "State Senate" },
-                    { value: "State House", label: "State House" },
-                    { value: "Statewide", label: "Statewide" },
-                  ]}
-                  onChange={(value) => setRole(value as RoleFilter)}
-                />
                 <SelectFilter
                   label="Coverage"
                   value={exposure}
@@ -286,7 +289,7 @@ export function Dashboard({
                     { value: "LOCAL", label: "District only" },
                     { value: "STATEWIDE", label: "Statewide only" },
                   ]}
-                  onChange={(value) => setExposure(value as ExposureFilter)}
+                  onChange={setExposure}
                 />
                 <SelectFilter
                   label="Consistency"
@@ -297,7 +300,7 @@ export function Dashboard({
                     { value: "MID", label: "Mid (92-95%)" },
                     { value: "LOW", label: "Low (<92%)" },
                   ]}
-                  onChange={(value) => setConsistency(value as ConsistencyFilter)}
+                  onChange={setConsistency}
                 />
                 <SelectFilter
                   label="Promise Drift"
@@ -308,7 +311,7 @@ export function Dashboard({
                     { value: "MID", label: "Medium drift" },
                     { value: "HIGH", label: "High drift" },
                   ]}
-                  onChange={(value) => setDrift(value as DriftFilter)}
+                  onChange={setDrift}
                 />
                 <SelectFilter
                   label="Donor Volume"
@@ -319,18 +322,7 @@ export function Dashboard({
                     { value: "MID", label: "Medium donor volume" },
                     { value: "HIGH", label: "High donor volume" },
                   ]}
-                  onChange={(value) => setDonors(value as DonorFilter)}
-                />
-                <SelectFilter
-                  label="Sort"
-                  value={sort}
-                  options={[
-                    { value: "drift", label: "Biggest gap" },
-                    { value: "adherence", label: "Most consistent" },
-                    { value: "office", label: "Office" },
-                    { value: "name", label: "Name A-Z" },
-                  ]}
-                  onChange={(value) => setSort(value as Sort)}
+                  onChange={setDonors}
                 />
               </div>
 
@@ -360,7 +352,7 @@ export function Dashboard({
                   Done
                 </button>
               </div>
-            </div>
+            </dialog>
           )}
         </div>
       </div>
@@ -377,7 +369,7 @@ export function Dashboard({
                     key={politician.id}
                     politician={politician}
                     selected={politician.id === selectedId}
-                    onClick={() => onSelect(politician.id)}
+                    onClick={(event) => onSelect(politician.id, resolveProfileSide(event.clientX))}
                     index={i}
                   />
                 ))}
@@ -388,7 +380,30 @@ export function Dashboard({
             )}
           </div>
         </div>
-        <ElectionsSidebar onSelect={onSelect} />
+        <Suspense
+          fallback={
+            <aside
+              className="hidden lg:flex"
+              style={{
+                width: 576,
+                flexShrink: 0,
+                height: "100%",
+                background: "#F8F9FA",
+                borderLeft: "1px solid #E2E5E9",
+                overflowY: "auto",
+                padding: 16,
+                flexDirection: "column",
+                justifyContent: "flex-start",
+              }}
+            >
+              <div style={{ fontFamily: FONT_MONO, fontSize: 11, color: "#8A919E", marginTop: 8 }}>
+                Loading upcoming elections...
+              </div>
+            </aside>
+          }
+        >
+          <ElectionsSidebar onSelect={(id, side) => onSelect(id, side)} />
+        </Suspense>
       </div>
     </div>
   );
@@ -402,7 +417,7 @@ function Card({
 }: {
   politician: Politician;
   selected: boolean;
-  onClick: () => void;
+  onClick: (event: MouseEvent<HTMLButtonElement>) => void;
   index: number;
 }) {
   return (
@@ -530,34 +545,4 @@ function donationBand(politician: Politician): DonorFilter {
   if (total < 70000) return "LOW";
   if (total < 140000) return "MID";
   return "HIGH";
-}
-
-function SelectFilter<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: T;
-  options: { value: T; label: string }[];
-  onChange: (value: T) => void;
-}) {
-  return (
-    <div>
-      <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#8A919E", letterSpacing: "0.09em", marginBottom: 6 }}>{label}</div>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value as T)}
-        className="w-full rounded-md border border-[#E2E5E9] bg-white px-2 py-2"
-        style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#1E2734" }}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
 }

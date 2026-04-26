@@ -85,7 +85,7 @@ function scoreForAllele(vector: number[], alleleId: string): number {
 }
 
 function marketColor(score: number): string {
-  if (score <= 2.0) return "#2A7F62";
+  if (score <= 2) return "#2A7F62";
   if (score <= 3.4) return "#C97C1F";
   return "#B13A2C";
 }
@@ -179,23 +179,20 @@ function generateTurnText({
   const anchorScore = scoreForAllele(vector, anchorAllele);
   const anchorLabel = ALLELE_LABEL[anchorAllele] ?? anchorAllele;
 
-  const opening =
-    turnIndex === 0
-      ? "My baseline is simple"
-      : turnIndex % 3 === 0
-        ? "Let me push this further"
-        : turnIndex % 2 === 0
-          ? "Where I disagree is the mechanism"
-          : "The implementation details matter";
+  let opening = "The implementation details matter";
+  if (turnIndex === 0) {
+    opening = "My baseline is simple";
+  } else if (turnIndex % 3 === 0) {
+    opening = "Let me push this further";
+  } else if (turnIndex % 2 === 0) {
+    opening = "Where I disagree is the mechanism";
+  }
 
-  let stance = "I want a balanced policy path with staged rollouts and measurable outcomes.";
-
+  let stance = `On ${anchorLabel}, I support a middle track with targeted intervention and strict feedback loops.`;
   if (anchorScore >= 4.2) {
     stance = `On ${anchorLabel}, I favor a high-autonomy approach with fewer central constraints and stronger local discretion.`;
   } else if (anchorScore <= 1.8) {
     stance = `On ${anchorLabel}, I favor stronger public guardrails, broader access guarantees, and direct accountability.`;
-  } else {
-    stance = `On ${anchorLabel}, I support a middle track with targeted intervention and strict feedback loops.`;
   }
 
   const modeSuffix =
@@ -230,7 +227,16 @@ function buildSimulation(participants: Politician[], topic: Topic, mode: SimMode
   return turns;
 }
 
-export function Simulator({ list }: { list: Politician[] }) {
+function nextSelectedIds(current: string[], id: string): string[] {
+  if (current.includes(id)) {
+    if (current.length <= 2) return current;
+    return current.filter((x) => x !== id);
+  }
+  if (current.length >= 4) return current;
+  return [...current, id];
+}
+
+export function Simulator({ list }: Readonly<{ list: Politician[] }>) {
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>(() => list.slice(0, 3).map((p) => p.id));
   const [mode, setMode] = useState<SimMode>("theoretical");
@@ -281,23 +287,17 @@ export function Simulator({ list }: { list: Politician[] }) {
 
   useEffect(() => {
     return () => {
-      if (exportUrl) URL.revokeObjectURL(exportUrl);
+      if (exportUrl !== null) {
+        URL.revokeObjectURL(exportUrl);
+      }
     };
   }, [exportUrl]);
 
   const toggleParticipant = (id: string) => {
-    setSelectedIds((current) => {
-      if (current.includes(id)) {
-        if (current.length <= 2) return current;
-        return current.filter((x) => x !== id);
-      }
-      if (current.length >= 4) return current;
-      return [...current, id];
-    });
+    setSelectedIds((current) => nextSelectedIds(current, id));
   };
 
   const runSimulation = () => {
-    if (participants.length < 2) return;
     const next = buildSimulation(participants, topic, mode);
     setTurns(next);
     setActiveTurn(0);
@@ -451,7 +451,7 @@ export function Simulator({ list }: { list: Politician[] }) {
   const exportSimulationVideo = async () => {
     if (turns.length === 0 || participants.length === 0) return;
 
-    if (typeof window === "undefined") return;
+    if (globalThis.window === undefined) return;
 
     const canvas = exportCanvasRef.current;
     if (!canvas) return;
@@ -466,9 +466,9 @@ export function Simulator({ list }: { list: Politician[] }) {
       "video/webm;codecs=vp9",
       "video/webm;codecs=vp8",
       "video/webm",
-    ].find((type) => window.MediaRecorder?.isTypeSupported(type));
+    ].find((type) => globalThis.MediaRecorder?.isTypeSupported(type));
 
-    if (!supportedMime || !window.MediaRecorder) {
+    if (!supportedMime || !globalThis.MediaRecorder) {
       setExportError("Video export requires MediaRecorder support (try Chrome or Edge).");
       return;
     }
@@ -506,11 +506,11 @@ export function Simulator({ list }: { list: Politician[] }) {
       const frameTurn = turns[index];
       setActiveTurn(index);
       drawStageFrame({ ctx, frameTurn, images: imageMap });
-      await new Promise((resolve) => window.setTimeout(resolve, frameDelay));
+      await new Promise((resolve) => globalThis.setTimeout(resolve, frameDelay));
     }
 
-    drawStageFrame({ ctx, frameTurn: turns[turns.length - 1] ?? null, images: imageMap });
-    await new Promise((resolve) => window.setTimeout(resolve, 650));
+    drawStageFrame({ ctx, frameTurn: turns.at(-1) ?? null, images: imageMap });
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 650));
 
     recorder.stop();
     await stopped;
@@ -526,12 +526,12 @@ export function Simulator({ list }: { list: Politician[] }) {
 
   const exportSimulationMp4 = async () => {
     if (turns.length === 0 || participants.length === 0) return;
-    if (typeof window === "undefined") return;
+    if (globalThis.window === undefined) return;
 
     const canvas = exportCanvasRef.current;
     if (!canvas) return;
 
-    if (typeof window.VideoEncoder === "undefined" || typeof window.VideoFrame === "undefined") {
+    if (globalThis.VideoEncoder === undefined || globalThis.VideoFrame === undefined) {
       setExportError("MP4 export requires WebCodecs support (Chrome or Edge recommended).");
       return;
     }
@@ -553,7 +553,7 @@ export function Simulator({ list }: { list: Politician[] }) {
         framerate: fps,
       };
 
-      const supported = await window.VideoEncoder.isConfigSupported(config);
+      const supported = await globalThis.VideoEncoder.isConfigSupported(config);
       if (!supported.supported) {
         setExportError("This browser cannot encode H.264 for MP4 export.");
         setExportJob(null);
@@ -573,7 +573,7 @@ export function Simulator({ list }: { list: Politician[] }) {
       });
 
       let encodeError: string | null = null;
-      const encoder = new window.VideoEncoder({
+      const encoder = new globalThis.VideoEncoder({
         output: (chunk, meta) => {
           muxer.addVideoChunk(chunk, meta);
         },
@@ -606,7 +606,7 @@ export function Simulator({ list }: { list: Politician[] }) {
         const frameCount = Math.max(1, Math.round((turnDelayMs / 1000) * fps));
         for (let localFrame = 0; localFrame < frameCount; localFrame++) {
           drawStageFrame({ ctx, frameTurn, images: imageMap });
-          const frame = new window.VideoFrame(canvas, { timestamp: timestampUs });
+          const frame = new globalThis.VideoFrame(canvas, { timestamp: timestampUs });
           encoder.encode(frame, { keyFrame: frameIndex % fps === 0 });
           frame.close();
           frameIndex += 1;
@@ -614,11 +614,11 @@ export function Simulator({ list }: { list: Politician[] }) {
         }
       }
 
-      const finalTurn = turns[turns.length - 1] ?? null;
+      const finalTurn = turns.at(-1) ?? null;
       const finalFrames = Math.round(0.7 * fps);
       for (let localFrame = 0; localFrame < finalFrames; localFrame++) {
         drawStageFrame({ ctx, frameTurn: finalTurn, images: imageMap });
-        const frame = new window.VideoFrame(canvas, { timestamp: timestampUs });
+        const frame = new globalThis.VideoFrame(canvas, { timestamp: timestampUs });
         encoder.encode(frame, { keyFrame: frameIndex % fps === 0 });
         frame.close();
         frameIndex += 1;
@@ -648,29 +648,23 @@ export function Simulator({ list }: { list: Politician[] }) {
   };
 
   return (
-    <div
-      className="flex min-w-0 flex-1 flex-col"
-      style={{
-        background:
-          "radial-gradient(1200px 500px at 15% -10%, rgba(40,123,120,0.16), transparent 45%), radial-gradient(900px 450px at 90% 10%, rgba(214,113,62,0.14), transparent 50%), #F4F6F8",
-      }}
-    >
+    <div className="flex min-w-0 flex-1 flex-col bg-white">
       <div className="border-b border-[#D7DCE3] px-5 pb-4 pt-6 md:px-8">
-        <h1 style={{ fontFamily: FONT_SANS, fontSize: 24, fontWeight: 300, letterSpacing: "-0.02em", color: "#0D0F12" }}>
+        <h1 style={{ fontFamily: FONT_SANS, fontSize: 22, fontWeight: 300, letterSpacing: "-0.02em", color: "#0D0F12" }}>
           Synthesized Discourse Simulator
         </h1>
-        <p style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#495163", marginTop: 6 }}>
+        <p style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#8A919E", marginTop: 4 }}>
           Select 2-4 politicians, choose a policy lane, then run a vector-grounded debate with voice-tier mapping.
         </p>
       </div>
 
-      <div className="grid flex-1 gap-4 px-5 py-5 md:grid-cols-[340px_1fr] md:px-8" style={{ minHeight: 0 }}>
-        <div className="flex min-h-0 flex-col rounded-2xl border border-[#D7DCE3] bg-white/90 p-4 backdrop-blur">
+      <div className="grid flex-1 gap-4 px-5 py-5 md:grid-cols-[340px_1fr] md:px-8" style={{ minHeight: 0, background: "#F8F9FA" }}>
+        <div className="flex min-h-0 flex-col rounded-xl border border-[#E2E5E9] bg-white p-4">
           <div className="mb-3" style={{ fontFamily: FONT_MONO, fontSize: 11, color: "#6E7686", letterSpacing: "0.08em" }}>
             SCENARIO CONTROLS
           </div>
 
-          <label style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#495163" }}>Topic</label>
+          <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#495163" }}>Topic</div>
           <div className="mt-1 grid grid-cols-1 gap-2">
             {TOPICS.map((item) => (
               <button
@@ -691,7 +685,7 @@ export function Simulator({ list }: { list: Politician[] }) {
           </div>
 
           <div className="mt-4">
-            <label style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#495163" }}>Adherence Override</label>
+            <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#495163" }}>Adherence Override</div>
             <div className="mt-1 grid grid-cols-2 gap-2 rounded-lg bg-[#EEF2F5] p-1">
               <button
                 onClick={() => setMode("theoretical")}
@@ -727,7 +721,7 @@ export function Simulator({ list }: { list: Politician[] }) {
           </div>
 
           <div className="mt-4">
-            <label style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#495163" }}>Participants ({selectedIds.length}/4)</label>
+            <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#495163" }}>Participants ({selectedIds.length}/4)</div>
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -775,7 +769,7 @@ export function Simulator({ list }: { list: Politician[] }) {
             <Button
               onClick={runSimulation}
               disabled={participants.length < 2}
-              className="h-9 bg-[#0F5B57] text-white hover:bg-[#0B4744]"
+              className="h-9 bg-[#0D0F12] text-white hover:bg-[#1B1E25]"
               style={{ fontFamily: FONT_SANS, fontSize: 12 }}
             >
               Generate Debate
@@ -854,7 +848,7 @@ export function Simulator({ list }: { list: Politician[] }) {
               <Button
                 onClick={exportSimulationVideo}
                 disabled={turns.length === 0 || isExporting}
-                className="h-9 bg-[#25364A] text-white hover:bg-[#1C2A3B]"
+                className="h-9 bg-[#1E3A5F] text-white hover:bg-[#1A304E]"
                 style={{ fontFamily: FONT_SANS, fontSize: 12 }}
               >
                 {exportJob === "webm" ? "Rendering WebM..." : "Export WebM"}
@@ -862,7 +856,7 @@ export function Simulator({ list }: { list: Politician[] }) {
               <Button
                 onClick={exportSimulationMp4}
                 disabled={turns.length === 0 || isExporting}
-                className="h-9 bg-[#1E4460] text-white hover:bg-[#16374E]"
+                className="h-9 bg-[#0B6B66] text-white hover:bg-[#095A56]"
                 style={{ fontFamily: FONT_SANS, fontSize: 12 }}
               >
                 {exportJob === "mp4" ? "Rendering MP4..." : "Export MP4"}
@@ -873,7 +867,7 @@ export function Simulator({ list }: { list: Politician[] }) {
             )}
           </div>
 
-          <div className="mt-4 rounded-xl border border-[#D7DCE3] bg-[#FAFBFC] p-3">
+          <div className="mt-4 rounded-xl border border-[#E2E5E9] bg-[#FAFBFC] p-3">
             <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#6E7686", letterSpacing: "0.06em" }}>VOICE TIER MAP</div>
             <div className="mt-2 grid grid-cols-1 gap-1" style={{ fontFamily: FONT_SANS, fontSize: 11, color: "#263246" }}>
               <div>Male (Senior) {"->"} Bill / Callum</div>
@@ -885,7 +879,7 @@ export function Simulator({ list }: { list: Politician[] }) {
         </div>
 
         <div className="grid min-h-0 gap-4 md:grid-rows-[minmax(320px,1fr)_minmax(180px,1fr)]">
-          <div className="relative min-h-[320px] overflow-hidden rounded-2xl border border-[#D7DCE3] bg-[#0E1318]">
+          <div className="relative min-h-[320px] overflow-hidden rounded-xl border border-[#E2E5E9] bg-[#0E1318]">
             <div className="absolute left-0 top-0 h-full w-full opacity-30" style={{ backgroundImage: "radial-gradient(circle at 30% 30%, #2A7F62 0%, transparent 40%), radial-gradient(circle at 70% 70%, #B13A2C 0%, transparent 45%)" }} />
 
             <div className="absolute left-1/2 top-1/2 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/25 bg-white/10 backdrop-blur-sm">
@@ -951,7 +945,7 @@ export function Simulator({ list }: { list: Politician[] }) {
           </div>
 
           <div className="grid min-h-0 gap-4 md:grid-cols-[1.2fr_1fr]">
-            <div className="min-h-0 overflow-hidden rounded-2xl border border-[#D7DCE3] bg-white">
+            <div className="min-h-0 overflow-hidden rounded-xl border border-[#E2E5E9] bg-white">
               <div className="border-b border-[#E4E8ED] px-4 py-3">
                 <div style={{ fontFamily: FONT_MONO, fontSize: 11, color: "#6E7686", letterSpacing: "0.08em" }}>
                   LIVE TRANSCRIPTION HUD
@@ -1008,7 +1002,7 @@ export function Simulator({ list }: { list: Politician[] }) {
               </div>
             </div>
 
-            <div className="min-h-0 overflow-hidden rounded-2xl border border-[#D7DCE3] bg-white">
+            <div className="min-h-0 overflow-hidden rounded-xl border border-[#E2E5E9] bg-white">
               <div className="border-b border-[#E4E8ED] px-4 py-3">
                 <div style={{ fontFamily: FONT_MONO, fontSize: 11, color: "#6E7686", letterSpacing: "0.08em" }}>
                   PLAYBACK EXPORT
@@ -1024,7 +1018,9 @@ export function Simulator({ list }: { list: Politician[] }) {
                       controls
                       src={exportUrl}
                       className="w-full rounded-lg border border-[#D7DCE3]"
-                    />
+                    >
+                      <track kind="captions" />
+                    </video>
                     <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#6E7686" }}>
                       Format: {exportMimeType === "video/mp4" ? "MP4 (H.264)" : "WebM"}
                     </div>
@@ -1041,7 +1037,7 @@ export function Simulator({ list }: { list: Politician[] }) {
                   onClick={(event) => {
                     if (!exportUrl) event.preventDefault();
                   }}
-                  className="inline-flex h-9 w-full items-center justify-center rounded-md bg-[#0F5B57] text-white"
+                  className="inline-flex h-9 w-full items-center justify-center rounded-md bg-[#0D0F12] text-white"
                   style={{ fontFamily: FONT_SANS, fontSize: 12, pointerEvents: exportUrl ? "auto" : "none", opacity: exportUrl ? 1 : 0.45 }}
                 >
                   Download Video

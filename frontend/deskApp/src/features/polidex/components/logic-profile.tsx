@@ -15,34 +15,38 @@ type RadarMode = "intent" | "actual" | "both";
 
 export function LogicProfile({
   entity,
+  side = "right",
   onClose,
 }: {
   entity: Politician | null;
+  side?: "left" | "right";
   onClose: () => void;
 }) {
   return (
     <AnimatePresence>
       {entity && (
         <motion.div
-          initial={{ x: 520, opacity: 0 }}
+          initial={{ x: side === "right" ? 520 : -520, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
-          exit={{ x: 520, opacity: 0 }}
+          exit={{ x: side === "right" ? 520 : -520, opacity: 0 }}
           transition={{ duration: 0.24, ease: "easeOut" }}
           style={{
             position: "fixed",
             top: 0,
-            right: 0,
+            left: side === "left" ? 0 : "auto",
+            right: side === "right" ? 0 : "auto",
             height: "100vh",
             width: 520,
             maxWidth: "100vw",
             background: "#FFFFFF",
-            borderLeft: "1px solid #E2E5E9",
+            borderLeft: side === "right" ? "1px solid #E2E5E9" : "none",
+            borderRight: side === "left" ? "1px solid #E2E5E9" : "none",
             overflowY: "auto",
-            boxShadow: "-12px 0 32px rgba(13,15,18,0.06)",
+            boxShadow: side === "right" ? "-12px 0 32px rgba(13,15,18,0.06)" : "12px 0 32px rgba(13,15,18,0.06)",
             zIndex: 20,
           }}
         >
-          <Header entity={entity} onClose={onClose} />
+          <Header entity={entity} side={side} onClose={onClose} />
           <ScalarGauge entity={entity} />
           <RadarSection entity={entity} />
           <InfluenceTree entity={entity} />
@@ -54,7 +58,7 @@ export function LogicProfile({
   );
 }
 
-function Header({ entity, onClose }: { entity: Politician; onClose: () => void }) {
+function Header({ entity, side, onClose }: { entity: Politician; side: "left" | "right"; onClose: () => void }) {
   return (
     <div className="border-b border-[#E2E5E9] px-6 pb-5 pt-5">
       <div className="mb-4 flex items-start justify-between">
@@ -63,7 +67,7 @@ function Header({ entity, onClose }: { entity: Politician; onClose: () => void }
           className="flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-gray-100"
           style={{ background: "transparent", border: "none", cursor: "pointer", color: "#8A919E" }}
         >
-          <ArrowRight size={16} />
+          <ArrowRight size={16} style={{ transform: side === "right" ? "none" : "rotate(180deg)" }} />
         </button>
         <div style={{ fontFamily: FONT_SANS, fontSize: 12, fontWeight: 500, color: "#8A919E", paddingTop: 4 }}>Profile</div>
       </div>

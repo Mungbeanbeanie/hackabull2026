@@ -7,22 +7,37 @@ import { districtLabel, partyLabel } from "@/features/polidex/lib/display";
 import { FONT_SANS } from "@/features/polidex/lib/style";
 
 import { ImageWithFallback } from "../figma/image-with-fallback";
+import { resolveProfileSide } from "./utils";
 
-export function MatchRow({ politician, sim }: { politician: Politician; sim: number }) {
+export function MatchRow({
+  politician,
+  sim,
+  onOpenProfile,
+  selectedProfileId,
+}: Readonly<{
+  politician: Politician;
+  sim: number;
+  onOpenProfile: (id: string, side: "left" | "right") => void;
+  selectedProfileId: string | null;
+}>) {
   return (
-    <motion.div
+    <motion.button
       initial={{ opacity: 0, y: 6 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.25 }}
+      onClick={(event) => onOpenProfile(politician.id, resolveProfileSide(event.clientX))}
       style={{
         background: "white",
-        border: "1px solid #E2E5E9",
+        border: selectedProfileId === politician.id ? "1px solid #0D0F12" : "1px solid #E2E5E9",
         borderRadius: 12,
         padding: 12,
         display: "flex",
         alignItems: "center",
         gap: 12,
+        width: "100%",
+        textAlign: "left",
+        cursor: "pointer",
       }}
     >
       <div style={{ width: 44, height: 44, borderRadius: 10, overflow: "hidden", background: "#F1F3F5", flexShrink: 0 }}>
@@ -54,6 +69,6 @@ export function MatchRow({ politician, sim }: { politician: Politician; sim: num
       <div style={{ textAlign: "right" }}>
         <div style={{ fontFamily: FONT_SANS, fontSize: 16, fontWeight: 500, color: "#0D0F12" }}>{Math.round(sim * 100)}%</div>
       </div>
-    </motion.div>
+    </motion.button>
   );
 }

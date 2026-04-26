@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { upcomingElections } from "@/features/polidex/data/elections";
+import { type ReactNode, useEffect, useState } from "react";
+import { Election } from "@/features/polidex/types";
 import { ElectionCard } from "./election-card";
 
 const FONT_MONO = "ui-monospace, 'Fira Mono', monospace";
@@ -62,12 +62,54 @@ const STATE_OPTIONS = [
   { value: "WY", label: "Wyoming" },
 ];
 
-export function ElectionsSidebar({ onSelect }: { onSelect: (id: string) => void }) {
+export function ElectionsSidebar({ onSelect }: Readonly<{ onSelect: (id: string, side: "left" | "right") => void }>) {
   const [selectedState, setSelectedState] = useState("ALL");
+  const [upcomingElections, setUpcomingElections] = useState<Election[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    import("@/features/polidex/data/elections")
+      .then(({ upcomingElections: loadedUpcomingElections }) => {
+        if (!cancelled) {
+          setUpcomingElections(loadedUpcomingElections);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filtered = upcomingElections.filter(
     (e) => selectedState === "ALL" || e.state === selectedState,
   );
+
+  let bodyContent: ReactNode;
+
+  if (isLoading) {
+    bodyContent = (
+      <div style={{ fontFamily: FONT_MONO, fontSize: 11, color: "#8A919E", marginTop: 8 }}>
+        Loading upcoming elections...
+      </div>
+    );
+  } else if (filtered.length === 0) {
+    bodyContent = (
+      <div style={{ fontFamily: FONT_MONO, fontSize: 11, color: "#8A919E", marginTop: 8 }}>
+        No elections found for this state.
+      </div>
+    );
+  } else {
+    bodyContent = filtered.map((election) => (
+      <ElectionCard key={election.id} election={election} onSelect={onSelect} />
+    ));
+  }
 
   return (
     <aside
@@ -125,15 +167,7 @@ export function ElectionsSidebar({ onSelect }: { onSelect: (id: string) => void 
       </div>
 
       <div style={{ flex: 1 }}>
-        {filtered.length === 0 ? (
-          <div style={{ fontFamily: FONT_MONO, fontSize: 11, color: "#8A919E", marginTop: 8 }}>
-            No elections found for this state.
-          </div>
-        ) : (
-          filtered.map((election) => (
-            <ElectionCard key={election.id} election={election} onSelect={onSelect} />
-          ))
-        )}
+        {bodyContent}
       </div>
 
       <p

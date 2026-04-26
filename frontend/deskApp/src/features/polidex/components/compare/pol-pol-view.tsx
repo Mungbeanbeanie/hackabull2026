@@ -12,7 +12,7 @@ import { SelectFilter } from "../ui/select-filter";
 
 import { Legend } from "./legend";
 import { ListBox } from "./list-box";
-import { SearchablePoliticianPicker } from "./politician-picker";
+import { SearchablePoliticianPicker } from "./politician-picker-panel";
 
 type PartyFilter = "ALL" | "R" | "D" | "I";
 type RoleFilter = "ALL" | "U.S. Senate" | "U.S. House" | "Governor" | "State Senate" | "State House" | "Statewide";
@@ -21,10 +21,14 @@ type RegionFilter = "ALL" | "North FL" | "Central FL" | "South FL" | "Statewide"
 export function PolPolView({
   selected,
   setSelected,
-}: {
+  onOpenProfile,
+  selectedProfileId,
+}: Readonly<{
   selected: string[];
   setSelected: (ids: string[]) => void;
-}) {
+  onOpenProfile: (id: string, side: "left" | "right") => void;
+  selectedProfileId: string | null;
+}>) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [party, setParty] = useState<PartyFilter>("ALL");
   const [role, setRole] = useState<RoleFilter>("ALL");
@@ -32,15 +36,9 @@ export function PolPolView({
 
   const colors = ["#1565C0", "#C84B00", "#1B6B3A", "#6B21A8"];
   
-  // Filter available politicians
-  const filteredPoliticians = politicians.filter((p) => {
-    if (party !== "ALL" && p.party !== party) return false;
-    if (role !== "ALL" && p.role !== role) return false;
-    if (region !== "ALL" && p.region !== region) return false;
-    return true;
-  });
-
-  const selectedPoliticians = selected.map((id) => politicians.find((p) => p.id === id) ?? politicians[0]);
+  const selectedPoliticians = selected
+    .map((id) => politicians.find((p) => p.id === id))
+    .filter((p): p is (typeof politicians)[number] => Boolean(p));
 
   const handleUpdate = (index: number, newId: string) => {
     const updated = [...selected];
@@ -56,14 +54,107 @@ export function PolPolView({
   };
 
   const handleRemove = (index: number) => {
-    if (selected.length > 2) {
-      const updated = [...selected];
-      updated.splice(index, 1);
-      setSelected(updated);
-    }
+    const updated = [...selected];
+    updated.splice(index, 1);
+    setSelected(updated);
   };
 
   const activeFilterCount = [party !== "ALL", role !== "ALL", region !== "ALL"].filter(Boolean).length;
+
+  if (selectedPoliticians.length === 0) {
+    return (
+      <div className="space-y-6 px-5 py-6 md:px-8">
+        <div className="relative">
+          <button
+            onClick={() => setFiltersOpen((v) => !v)}
+            className="flex items-center gap-2 rounded-md border border-[#E2E5E9] bg-[#F8F9FA] px-3 py-2"
+            style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#1C2431" }}
+          >
+            <SlidersHorizontal size={14} />
+            Filters
+            {activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+            <ChevronDown size={14} style={{ transform: filtersOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 160ms" }} />
+          </button>
+
+          {filtersOpen && (
+            <dialog
+              className="absolute left-0 z-20 mt-3 w-full rounded-xl border border-[#E2E5E9] bg-white p-4 shadow-[0_18px_46px_rgba(13,15,18,0.12)] lg:w-[min(600px,calc(100vw-4rem))]"
+              aria-label="Filters"
+              open
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <div style={{ fontFamily: FONT_SANS, fontSize: 14, fontWeight: 500, color: "#0D0F12" }}>Advanced Filters</div>
+                  <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#8A919E" }}>Narrow down your comparison options.</div>
+                </div>
+                <button onClick={() => setFiltersOpen(false)} className="rounded-md border border-[#E2E5E9] bg-[#F8F9FA] p-1.5" aria-label="Close filters">
+                  <X size={14} color="#4B5260" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <SelectFilter
+                  label="Party"
+                  value={party}
+                  options={[
+                    { value: "ALL", label: "All parties" },
+                    { value: "R", label: "Republican" },
+                    { value: "D", label: "Democrat" },
+                    { value: "I", label: "Independent" },
+                  ]}
+                  onChange={setParty}
+                />
+                <SelectFilter
+                  label="Role"
+                  value={role}
+                  options={[
+                    { value: "ALL", label: "All roles" },
+                    { value: "U.S. Senate", label: "U.S. Senate" },
+                    { value: "U.S. House", label: "U.S. House" },
+                    { value: "Governor", label: "Governor" },
+                    { value: "State Senate", label: "State Senate" },
+                    { value: "State House", label: "State House" },
+                    { value: "Statewide", label: "Statewide" },
+                  ]}
+                  onChange={setRole}
+                />
+                <SelectFilter
+                  label="Region"
+                  value={region}
+                  options={[
+                    { value: "ALL", label: "All regions" },
+                    { value: "North FL", label: "North Florida" },
+                    { value: "Central FL", label: "Central Florida" },
+                    { value: "South FL", label: "South Florida" },
+                    { value: "Statewide", label: "Statewide" },
+                  ]}
+                  onChange={setRegion}
+                />
+              </div>
+            </dialog>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <button
+            onClick={handleAdd}
+            className="flex h-full min-h-[320px] items-center justify-center rounded-xl border border-dashed border-[#C5CBD3] bg-white text-left shadow-[0_1px_4px_rgba(13,15,18,0.04)] transition-transform hover:-translate-y-0.5"
+            style={{ fontFamily: FONT_SANS, color: "#4B5260" }}
+          >
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[#E2E5E9] bg-[#F8F9FA] text-2xl text-[#1C2431]">
+                +
+              </div>
+              <div className="text-center">
+                <div style={{ fontSize: 16, fontWeight: 500 }}>Add politician</div>
+                <div style={{ fontSize: 12, color: "#8A919E", marginTop: 4 }}>Start with one, or stack up to four.</div>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const data = taxonomy.map((topic, i) => {
     const row: Record<string, number | string> = { dim: topic.name, name: topic.name };
@@ -98,11 +189,11 @@ export function PolPolView({
           <ChevronDown size={14} style={{ transform: filtersOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 160ms" }} />
         </button>
 
-        {filtersOpen && (
-          <div
+          {filtersOpen && (
+            <dialog
             className="absolute left-0 z-20 mt-3 w-full rounded-xl border border-[#E2E5E9] bg-white p-4 shadow-[0_18px_46px_rgba(13,15,18,0.12)] lg:w-[min(600px,calc(100vw-4rem))]"
-            role="dialog"
             aria-label="Filters"
+              open
           >
             <div className="mb-4 flex items-center justify-between">
               <div>
@@ -128,7 +219,7 @@ export function PolPolView({
                   { value: "D", label: "Democrat" },
                   { value: "I", label: "Independent" },
                 ]}
-                onChange={(value) => setParty(value as PartyFilter)}
+                  onChange={setParty}
               />
               <SelectFilter
                 label="Role"
@@ -142,7 +233,7 @@ export function PolPolView({
                   { value: "State House", label: "State House" },
                   { value: "Statewide", label: "Statewide" },
                 ]}
-                onChange={(value) => setRole(value as RoleFilter)}
+                  onChange={setRole}
               />
               <SelectFilter
                 label="Region"
@@ -154,10 +245,10 @@ export function PolPolView({
                   { value: "South FL", label: "South Florida" },
                   { value: "Statewide", label: "Statewide" },
                 ]}
-                onChange={(value) => setRegion(value as RegionFilter)}
+                  onChange={setRegion}
               />
             </div>
-          </div>
+            </dialog>
         )}
       </div>
 
@@ -169,59 +260,42 @@ export function PolPolView({
         className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4"
       >
         {selected.map((selectedId, i) => (
-          <div key={i} className="group relative">
+          <div key={selectedId} className="group relative">
             <SearchablePoliticianPicker
               value={selectedId}
               onChange={(id) => handleUpdate(i, id)}
               label={`Politician ${i + 1}`}
               excludeIds={selected.filter((_, idx) => idx !== i)}
+              onOpenProfile={onOpenProfile}
+              selectedProfileId={selectedProfileId}
             />
-            {selected.length > 2 && (
-              <button
-                onClick={() => handleRemove(i)}
-                className="absolute right-0 top-0 opacity-0 transition-opacity group-hover:opacity-100"
-                style={{
-                  background: "#991B1B",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 4,
-                  width: 20,
-                  height: 20,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  fontSize: 14,
-                  lineHeight: 1,
-                }}
-              >
-                x
-              </button>
-            )}
+            <button
+              onClick={() => handleRemove(i)}
+              className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border border-[#D8DEE7] bg-white text-[#6A7280] shadow-[0_1px_2px_rgba(13,15,18,0.06)] transition-colors hover:border-[#AAB4C0] hover:text-[#0D0F12]"
+              aria-label={`Remove politician ${i + 1}`}
+              type="button"
+            >
+              x
+            </button>
           </div>
         ))}
 
         {selected.length < 4 && (
-          <div className="flex flex-1 flex-col justify-end">
-            <button
-              onClick={handleAdd}
-              style={{
-                fontFamily: FONT_SANS,
-                fontSize: 13,
-                padding: "10px 14px",
-                borderRadius: 8,
-                background: "#FFFFFF",
-                border: "1px dashed #C5CBD3",
-                color: "#4B5260",
-                cursor: "pointer",
-                height: "fit-content",
-                alignSelf: "flex-start",
-                marginTop: "auto",
-              }}
-            >
-              + Add
-            </button>
-          </div>
+          <button
+            onClick={handleAdd}
+            className="flex h-full min-h-[320px] items-center justify-center rounded-xl border border-dashed border-[#C5CBD3] bg-white text-left shadow-[0_1px_4px_rgba(13,15,18,0.04)] transition-transform hover:-translate-y-0.5"
+            style={{ fontFamily: FONT_SANS, color: "#4B5260" }}
+          >
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[#E2E5E9] bg-[#F8F9FA] text-2xl text-[#1C2431]">
+                +
+              </div>
+              <div className="text-center">
+                <div style={{ fontSize: 16, fontWeight: 500 }}>Add politician</div>
+                <div style={{ fontSize: 12, color: "#8A919E", marginTop: 4 }}>Keep building the comparison.</div>
+              </div>
+            </div>
+          </button>
         )}
       </motion.div>
 
@@ -241,9 +315,9 @@ export function PolPolView({
             <RadarChart data={data} outerRadius="78%">
               <PolarGrid stroke="#E2E5E9" />
               <PolarAngleAxis dataKey="dim" tick={{ fill: "#8A919E", fontSize: 9, fontFamily: FONT_MONO }} />
-              {selectedPoliticians.map((_, idx) => (
+              {selectedPoliticians.map((politician, idx) => (
                 <Radar
-                  key={idx}
+                  key={politician.id}
                   dataKey={`p${idx}`}
                   stroke={colors[idx]}
                   fill={colors[idx]}
@@ -256,7 +330,7 @@ export function PolPolView({
         </div>
         <div className="flex flex-wrap items-center gap-4">
           {selectedPoliticians.map((p, i) => (
-            <Legend key={i} swatch={colors[i]} label={p.name} />
+            <Legend key={p.id} swatch={colors[i % colors.length]} label={p.name} />
           ))}
         </div>
       </motion.div>

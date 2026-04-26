@@ -4,17 +4,17 @@ import { useState } from "react";
 
 import { politicians } from "@/features/polidex/data/politicians";
 import { RankedPolitician } from "@/features/polidex/lib/api";
-import { districtLabel, levelLabel, partyLabel, regionLabel } from "@/features/polidex/lib/display";
 import { UserProfile, exportProfileCode } from "@/features/polidex/lib/profile";
-import { FONT_MONO, FONT_SANS, consistencyLabel } from "@/features/polidex/lib/style";
+import { FONT_MONO, FONT_SANS } from "@/features/polidex/lib/style";
 
 import { InfoTooltip } from "./ui/info-tooltip";
 import { MatchView } from "./compare/match-view";
 import { ModeTab } from "./compare/mode-tab";
 import { PolPolView } from "./compare/pol-pol-view";
-import { VersusView } from "./compare/versus-view";
+import { VersusView } from "./compare/versus-panel";
 
 type Mode = "match" | "vsYou" | "vsPol";
+type ProfileSide = "left" | "right";
 
 export function Compare({
   profile,
@@ -23,17 +23,21 @@ export function Compare({
   backendOnline = null,
   onTakeQuiz,
   onImportProfile,
-}: {
+  onOpenProfile,
+  selectedProfileId,
+}: Readonly<{
   profile: UserProfile | null;
   ranked?: RankedPolitician[];
   isRanking?: boolean;
   backendOnline?: boolean | null;
   onTakeQuiz: () => void;
   onImportProfile: (code: string) => boolean;
-}) {
+  onOpenProfile: (id: string, side: ProfileSide) => void;
+  selectedProfileId: string | null;
+}>) {
   const [mode, setMode] = useState<Mode>(profile ? "match" : "vsPol");
   const [vsYouSel, setVsYouSel] = useState<string>(politicians[0].id);
-  const [vsPolSels, setVsPolSels] = useState<string[]>([politicians[0].id, politicians[6].id]);
+  const [vsPolSels, setVsPolSels] = useState<string[]>([]);
   const [profileCodeInput, setProfileCodeInput] = useState("");
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
   const profileCode = profile ? exportProfileCode(profile) : null;
@@ -105,12 +109,31 @@ export function Compare({
       </div>
 
       <div className="flex-1 overflow-y-auto" style={{ background: "#F8F9FA" }}>
-        {mode === "match" && profile && <MatchView ranked={ranked} isRanking={isRanking} backendOnline={backendOnline} />}
-        {mode === "vsYou" && profile && <VersusView profile={profile} sel={vsYouSel} setSel={setVsYouSel} ranked={ranked} />}
-        {mode === "vsPol" && <PolPolView selected={vsPolSels} setSelected={setVsPolSels} />}
+        {mode === "match" && profile && (
+          <MatchView
+            ranked={ranked}
+            isRanking={isRanking}
+            backendOnline={backendOnline}
+            onOpenProfile={onOpenProfile}
+            selectedProfileId={selectedProfileId}
+          />
+        )}
+        {mode === "vsYou" && profile && (
+          <VersusView
+            profile={profile}
+            sel={vsYouSel}
+            setSel={setVsYouSel}
+            ranked={ranked}
+            onOpenProfile={onOpenProfile}
+            selectedProfileId={selectedProfileId}
+          />
+        )}
+        {mode === "vsPol" && (
+          <PolPolView selected={vsPolSels} setSelected={setVsPolSels} onOpenProfile={onOpenProfile} selectedProfileId={selectedProfileId} />
+        )}
         {!profile && mode !== "vsPol" && (
           <div className="px-8 py-16 text-center" style={{ color: "#8A919E", fontSize: 14, fontFamily: FONT_SANS }}>
-            Take the quiz to unlock personal comparisons.
+            <div>Take the quiz to unlock personal comparisons.</div>
             <button
               onClick={onTakeQuiz}
               className="mx-auto mt-4 block rounded-md bg-[#0D0F12] px-4 py-2 text-xs text-white"

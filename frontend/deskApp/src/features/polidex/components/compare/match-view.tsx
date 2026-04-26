@@ -8,16 +8,21 @@ import { FONT_SANS } from "@/features/polidex/lib/style";
 
 import { ImageWithFallback } from "../figma/image-with-fallback";
 import { MatchRow } from "./match-row";
+import { resolveProfileSide } from "./utils";
 
 export function MatchView({
   ranked,
   isRanking = false,
   backendOnline = null,
-}: {
+  onOpenProfile,
+  selectedProfileId,
+}: Readonly<{
   ranked: RankedPolitician[];
   isRanking?: boolean;
   backendOnline?: boolean | null;
-}) {
+  onOpenProfile: (id: string, side: "left" | "right") => void;
+  selectedProfileId: string | null;
+}>) {
   if (ranked.length === 0) {
     const message = isRanking ? "Ranking politicians…" : "Complete the quiz to see your matches.";
     return (
@@ -29,24 +34,28 @@ export function MatchView({
 
   const top = ranked[0];
   const rest = ranked.slice(1, 7);
-  const worst = ranked[ranked.length - 1];
+  const worst = ranked.at(-1);
 
   return (
     <div className="space-y-6 px-5 py-6 md:px-8">
-      <motion.div
+      <motion.button
         initial={{ opacity: 0, y: 8 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.25 }}
         transition={{ duration: 0.3 }}
+        onClick={(event) => onOpenProfile(top.politician.id, resolveProfileSide(event.clientX))}
         style={{
           background: "white",
-          border: "1px solid #E2E5E9",
+          border: selectedProfileId === top.politician.id ? "1px solid #0D0F12" : "1px solid #E2E5E9",
           borderRadius: 14,
           padding: 22,
           display: "flex",
           alignItems: "center",
           gap: 20,
           flexWrap: "wrap",
+          width: "100%",
+          textAlign: "left",
+          cursor: "pointer",
         }}
       >
         <div style={{ width: 96, height: 96, borderRadius: 14, overflow: "hidden", flexShrink: 0, background: "#F1F3F5" }}>
@@ -76,30 +85,40 @@ export function MatchView({
             alignment with your views
           </div>
         </div>
-      </motion.div>
+      </motion.button>
 
       <div>
         <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#8A919E", marginBottom: 10 }}>More close matches</div>
         <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
           {rest.map(({ politician, sim }) => (
-            <MatchRow key={politician.id} politician={politician} sim={sim} />
+            <MatchRow
+              key={politician.id}
+              politician={politician}
+              sim={sim}
+              onOpenProfile={onOpenProfile}
+              selectedProfileId={selectedProfileId}
+            />
           ))}
         </div>
       </div>
 
-      <motion.div
+      <motion.button
         initial={{ opacity: 0, y: 8 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.4 }}
         transition={{ duration: 0.3 }}
+        onClick={(event) => onOpenProfile(worst.politician.id, resolveProfileSide(event.clientX))}
         style={{
           background: "white",
-          border: "1px solid #E2E5E9",
+          border: selectedProfileId === worst.politician.id ? "1px solid #0D0F12" : "1px solid #E2E5E9",
           borderRadius: 12,
           padding: 16,
           display: "flex",
           alignItems: "center",
           gap: 14,
+          width: "100%",
+          textAlign: "left",
+          cursor: "pointer",
         }}
       >
         <div style={{ width: 48, height: 48, borderRadius: 10, overflow: "hidden", background: "#F1F3F5" }}>
@@ -117,7 +136,7 @@ export function MatchView({
           <div style={{ fontFamily: FONT_SANS, fontSize: 14, fontWeight: 500, color: "#0D0F12" }}>{worst.politician.name}</div>
         </div>
         <div style={{ fontFamily: FONT_SANS, fontSize: 22, fontWeight: 300, color: "#991B1B" }}>{Math.round(worst.sim * 100)}%</div>
-      </motion.div>
+      </motion.button>
     </div>
   );
 }
