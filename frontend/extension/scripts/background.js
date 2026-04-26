@@ -19,48 +19,56 @@ const MENU_ID     = "who-is-this";
 const STUB_DB = [
   {
     name: "Donald Trump",
+    position: "President (2017–2021, 2025–)",
     vector: [4, 2, 5, 5, 4, 5, 4, 5, 4, 5, 5, 4, 4, 5, 3, 4, 3, 5, 5, 5],
     policies: ["Tax Cuts & Jobs Act", "Border Wall & Remain in Mexico"],
     summary: "A nationalist populist who reshaped the GOP around immigration restriction, tariffs, and executive unilateralism."
   },
   {
     name: "Ron DeSantis",
+    position: "Governor of Florida (2019–2023)",
     vector: [4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 4, 4, 4, 5, 5, 4, 3, 4, 5, 5],
     policies: ["School Choice Expansion", "6-Week Abortion Ban"],
     summary: "A culture-war conservative who used Florida's governorship to aggressively restrict abortion, expand school vouchers, and challenge federal authority."
   },
   {
     name: "Marco Rubio",
+    position: "U.S. Secretary of State",
     vector: [4, 4, 5, 4, 4, 4, 5, 4, 4, 4, 3, 5, 3, 4, 4, 4, 3, 4, 4, 4],
     policies: ["Defense Appropriations", "Child Tax Credit Expansion"],
     summary: "A hawkish establishment conservative who pairs strong national defense with occasional bipartisan dealmaking on immigration and family policy."
   },
   {
     name: "Rick Scott",
+    position: "U.S. Senator, Florida",
     vector: [5, 5, 5, 5, 4, 5, 5, 5, 5, 5, 4, 4, 4, 5, 5, 5, 4, 4, 5, 5],
     policies: ["Balanced Budget Push", "Medicare Fraud Crackdown"],
     summary: "A fiscal hardliner who cut Florida's government dramatically as governor and advocates for spending caps and strict entitlement reform in the Senate."
   },
   {
     name: "Joe Biden",
+    position: "President (2021–2025)",
     vector: [2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 1, 3, 2, 1, 2, 2, 3, 2, 2, 2],
     policies: ["Inflation Reduction Act", "Infrastructure Investment & Jobs Act"],
     summary: "A center-left institutionalist who championed major climate and infrastructure investment while prioritizing NATO alliances and incremental domestic reform."
   },
   {
     name: "Bernie Sanders",
+    position: "U.S. Senator, Vermont",
     vector: [1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2, 2, 1, 1],
     policies: ["Medicare for All", "Green New Deal"],
     summary: "A democratic socialist who has spent decades pushing for universal healthcare, free public college, and aggressive climate legislation funded by wealth taxes."
   },
   {
     name: "Alexandria Ocasio-Cortez",
+    position: "U.S. Rep., NY-14",
     vector: [1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1],
     policies: ["Green New Deal", "Defund the Pentagon"],
     summary: "A progressive firebrand who advocates for sweeping climate policy, abolishing student debt, and redirecting defense spending toward domestic social programs."
   },
   {
     name: "Nikki Haley",
+    position: "Former U.S. Ambassador to the UN",
     vector: [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 5, 3, 4, 4, 4, 3, 4, 4, 4],
     policies: ["UN Reform", "Balanced Budget Amendment"],
     summary: "A hawkish internationalist conservative who emphasizes fiscal discipline, a strong military posture, and a more traditional Republican foreign policy."
@@ -76,7 +84,8 @@ async function refreshPoliticianCache() {
     const raw = Array.isArray(data) ? data : (data.politicians || []);
     const politicians = raw.map(p => ({
       ...p,
-      vector: Array.from({ length: 20 }, (_, i) => p.vector[`d${i + 1}`])
+      vector:   Array.from({ length: 20 }, (_, i) => p.vector[`d${i + 1}`]),
+      position: [p.role, p.district].filter(Boolean).join(" — "),
     }));
     await chrome.storage.local.set({ [STORAGE_KEY]: politicians });
   } catch {
@@ -124,10 +133,12 @@ async function handleLookup(text, tabId) {
 
     await chrome.storage.local.set({
       last_match: {
-        name:     match.name,
-        score:    result.score,
-        summary:  match.summary || "",
-        policies: match.policies
+        name:       match.name,
+        position:   match.position || "",
+        score:      result.score,
+        summary:    match.summary || "",
+        policies:   match.policies,
+        dimensions: result.dimensions || [],
       }
     });
 
@@ -136,10 +147,12 @@ async function handleLookup(text, tabId) {
       chrome.tabs.sendMessage(tabId, {
         type: "SHOW_CARD",
         data: {
-          name:     match.name,
-          score:    result.score,
-          summary:  match.summary || "",
-          policies: match.policies || []
+          name:       match.name,
+          position:   match.position || "",
+          score:      result.score,
+          summary:    match.summary || "",
+          policies:   match.policies || [],
+          dimensions: result.dimensions || [],
         }
       }, () => { if (chrome.runtime.lastError) {} });
     }
@@ -178,4 +191,11 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== MENU_ID) return;
   const text = info.selectionText?.trim();
   if (text) handleLookup(text, tab?.id);
+});
+
+// Real-time sync from deskApp (localhost:3000) via content.js bridge
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.type === "SYNC_VECTOR" && Array.isArray(msg.vector) && msg.vector.length === 20) {
+    setUserVector(msg.vector);
+  }
 });

@@ -89,6 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
       card.style.display = "block";
 
       document.getElementById("poli-name").textContent = last_match.name;
+      document.getElementById("poli-position").textContent = last_match.position || "";
 
       const { color, bg, border } = scoreBadgeStyle(last_match.score);
       const badgeEl = document.getElementById("match-badge");
@@ -102,6 +103,23 @@ document.addEventListener("DOMContentLoaded", () => {
       const policiesEl = document.getElementById("policies");
       const policies = (last_match.policies || []).slice(0, 2);
       policiesEl.innerHTML = policies.map(p => `<div class="policy-item">${p}</div>`).join("");
+
+      const dimensions = last_match.dimensions || [];
+      if (dimensions.length > 0) {
+        const overlapSection = document.getElementById("overlap-section");
+        overlapSection.style.display = "block";
+
+        // Sort most-divergent first so the user immediately sees where they clash
+        const sorted = [...dimensions].sort((a, b) => a.agreement - b.agreement);
+        document.getElementById("dim-rows").innerHTML = sorted.map(d => {
+          const c = d.agreement >= 70 ? "#1B6B3A" : d.agreement >= 45 ? "#7A4F00" : "#991B1B";
+          return `<div class="dim-row">
+            <div class="dim-label">${d.name}</div>
+            <div class="dim-track"><div class="dim-fill" style="width:${d.agreement}%;background:${c}"></div></div>
+            <div class="dim-pct" style="color:${c}">${d.agreement}%</div>
+          </div>`;
+        }).join("");
+      }
     });
   });
 });

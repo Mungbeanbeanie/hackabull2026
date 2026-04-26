@@ -44,6 +44,8 @@ export function saveProfile(profile: UserProfile) {
   }
 
   window.localStorage.setItem(KEY, JSON.stringify(profile));
+  // Signal extension content script for same-tab real-time sync
+  window.dispatchEvent(new CustomEvent("polidex:profile-saved", { detail: profile }));
 }
 
 export function clearProfile() {

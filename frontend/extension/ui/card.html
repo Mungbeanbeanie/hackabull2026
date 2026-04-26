@@ -26,7 +26,7 @@
     }
 
     body {
-      width: 280px;
+      width: 300px;
       font-family: var(--font-sans);
       background: #fff;
       color: var(--color-primary);
@@ -152,6 +152,64 @@
       min-height: 14px;
     }
 
+    #poli-position {
+      font-size: 11px;
+      color: var(--color-muted);
+      margin-top: 1px;
+    }
+
+    /* ── Overlap chart ── */
+    #overlap-section {
+      padding: 10px 14px 12px;
+      border-top: 1px solid var(--color-border);
+    }
+
+    .dim-rows {
+      max-height: 220px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #D0D3D9 transparent;
+    }
+
+    .dim-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .dim-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--color-secondary);
+      width: 82px;
+      flex-shrink: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dim-track {
+      flex: 1;
+      height: 5px;
+      background: var(--color-fill);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .dim-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .dim-pct {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      width: 28px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
     /* ── Fallback ── */
     #fallback {
       padding: 22px 16px;
@@ -167,13 +225,21 @@
 
   <div id="main-card" style="display:none">
     <div class="card-header">
-      <div id="poli-name"></div>
+      <div>
+        <div id="poli-name"></div>
+        <div id="poli-position"></div>
+      </div>
       <div id="match-badge"></div>
     </div>
     <div id="summary"></div>
     <div class="divider"></div>
     <div class="section-label">Key Policies</div>
     <div class="policy-list" id="policies"></div>
+  </div>
+
+  <div id="overlap-section" style="display:none">
+    <div class="section-label">Issue Overlap</div>
+    <div class="dim-rows" id="dim-rows"></div>
   </div>
 
   <div id="sync-section">

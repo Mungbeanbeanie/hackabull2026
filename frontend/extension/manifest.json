@@ -14,7 +14,11 @@
       "js": ["scripts/content.js"]
     }
   ],
+  "icons": {
+    "128": "logo.PNG"
+  },
   "action": {
-    "default_popup": "ui/card.html"
+    "default_popup": "ui/card.html",
+    "default_icon": "logo.PNG"
   }
 }

@@ -78,10 +78,39 @@ function showOverlay(data) {
     "box-sizing:border-box"
   ].join(";");
 
+  const position = data.position
+    ? `<div style="font-size:11px;color:#8A919E;margin-top:1px;margin-bottom:4px;font-family:inherit">${escapeHtml(data.position)}</div>`
+    : "";
+
+  // Top 5 most divergent dimensions
+  const dimRows = (data.dimensions || [])
+    .slice()
+    .sort((a, b) => a.agreement - b.agreement)
+    .slice(0, 5)
+    .map(d => {
+      const c = d.agreement >= 70 ? "#1B6B3A" : d.agreement >= 45 ? "#7A4F00" : "#991B1B";
+      return `<div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
+        <div style="font-size:9px;color:#4B5260;width:70px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:monospace">${escapeHtml(d.name)}</div>
+        <div style="flex:1;height:4px;background:#F1F3F5;border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${d.agreement}%;background:${c};border-radius:2px"></div>
+        </div>
+        <div style="font-size:9px;color:${c};width:26px;text-align:right;flex-shrink:0;font-family:monospace">${d.agreement}%</div>
+      </div>`;
+    }).join("");
+
+  const dimSection = dimRows ? `
+    <div style="height:1px;background:#F1F3F5;margin:10px 0"></div>
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.09em;color:#8A919E;margin-bottom:6px;font-family:inherit">Most Divergent Issues</div>
+    ${dimRows}
+  ` : "";
+
   card.innerHTML = `
     <div style="padding:14px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px">
-        <div style="font-size:14px;font-weight:500;color:#0D0F12;line-height:1.3;font-family:inherit">${escapeHtml(data.name)}</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:4px">
+        <div>
+          <div style="font-size:14px;font-weight:500;color:#0D0F12;line-height:1.3;font-family:inherit">${escapeHtml(data.name)}</div>
+          ${position}
+        </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
           <span style="font-size:11px;font-weight:500;padding:2px 8px;border-radius:6px;color:${color};background:${bg};border:1px solid ${border};white-space:nowrap;font-family:inherit">${data.score}% Match</span>
           <button id="civic-hud-close" style="background:none;border:none;color:#8A919E;cursor:pointer;font-size:18px;padding:0;line-height:1;font-family:inherit">&times;</button>
@@ -91,12 +120,42 @@ function showOverlay(data) {
       <div style="height:1px;background:#F1F3F5;margin-bottom:10px"></div>
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.09em;color:#8A919E;margin-bottom:7px;font-family:inherit">Key Policies</div>
       <div style="display:flex;flex-direction:column;gap:4px">${policies}</div>
+      ${dimSection}
     </div>
   `;
 
   document.body.appendChild(card);
   document.getElementById("civic-hud-close").addEventListener("click", () => card.remove());
   setTimeout(() => { if (card.parentNode) card.remove(); }, 10000);
+}
+
+// ── deskApp → extension sync ──────────────────────────────────────────────────
+// Runs only on localhost:3000. Reads polidex:profile from localStorage and
+// pushes it to the service worker whenever it changes.
+if (window.location.hostname === "localhost" && window.location.port === "3000") {
+  function syncFromLocalStorage() {
+    try {
+      const raw = localStorage.getItem("polidex:profile");
+      if (!raw) return;
+      const profile = JSON.parse(raw);
+      if (Array.isArray(profile.vector) && profile.vector.length === 20) {
+        chrome.runtime.sendMessage({ type: "SYNC_VECTOR", vector: profile.vector });
+      }
+    } catch {}
+  }
+  // Initial load: pick up any profile already saved
+  syncFromLocalStorage();
+  // Cross-tab: fires when another tab writes to localStorage
+  window.addEventListener("storage", (e) => {
+    if (e.key === "polidex:profile") syncFromLocalStorage();
+  });
+  // Same-tab: fires when the quiz completes in this tab (see saveProfile in profile.ts)
+  window.addEventListener("polidex:profile-saved", (e) => {
+    const vector = e.detail?.vector;
+    if (Array.isArray(vector) && vector.length === 20) {
+      chrome.runtime.sendMessage({ type: "SYNC_VECTOR", vector });
+    }
+  });
 }
 
 function showToast(message) {
