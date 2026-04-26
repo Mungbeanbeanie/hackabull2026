@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Compare } from "@/features/poliweb/components/compare";
 import { Dashboard } from "@/features/poliweb/components/dashboard";
@@ -9,7 +9,8 @@ import { Landing } from "@/features/poliweb/components/landing";
 import { LogicProfile } from "@/features/poliweb/components/logic-profile";
 import { Quiz } from "@/features/poliweb/components/quiz";
 import { TopNav } from "@/features/poliweb/components/top-nav";
-import { politicians } from "@/features/poliweb/data/politicians";
+import { Politician, politicians } from "@/features/poliweb/data/politicians";
+import { RankedPolitician, SearchResult, checkHealth, searchPoliticians } from "@/features/poliweb/lib/api";
 import { UserProfile, clearProfile, loadProfile } from "@/features/poliweb/lib/profile";
 import { View } from "@/features/poliweb/types";
 
@@ -18,6 +19,29 @@ export function PoliWebApp() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(() => loadProfile());
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [rankedResults, setRankedResults] = useState<SearchResult[]>([]);
+  const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    checkHealth().then(setBackendOnline);
+  }, []);
+
+  useEffect(() => {
+    if (!profile) return;
+    searchPoliticians(profile.vector, profile.weights, false, [])
+      .then(setRankedResults)
+      .catch((err) => console.error("backend search failed:", err));
+  }, [profile]);
+
+  const rankedPoliticians = useMemo((): RankedPolitician[] => {
+    if (rankedResults.length === 0) return [];
+    return rankedResults
+      .map((r) => {
+        const politician = politicians.find((p) => p.id === r.id);
+        return politician ? { politician, sim: r.score } : null;
+      })
+      .filter((x): x is { politician: Politician; sim: number } => x !== null);
+  }, [rankedResults]);
 
   const selected = politicians.find((p) => p.id === selectedId) ?? null;
 
@@ -28,6 +52,7 @@ export function PoliWebApp() {
   if (view === "loading") {
     return (
       <GlobalLoadingScreen
+        backendOnline={backendOnline}
         onComplete={() => {
           setIsDataLoaded(true);
           setView("dashboard");
@@ -61,7 +86,7 @@ export function PoliWebApp() {
         {view === "dashboard" && (
           <Dashboard list={politicians} selectedId={selectedId} onSelect={setSelectedId} isLoading={!isDataLoaded} />
         )}
-        {view === "compare" && <Compare profile={profile} onTakeQuiz={() => setView("quiz")} />}
+        {view === "compare" && <Compare profile={profile} ranked={rankedPoliticians} onTakeQuiz={() => setView("quiz")} />}
 
         <LogicProfile entity={selected} onClose={() => setSelectedId(null)} />
       </div>

@@ -44,10 +44,12 @@ public class RequestHandler {
     // ── route handlers ────────────────────────────────────────────────────────
 
     private void handleHealth(HttpExchange ex) throws IOException {
+        if (handlePreflight(ex)) return;
         respond(ex, 200, "{\"status\":\"ok\"}");
     }
 
     private void handleSearch(HttpExchange ex) throws IOException {
+        if (handlePreflight(ex)) return;
         if (!"POST".equals(ex.getRequestMethod())) {
             respond(ex, 405, jsonError("method not allowed"));
             return;
@@ -124,8 +126,24 @@ public class RequestHandler {
 
     // ── utilities ─────────────────────────────────────────────────────────────
 
+    private static void setCorsHeaders(HttpExchange ex) {
+        ex.getResponseHeaders().set("Access-Control-Allow-Origin",  "*");
+        ex.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        ex.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+        ex.getResponseHeaders().set("Access-Control-Max-Age",       "86400");
+    }
+
+    private static boolean handlePreflight(HttpExchange ex) throws IOException {
+        if (!"OPTIONS".equals(ex.getRequestMethod())) return false;
+        setCorsHeaders(ex);
+        ex.sendResponseHeaders(204, -1);
+        ex.close();
+        return true;
+    }
+
     private static void respond(HttpExchange ex, int status, String body) throws IOException {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+        setCorsHeaders(ex);
         ex.getResponseHeaders().set("Content-Type", "application/json");
         ex.sendResponseHeaders(status, bytes.length);
         try (OutputStream os = ex.getResponseBody()) {
