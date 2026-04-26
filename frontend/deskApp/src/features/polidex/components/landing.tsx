@@ -144,7 +144,7 @@ export function Landing({ onInit }: { onInit: () => void }) {
         </motion.div>
       </div>
 
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center md:px-8">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center md:px-8" style={{ paddingBottom: "10vh" }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -166,11 +166,10 @@ export function Landing({ onInit }: { onInit: () => void }) {
               marginBottom: 18,
             }}
           >
-            See the gap between what they <em style={{ fontStyle: "italic", color: "#1565C0" }}>say</em> and what they <em style={{ fontStyle: "italic", color: "#C84B00" }}>do</em>.
+            Your vote is your <em style={{ fontStyle: "italic", background: "linear-gradient(170deg, #6AA8DE 0%, #2B6AA4 45%, #1D4D82 100%)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>leverage</em>. Use it like it <em style={{ fontStyle: "italic", background: "linear-gradient(170deg, #FF5A6D 0%, #F61536 50%, #D6092A 100%)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>matters</em>.
           </h1>
           <p style={{ fontSize: 14, color: "#4B5260", lineHeight: 1.6, maxWidth: 520, marginLeft: "auto", marginRight: "auto", marginBottom: 32 }}>
-            A clinical dashboard for civic analysis. Compare promises against voting records,
-            surface the donors driving each decision, and read every politician at a glance.
+            The world is breaking. PoliDex doesn&apos;t just find who you agree with today — it helps you vote strategically to shift the political landscape for good.
           </p>
         </motion.div>
 
