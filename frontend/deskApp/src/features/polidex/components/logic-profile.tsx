@@ -14,6 +14,15 @@ import { ImageWithFallback } from "./figma/image-with-fallback";
 type RadarMode = "intent" | "actual" | "both";
 const PROFILE_SKELETON_ROW_IDS = ["r1", "r2", "r3", "r4", "r5"] as const;
 
+function stanceLabel(score: number): string {
+  // Score is 1–5. Use friendly wording (no x/5).
+  if (score <= 1.4) return "Strongly oppose";
+  if (score <= 2.4) return "Lean oppose";
+  if (score <= 3.4) return "Mixed / unsure";
+  if (score <= 4.4) return "Lean support";
+  return "Strongly support";
+}
+
 export function LogicProfile({
   entity,
   side = "right",
@@ -287,7 +296,7 @@ function RadarSection({ entity }: { entity: Politician }) {
             <AlertStrip
               key={conflict.dim}
               title={conflict.name}
-              body={`Said ${conflict.intent}/5, voted ${conflict.actual}/5 - gap of ${Math.abs(conflict.intent - conflict.actual)}.`}
+              body={`Promised: ${stanceLabel(conflict.intent)} · Voted: ${stanceLabel(conflict.actual)} · Gap: ${Math.abs(conflict.intent - conflict.actual).toFixed(1)}`}
             />
           ))}
         </div>

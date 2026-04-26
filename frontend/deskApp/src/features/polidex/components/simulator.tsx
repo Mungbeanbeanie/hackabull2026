@@ -43,6 +43,8 @@ type StageSlot = {
 const STAGE_W = 1280;
 const STAGE_H = 720;
 
+const DEFAULT_SENTENCE_CHUNK_MAX = 420;
+
 const PLAYBACK_SPEEDS = [
   { label: "0.75x", value: 0.75 },
   { label: "1x", value: 1 },
@@ -92,27 +94,31 @@ function marketColor(score: number): string {
   return "#B13A2C";
 }
 
+function clampPercent(value: number, pad = 14): number {
+  return Math.min(100 - pad, Math.max(pad, value));
+}
+
 function getStageSlots(count: number): StageSlot[] {
   if (count <= 2) {
     return [
-      { leftPercent: 24, topPercent: 50 },
-      { leftPercent: 76, topPercent: 50 },
+      { leftPercent: 30, topPercent: 50 },
+      { leftPercent: 70, topPercent: 50 },
     ];
   }
 
   if (count === 3) {
     return [
-      { leftPercent: 50, topPercent: 15 },
-      { leftPercent: 22, topPercent: 78 },
-      { leftPercent: 78, topPercent: 78 },
+      { leftPercent: 50, topPercent: 24 },
+      { leftPercent: 28, topPercent: 74 },
+      { leftPercent: 72, topPercent: 74 },
     ];
   }
 
   return [
-    { leftPercent: 22, topPercent: 22 },
-    { leftPercent: 78, topPercent: 22 },
-    { leftPercent: 22, topPercent: 78 },
-    { leftPercent: 78, topPercent: 78 },
+    { leftPercent: 28, topPercent: 26 },
+    { leftPercent: 72, topPercent: 26 },
+    { leftPercent: 28, topPercent: 74 },
+    { leftPercent: 72, topPercent: 74 },
   ];
 }
 
@@ -150,6 +156,62 @@ function loadImage(url: string): Promise<HTMLImageElement | null> {
     image.onerror = () => resolve(null);
     image.src = url;
   });
+}
+
+function splitForSpeech(text: string, maxLen: number): string[] {
+  const cleaned = text.replaceAll(/\s+/g, " ").trim();
+  if (!cleaned) return [];
+
+  // Prefer sentence boundaries, but keep chunks <= maxLen for TTS reliability.
+  const rough = cleaned.split(/(?<=[.!?])\s+/g);
+  const chunks: string[] = [];
+  let current = "";
+
+  const push = () => {
+    const t = current.trim();
+    if (t) chunks.push(t);
+    current = "";
+  };
+
+  for (const part of rough) {
+    if (!part) continue;
+    if (part.length > maxLen) {
+      // Fallback: hard wrap long sentence by words.
+      const words = part.split(" ");
+      let line = "";
+      for (const w of words) {
+        const next = line ? `${line} ${w}` : w;
+        if (next.length <= maxLen) {
+          line = next;
+        } else {
+          if (line) chunks.push(line);
+          line = w;
+        }
+      }
+      if (line) chunks.push(line);
+      continue;
+    }
+
+    const next = current ? `${current} ${part}` : part;
+    if (next.length <= maxLen) {
+      current = next;
+    } else {
+      push();
+      current = part;
+    }
+  }
+
+  push();
+  return chunks;
+}
+
+function pauseMsForChunk(chunk: string): number {
+  const trimmed = chunk.trim();
+  if (!trimmed) return 0;
+  const last = trimmed.at(-1);
+  if (last === "." || last === "!" || last === "?") return 260;
+  if (last === "," || last === ";" || last === ":") return 140;
+  return 90;
 }
 
 function getVoiceProfile(politician: Politician): VoiceProfile {
@@ -257,6 +319,8 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
   const exportCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const turnAudioCacheRef = useRef<Map<string, string>>(new Map());
+  const speakSeqCacheRef = useRef<Map<string, string[]>>(new Map());
+  const runTokenRef = useRef(0);
 
   const topic = useMemo(() => TOPICS.find((t) => t.id === topicId) ?? TOPICS[0], [topicId]);
   const participants = useMemo(() => list.filter((p) => selectedIds.includes(p.id)), [list, selectedIds]);
@@ -275,21 +339,129 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
   const activeSpeaker = participants.find((p) => p.id === activeSpeakerId) ?? null;
   const isExporting = exportJob !== null;
 
+  const stopAudio = () => {
+    const player = audioRef.current;
+    if (!player) return;
+    try {
+      player.pause();
+      player.currentTime = 0;
+    } catch {
+      // ignore
+    }
+  };
+
+  const playOnce = async (url: string) => {
+    const player = audioRef.current;
+    if (!player) return;
+    player.src = url;
+    player.playbackRate = playbackSpeed;
+    await player.play();
+    await new Promise<void>((resolve, reject) => {
+      const onEnded = () => {
+        cleanup();
+        resolve();
+      };
+      const onErr = () => {
+        cleanup();
+        reject(new Error("audio playback failed"));
+      };
+      const cleanup = () => {
+        player.removeEventListener("ended", onEnded);
+        player.removeEventListener("error", onErr);
+      };
+      player.addEventListener("ended", onEnded);
+      player.addEventListener("error", onErr);
+    });
+  };
+
+  const ensureTurnAudioUrls = async (turn: SimTurn): Promise<string[]> => {
+    const cachedSeq = speakSeqCacheRef.current.get(turn.id);
+    if (cachedSeq) return cachedSeq;
+
+    // Short turns: single request + cache as one URL (fast).
+    if (turn.text.length <= DEFAULT_SENTENCE_CHUNK_MAX) {
+      const cached = turnAudioCacheRef.current.get(turn.id);
+      if (cached) {
+        speakSeqCacheRef.current.set(turn.id, [cached]);
+        return [cached];
+      }
+      const res = await synthesizeTranscriptAudio(turn.text, turn.voice.voiceName);
+      const blob = new Blob([Uint8Array.from(atob(res.audioBase64), (char) => char.codePointAt(0) ?? 0)], {
+        type: res.mimeType || "audio/mpeg",
+      });
+      const url = URL.createObjectURL(blob);
+      turnAudioCacheRef.current.set(turn.id, url);
+      speakSeqCacheRef.current.set(turn.id, [url]);
+      return [url];
+    }
+
+    // Long turns: sentence-chunk and synthesize sequentially to avoid truncation.
+    const chunks = splitForSpeech(turn.text, DEFAULT_SENTENCE_CHUNK_MAX);
+    const urls: string[] = [];
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i] ?? "";
+      const cacheKey = `${turn.id}::${i}`;
+      const existing = turnAudioCacheRef.current.get(cacheKey);
+      if (existing) {
+        urls.push(existing);
+        continue;
+      }
+      const res = await synthesizeTranscriptAudio(chunk, turn.voice.voiceName);
+      const blob = new Blob([Uint8Array.from(atob(res.audioBase64), (char) => char.codePointAt(0) ?? 0)], {
+        type: res.mimeType || "audio/mpeg",
+      });
+      const url = URL.createObjectURL(blob);
+      turnAudioCacheRef.current.set(cacheKey, url);
+      urls.push(url);
+    }
+    speakSeqCacheRef.current.set(turn.id, urls);
+    return urls;
+  };
+
   useEffect(() => {
     if (!isRunning || turns.length === 0) return;
+    if (isExporting) return;
+    if (!audioRef.current) return;
 
-    const timer = setInterval(() => {
-      setActiveTurn((prev) => {
-        if (prev >= turns.length - 1) {
-          setIsRunning(false);
-          return prev;
+    setAudioError(null);
+    const myToken = ++runTokenRef.current;
+
+    const run = async () => {
+      for (let idx = activeTurn; idx < turns.length; idx++) {
+        if (runTokenRef.current !== myToken) return;
+        setActiveTurn(idx);
+        const turn = turns[idx];
+        if (!turn) continue;
+
+        try {
+          const urls = await ensureTurnAudioUrls(turn);
+          for (let u = 0; u < urls.length; u++) {
+            if (runTokenRef.current !== myToken) return;
+            await playOnce(urls[u]);
+            const chunks = splitForSpeech(turn.text, DEFAULT_SENTENCE_CHUNK_MAX);
+            const pause = pauseMsForChunk(chunks[u] ?? "");
+            await new Promise((r) => setTimeout(r, Math.round(pause / playbackSpeed)));
+          }
+        } catch {
+          setAudioError("ElevenLabs audio unavailable; transcript is still generated.");
+          // If audio fails, continue advancing at a readable pace rather than freezing.
+          await new Promise((r) => setTimeout(r, Math.round(1600 / playbackSpeed)));
         }
-        return prev + 1;
-      });
-    }, Math.round(1700 / playbackSpeed));
+      }
 
-    return () => clearInterval(timer);
-  }, [isRunning, turns.length, playbackSpeed]);
+      if (runTokenRef.current === myToken) {
+        setIsRunning(false);
+      }
+    };
+
+    void run();
+
+    return () => {
+      runTokenRef.current++;
+      stopAudio();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRunning, isExporting, turns, playbackSpeed]);
 
   useEffect(() => {
     return () => {
@@ -299,56 +471,13 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
     };
   }, [exportUrl]);
 
-  useEffect(() => {
-    const player = audioRef.current;
-    const currentTurn = turns[activeTurn];
-    // During export we intentionally advance `activeTurn` for rendering,
-    // but we do NOT want to synthesize/play audio.
-    if (!player || !isRunning || !currentTurn || isExporting) return;
-
-    let canceled = false;
-    const cacheKey = currentTurn.id;
-    const cached = turnAudioCacheRef.current.get(cacheKey);
-
-    const playUrl = async (url: string) => {
-      if (canceled || audioRef.current == null) return;
-      try {
-        audioRef.current.src = url;
-        audioRef.current.playbackRate = playbackSpeed;
-        await audioRef.current.play();
-      } catch {
-        setAudioError("Unable to autoplay this turn audio.");
-      }
-    };
-
-    if (cached) {
-      void playUrl(cached);
-      return () => {
-        canceled = true;
-      };
-    }
-
-    void synthesizeTranscriptAudio(currentTurn.text, currentTurn.voice.voiceName)
-      .then((res) => {
-        if (canceled) return;
-        const blob = new Blob([Uint8Array.from(atob(res.audioBase64), (char) => char.charCodeAt(0))], { type: res.mimeType || "audio/mpeg" });
-        const url = URL.createObjectURL(blob);
-        turnAudioCacheRef.current.set(cacheKey, url);
-        void playUrl(url);
-      })
-      .catch(() => {
-        if (!canceled) setAudioError("ElevenLabs audio unavailable; transcript is still generated.");
-      });
-
-    return () => {
-      canceled = true;
-    };
-  }, [activeTurn, isExporting, isRunning, playbackSpeed, turns]);
+  // (audio playback is handled by the run loop above)
 
   useEffect(() => {
     return () => {
       turnAudioCacheRef.current.forEach((url) => URL.revokeObjectURL(url));
       turnAudioCacheRef.current.clear();
+      speakSeqCacheRef.current.clear();
     };
   }, []);
 
@@ -410,6 +539,8 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
 
   const resetSimulation = () => {
     setIsRunning(false);
+    runTokenRef.current++;
+    stopAudio();
     setTurns([]);
     setActiveTurn(0);
     setExportError(null);
@@ -418,11 +549,15 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
 
   const goPrevTurn = () => {
     setIsRunning(false);
+    runTokenRef.current++;
+    stopAudio();
     setActiveTurn((prev) => Math.max(0, prev - 1));
   };
 
   const goNextTurn = () => {
     setIsRunning(false);
+    runTokenRef.current++;
+    stopAudio();
     setActiveTurn((prev) => Math.min(turns.length - 1, prev + 1));
   };
 
@@ -880,7 +1015,15 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
             </Button>
             <div className="grid grid-cols-2 gap-2">
               <Button
-                onClick={() => setIsRunning((v) => !v)}
+                onClick={() => {
+                  if (isRunning) {
+                    setIsRunning(false);
+                    runTokenRef.current++;
+                    stopAudio();
+                  } else {
+                    setIsRunning(true);
+                  }
+                }}
                 disabled={turns.length === 0}
                 variant="outline"
                 className="h-8 border-[#D7DCE3]"
@@ -1007,8 +1150,8 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
                   key={speaker.id}
                   className="absolute"
                   style={{
-                    left: `${slot.leftPercent}%`,
-                    top: `${slot.topPercent}%`,
+                    left: `${clampPercent(slot.leftPercent)}%`,
+                    top: `${clampPercent(slot.topPercent, 18)}%`,
                     transform: "translate(-50%, -50%)",
                     zIndex: active ? 5 : 2,
                   }}
@@ -1084,7 +1227,18 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
                           Voice: {turn.voice.voiceName} ({turn.voice.tier})
                         </div>
                       </div>
-                      <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#2C394E", marginTop: 6 }}>{turn.text}</div>
+              <div
+                style={{
+                  fontFamily: FONT_SANS,
+                  fontSize: 12,
+                  color: "#2C394E",
+                  marginTop: 6,
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                }}
+              >
+                {turn.text}
+              </div>
                       <div className="mt-2 flex flex-wrap gap-1">
                         {turn.triggeredAlleles.map((alleleId) => (
                           <span

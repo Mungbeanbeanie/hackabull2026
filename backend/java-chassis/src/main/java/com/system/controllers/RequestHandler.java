@@ -277,10 +277,14 @@ public class RequestHandler {
         if (apiKey == null || apiKey.isBlank()) apiKey = System.getenv("GEMINI_API_KEY");
         if (apiKey == null || apiKey.isBlank()) apiKey = System.getenv("GOOGLE_API_KEY");
 
-        String prompt = "Generate a concise political debate transcript in strict JSON." +
+        int turnCount = Math.max(8, participants.size() * 3);
+        String prompt = "Generate a political debate transcript in strict JSON only (no markdown, no prose outside JSON)." +
             " Return an object with key turns: [{speakerId, text, triggeredAlleles}]." +
-            " Keep each text under 280 characters and grounded in provided vectors." +
+            " Generate exactly " + turnCount + " turns." +
+            " Each turn text should be natural spoken dialogue (2-5 sentences), grounded in the provided vectors and topic." +
+            " Do not truncate or artificially cap character counts." +
             " Use only speakerId values from provided participants." +
+            " triggeredAlleles must be 1-2 entries from topic.alleles." +
             " topic=" + MAPPER.writeValueAsString(topic) +
             " mode=" + mode +
             " participants=" + MAPPER.writeValueAsString(participants) +
@@ -290,7 +294,8 @@ public class RequestHandler {
         payload.put("contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))));
         payload.put("generationConfig", Map.of(
             "responseMimeType", "application/json",
-            "temperature", 0.35
+            "temperature", 0.35,
+            "maxOutputTokens", 1400
         ));
 
         HttpRequest req = HttpRequest.newBuilder()
