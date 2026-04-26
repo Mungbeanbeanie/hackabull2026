@@ -8,10 +8,27 @@ import { taxonomy } from "@/features/polidex/data/taxonomy";
 import { UserProfile, saveProfile } from "@/features/polidex/lib/profile";
 import { FONT_SANS } from "@/features/polidex/lib/style";
 
-const AVAILABLE_STATES = [
-  { abbr: "FL", name: "Florida" },
-  { abbr: "TX", name: "Texas" },
-];
+
+const STATE_NAME_TO_ABBR: Record<string, string> = {
+  "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR",
+  "california": "CA", "colorado": "CO", "connecticut": "CT", "delaware": "DE",
+  "florida": "FL", "georgia": "GA", "hawaii": "HI", "idaho": "ID",
+  "illinois": "IL", "indiana": "IN", "iowa": "IA", "kansas": "KS",
+  "kentucky": "KY", "louisiana": "LA", "maine": "ME", "maryland": "MD",
+  "massachusetts": "MA", "michigan": "MI", "minnesota": "MN", "mississippi": "MS",
+  "missouri": "MO", "montana": "MT", "nebraska": "NE", "nevada": "NV",
+  "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM", "new york": "NY",
+  "north carolina": "NC", "north dakota": "ND", "ohio": "OH", "oklahoma": "OK",
+  "oregon": "OR", "pennsylvania": "PA", "rhode island": "RI", "south carolina": "SC",
+  "south dakota": "SD", "tennessee": "TN", "texas": "TX", "utah": "UT",
+  "vermont": "VT", "virginia": "VA", "washington": "WA", "west virginia": "WV",
+  "wisconsin": "WI", "wyoming": "WY",
+};
+
+function normalizeState(input: string): string {
+  const lower = input.toLowerCase().trim();
+  return STATE_NAME_TO_ABBR[lower] ?? input.toUpperCase().trim();
+}
 
 const QUESTIONS = taxonomy.map((topic) => ({
   id: topic.id,
@@ -71,7 +88,7 @@ export function Quiz({
     const profile: UserProfile = {
       vector,
       weights,
-      state: userState,
+      state: userState ? normalizeState(userState) : undefined,
       updatedAt: new Date().toISOString(),
     };
 
@@ -140,32 +157,23 @@ export function Quiz({
               <h2 style={{ fontFamily: FONT_SANS, fontSize: 26, fontWeight: 400, color: "#0D0F12", lineHeight: 1.3, marginBottom: 28 }}>
                 Which state do you live in?
               </h2>
-              <div className="flex flex-col gap-3">
-                {AVAILABLE_STATES.map(({ abbr, name }) => {
-                  const active = userState === abbr;
-                  return (
-                    <button
-                      key={abbr}
-                      onClick={() => setUserState(abbr)}
-                      style={{
-                        padding: "14px 20px",
-                        borderRadius: 10,
-                        border: active ? "2px solid #0D0F12" : "1px solid #E2E5E9",
-                        background: active ? "#0D0F12" : "#FFFFFF",
-                        color: active ? "#FFFFFF" : "#0D0F12",
-                        fontFamily: FONT_SANS,
-                        fontSize: 14,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        textAlign: "left",
-                        transition: "all 150ms",
-                      }}
-                    >
-                      {name}
-                    </button>
-                  );
-                })}
-              </div>
+              <input
+                type="text"
+                placeholder="e.g. Florida, Texas, California…"
+                value={userState ?? ""}
+                onChange={(e) => setUserState(e.target.value.trim() || undefined)}
+                style={{
+                  width: "100%",
+                  padding: "14px 20px",
+                  borderRadius: 10,
+                  border: "1px solid #E2E5E9",
+                  fontFamily: FONT_SANS,
+                  fontSize: 14,
+                  color: "#0D0F12",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
               <button
                 onClick={() => { setUserState(undefined); setStep(0); }}
                 style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#8A919E", background: "transparent", border: "none", cursor: "pointer", marginTop: 20, padding: 0 }}
