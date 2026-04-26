@@ -3,3 +3,7 @@
 .env
 backend/java-chassis/.env
 backend/java-chassis/target/
+
+# Local frontend env (do not commit)
+frontend/deskApp/.env
+frontend/deskApp/.env.local
