@@ -68,5 +68,5 @@ Ordered by dependency. Each phase unblocks the next.
 - [x] `background.js` — receives selected text, queries politician DB, returns match + 20D vector
 - [X] `cosine_bridge.js` — runs cosine_sim in-extension against stored user_vector (JS port or fetch to local backend)
 - [x] `user_vector_store.js` — stores/retrieves user_vector via `chrome.storage.local`; source TBD (see open questions)
-- [ ] `card.html` / `popup.js` — renders hover card: % match, top aligned/misaligned dims, top 2 implemented policies
+- [x] `card.html` / `popup.js` — renders hover card: % match, top aligned/misaligned dims, top 2 implemented policies
 - [ ] **[Stretch]** mini IV distribution panel in card
