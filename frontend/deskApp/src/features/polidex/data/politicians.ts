@@ -57,7 +57,7 @@ const PHOTO_BY_ID: Record<string, string> = {
   "rs-fl08":  `${B}/P/P000599.jpg`, // Bill Posey
   "ms-fl01":  `${B}/G/G000578.jpg`, // Matt Gaetz
   "as-fl04":  `${B}/B/B001316.jpg`, // Aaron Bean
-  "vs-fl27":  `${B}/S/S001235.jpg`, // Maria Salazar
+  "vs-fl27":  "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/REP.MES_Headshot_%28cropped_2%29.jpg/330px-REP.MES_Headshot_%28cropped_2%29.jpg", // Maria Salazar
   "cm-fl26":  `${B}/G/G000592.jpg`, // Carlos Gimenez
   "ds-fl17":  `${B}/F/F000475.jpg`, // Scott Franklin
   "mw-fl05":  `${B}/R/R000609.jpg`, // John Rutherford
@@ -91,7 +91,7 @@ const PHOTO_BY_ID: Record<string, string> = {
   "ds-flhs2":   "https://upload.wikimedia.org/wikipedia/commons/d/d9/Official_Portrait_of_Daniel_Perez.jpg",
   "ga-tx-gov":  "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/2024-GovernorAbbott-Portrait.jpg/330px-2024-GovernorAbbott-Portrait.jpg",
   "kp-tx-ag":   "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/K_Paxton.jpg/330px-K_Paxton.jpg",
-  // jc-fl15 (Jay Collins) — no Wikipedia photo found; falls back to FALLBACK_PHOTOS
+  "jc-fl15":   "https://upload.wikimedia.org/wikipedia/commons/d/d5/Official_portrait_of_Lieutenant_Governor_of_Florida_Jay_Collins_%28cropped_5%29.jpg",
 };
 
 const META: Record<string, { role: Politician["role"]; region: Politician["region"]; state: string }> = {
