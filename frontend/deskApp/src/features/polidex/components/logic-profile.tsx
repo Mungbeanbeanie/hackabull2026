@@ -315,8 +315,12 @@ function AlertStrip({ title, body }: { title: string; body: string }) {
 }
 
 function InfluenceTree({ entity }: { entity: Politician }) {
-  const width = 472;
+  // Make room for a dedicated "Contribution" column so curves never cross the amounts.
+  const width = 560;
   const leftPad = 24;
+  const contributionColumnW = 120;
+  const contributionX = width - leftPad;
+  const gutterX = width - contributionColumnW;
 
   const tierColor = (tier: number) => {
     if (tier === 2) return "#5C35C9";
@@ -338,7 +342,7 @@ function InfluenceTree({ entity }: { entity: Politician }) {
   const startY = headerY + 28;
   const lastY = startY + (donors.length - 1) * rowHeight;
   const targetY = lastY + 80;
-  const targetX = width - 110;
+  const targetX = gutterX - 52;
 
   return (
     <div className="px-6 py-5">
@@ -347,19 +351,22 @@ function InfluenceTree({ entity }: { entity: Politician }) {
         <text x={leftPad} y={20} style={{ fontFamily: FONT_SANS, fontSize: 11, fill: "#8A919E" }}>
           Top backers
         </text>
-        <text x={width - leftPad} y={20} textAnchor="end" style={{ fontFamily: FONT_SANS, fontSize: 11, fill: "#8A919E" }}>
+        <text x={contributionX} y={20} textAnchor="end" style={{ fontFamily: FONT_SANS, fontSize: 11, fill: "#8A919E" }}>
           Contribution
         </text>
+
+        {/* visual gutter for the contribution column */}
+        <rect x={gutterX - 10} y={headerY - 18} width={contributionColumnW + 10} height={targetY + 35} fill="#FFFFFF" opacity={0.92} />
 
         {donors.map((donor, i) => {
           const y = startY + i * rowHeight;
           const lineWidth = (donor.amount / maxAmount) * 3 + 1;
           const color = tierColor(donor.tier);
           const cx = leftPad + 8;
-          const routeX = targetX - 44;
+          const routeX = Math.min(targetX - 44, gutterX - 80);
           const targetNodeY = targetY - 14;
           const startX = cx + 6;
-          const endX = targetX - 30;
+          const endX = Math.min(targetX - 30, gutterX - 26);
           const path = `M ${startX} ${y} C ${routeX} ${y}, ${routeX} ${targetNodeY}, ${endX} ${targetNodeY}`;
 
           return (
@@ -375,7 +382,7 @@ function InfluenceTree({ entity }: { entity: Politician }) {
                 {tierName(donor.tier)} - influences {donor.dimensions.map((id) => issueName(id)).join(", ")}
               </text>
               <text
-                x={width - leftPad}
+                x={contributionX}
                 y={y + 4}
                 textAnchor="end"
                 style={{ fontFamily: FONT_SANS, fontSize: 12, fill: "#1A1D23", fontWeight: 500 }}

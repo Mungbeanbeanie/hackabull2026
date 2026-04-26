@@ -11,6 +11,7 @@ import { UserProfile } from "@/features/polidex/lib/profile";
 import { FONT_MONO, FONT_SANS } from "@/features/polidex/lib/style";
 
 import { ImageWithFallback } from "./figma/image-with-fallback";
+import { SelectFilter } from "./ui/select-filter";
 
 type SimMode = "theoretical" | "functional";
 
@@ -65,6 +66,14 @@ const VOICE_MAP: Record<"male-senior" | "male-young" | "female-senior" | "female
   "female-senior": { tier: "Female (Senior)", voiceName: "Bella" },
   "female-young": { tier: "Female (Young)", voiceName: "Gigi" },
 };
+
+type VoiceChoice = "Antoni" | "Bill" | "Bella" | "Gigi";
+const VOICE_OPTIONS: ReadonlyArray<{ value: VoiceChoice; label: string }> = [
+  { value: "Antoni", label: "Antoni (Male, young)" },
+  { value: "Bill", label: "Bill (Male, senior)" },
+  { value: "Gigi", label: "Gigi (Female, young)" },
+  { value: "Bella", label: "Bella (Female, senior)" },
+];
 
 const FEMALE_FIRST_NAMES = new Set([
   "Ashley",
@@ -315,12 +324,15 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
   const [exportError, setExportError] = useState<string | null>(null);
   const [transcriptLoading, setTranscriptLoading] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [voiceOverrides, setVoiceOverrides] = useState<Record<string, VoiceChoice>>({});
 
   const exportCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const turnAudioCacheRef = useRef<Map<string, string>>(new Map());
   const speakSeqCacheRef = useRef<Map<string, string[]>>(new Map());
   const runTokenRef = useRef(0);
+  const transcriptWrapRef = useRef<HTMLDivElement | null>(null);
+  const activeTurnRef = useRef<HTMLDivElement | null>(null);
 
   const topic = useMemo(() => TOPICS.find((t) => t.id === topicId) ?? TOPICS[0], [topicId]);
   const participants = useMemo(() => list.filter((p) => selectedIds.includes(p.id)), [list, selectedIds]);
@@ -334,6 +346,12 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
   const stageSlots = useMemo(() => getStageSlots(participants.length), [participants.length]);
 
   const selectedTurn = turns[activeTurn] ?? null;
+  useEffect(() => {
+    if (!isRunning) return;
+    if (!activeTurnRef.current) return;
+    activeTurnRef.current.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [activeTurn, isRunning]);
+
 
   const activeSpeakerId = selectedTurn?.speakerId ?? participants[0]?.id ?? null;
   const activeSpeaker = participants.find((p) => p.id === activeSpeakerId) ?? null;
@@ -515,12 +533,14 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
       const participantById = new Map(participants.map((participant) => [participant.id, participant]));
       const next: SimTurn[] = generated.turns.map((turn, index) => {
         const speaker = participantById.get(turn.speakerId) ?? participants[index % participants.length];
+        const override = voiceOverrides[speaker.id];
+        const voiceProfile = override ? { tier: "Male (Young)" as VoiceTier, voiceName: override } : getVoiceProfile(speaker);
         return {
           id: `${speaker.id}-${index}`,
           speakerId: speaker.id,
           text: turn.text,
           triggeredAlleles: turn.triggeredAlleles,
-          voice: getVoiceProfile(speaker),
+          voice: voiceProfile,
         };
       });
 
@@ -1060,18 +1080,45 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
               >
                 Next
               </Button>
-              <select
-                value={playbackSpeed}
-                onChange={(event) => setPlaybackSpeed(Number(event.target.value))}
-                className="h-8 rounded-md border border-[#D7DCE3] bg-white px-2"
-                style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#1A2434" }}
-              >
-                {PLAYBACK_SPEEDS.map((speed) => (
-                  <option key={speed.value} value={speed.value}>
-                    {speed.label}
-                  </option>
+              <SelectFilter<string>
+                label="Speed"
+                size="sm"
+                value={String(playbackSpeed)}
+                options={PLAYBACK_SPEEDS.map((s) => ({ value: String(s.value), label: s.label }))}
+                onChange={(v) => setPlaybackSpeed(Number(v))}
+              />
+            </div>
+
+            <div className="mt-3 rounded-lg border border-[#E2E5E9] bg-[#FAFBFC] p-3">
+              <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#6E7686", letterSpacing: "0.06em" }}>
+                VOICE OVERRIDES
+              </div>
+              <div className="mt-2 space-y-2">
+                {participants.map((p) => (
+                  <div key={`voice-${p.id}`} className="grid grid-cols-[1fr_200px] items-end gap-2">
+                    <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#1A2434" }}>{p.name}</div>
+                    <SelectFilter<VoiceChoice>
+                      label="Voice"
+                      size="sm"
+                      value={voiceOverrides[p.id] ?? (getVoiceProfile(p).voiceName as VoiceChoice)}
+                      options={VOICE_OPTIONS}
+                      onChange={(v) => {
+                        setVoiceOverrides((cur) => ({ ...cur, [p.id]: v }));
+                        // clear cached audio for this speaker so new voice applies
+                        turnAudioCacheRef.current.forEach((url, key) => {
+                          if (key.startsWith(`${p.id}-`)) {
+                            URL.revokeObjectURL(url);
+                            turnAudioCacheRef.current.delete(key);
+                          }
+                        });
+                        speakSeqCacheRef.current.forEach((_urls, key) => {
+                          if (key.startsWith(`${p.id}-`)) speakSeqCacheRef.current.delete(key);
+                        });
+                      }}
+                    />
+                  </div>
                 ))}
-              </select>
+              </div>
             </div>
 
             <input
@@ -1201,7 +1248,7 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
                   Live Transcript
                 </div>
               </div>
-              <div className="h-full max-h-[280px] space-y-2 overflow-y-auto p-4">
+              <div ref={transcriptWrapRef} className="h-full max-h-[280px] space-y-2 overflow-y-auto p-4">
                 {turns.length === 0 && (
                   <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#6B7282" }}>
                     No transcript yet. Generate a debate to start simulated turn-taking.
@@ -1213,6 +1260,7 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
                   return (
                     <div
                       key={turn.id}
+                      ref={isActive ? activeTurnRef : undefined}
                       className="rounded-xl border px-3 py-2"
                       style={{
                         borderColor: isActive ? "#0F766E" : "#E4E8ED",

@@ -3,6 +3,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { Election } from "@/features/polidex/types";
 import { ElectionCard } from "./election-card";
+import { SelectFilter } from "../ui/select-filter";
 
 const FONT_MONO = "ui-monospace, 'Fira Mono', monospace";
 const FONT_SANS = "Inter, system-ui, sans-serif";
@@ -172,29 +173,18 @@ export function ElectionsSidebar({ onSelect }: Readonly<{ onSelect: (id: string,
         >
           Upcoming Elections
         </div>
-        <select
-          value={selectedState}
-          onChange={(e) => {
-            setSelectedState(e.target.value);
-            setVisibleCount(4);
-          }}
-          style={{
-            fontFamily: FONT_SANS,
-            fontSize: 12,
-            color: "#1C2431",
-            background: "#FFFFFF",
-            border: "1px solid #E2E5E9",
-            borderRadius: 6,
-            padding: "4px 8px",
-            cursor: "pointer",
-          }}
-        >
-          {STATE_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+        <div style={{ width: 180 }}>
+          <SelectFilter<string>
+            label="State"
+            size="sm"
+            value={selectedState}
+            options={STATE_OPTIONS}
+            onChange={(value) => {
+              setSelectedState(value);
+              setVisibleCount(4);
+            }}
+          />
+        </div>
       </div>
 
       <div style={{ flex: 1 }}>
