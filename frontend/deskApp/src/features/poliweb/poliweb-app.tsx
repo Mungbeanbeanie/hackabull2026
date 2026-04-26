@@ -8,6 +8,7 @@ import { GlobalLoadingScreen } from "@/features/poliweb/components/global-loadin
 import { Landing } from "@/features/poliweb/components/landing";
 import { LogicProfile } from "@/features/poliweb/components/logic-profile";
 import { Quiz } from "@/features/poliweb/components/quiz";
+import { Simulator } from "@/features/poliweb/components/simulator";
 import { TopNav } from "@/features/poliweb/components/top-nav";
 import { politicians } from "@/features/poliweb/data/politicians";
 import { UserProfile, clearProfile, loadProfile } from "@/features/poliweb/lib/profile";
@@ -62,6 +63,7 @@ export function PoliWebApp() {
           <Dashboard list={politicians} selectedId={selectedId} onSelect={setSelectedId} isLoading={!isDataLoaded} />
         )}
         {view === "compare" && <Compare profile={profile} onTakeQuiz={() => setView("quiz")} />}
+        {view === "simulator" && <Simulator list={politicians} />}
 
         <LogicProfile entity={selected} onClose={() => setSelectedId(null)} />
       </div>
