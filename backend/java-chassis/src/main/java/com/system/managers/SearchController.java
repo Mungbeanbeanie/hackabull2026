@@ -14,7 +14,6 @@ import com.system.models.UserProfile;
 import com.system.sampler.userNegPreference;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class SearchController {
@@ -32,7 +31,7 @@ public class SearchController {
     }
 
     // Full-library scan: score every figure in the index against the user profile
-    public InferencePayload.Response search(UserProfile profile, boolean useAdherence) throws Exception {
+    public InferencePayload.Response search(UserProfile profile, boolean useAdherence, List<String> seenIds) throws Exception {
         List<InferencePayload.Constraint> constraints = buildConstraints();
         List<InferencePayload.Candidate>  candidates  = buildCandidates();
 
@@ -45,7 +44,7 @@ public class SearchController {
             useAdherence,
             candidates,
             constraints,
-            Collections.emptyList()
+            seenIds
         );
 
         return pythonRunner.run(request);
