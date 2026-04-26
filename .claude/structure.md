@@ -7,32 +7,32 @@ Plan extension and relational edge mapping if time permits
 │   ├── /java-chassis          # The "System Manager" (State & Flow)
 │   │   ├── /src/main/java/com/system/
 │   │   │   ├── /controllers   # Inbound HTTP gateway
-│   │   │   │   └── RequestHandler.java  # Receives frontend requests, delegates to SearchController [stub]
+│   │   │   │   └── RequestHandler.java  # Receives frontend requests, delegates to SearchController [implemented]
 │   │   │   ├── /api           # Outbound API clients
 │   │   │   │   ├── ApiDispatcher.java       # Routes to correct wrapper, merges normalized responses [implemented]
-│   │   │   │   ├── congressGovApi.java      # Federal voting records; Adherence Scalar only [stub]
-│   │   │   │   ├── googleCivicInfoApi.java  # Maps user location → representatives/districts [stub]
-│   │   │   │   ├── legiscanApi.java         # Raw bill text + state roll-call voting records [stub]
-│   │   │   │   ├── openFecApi.java          # Donor/PAC connections → Edge Map [stub]
-│   │   │   │   ├── openStatesApi.java       # All 50 state legislature data; sole PoliVector source [stub]
-│   │   │   │   ├── wikimediaApi.java        # Biographical/political history text for LLM enrichment [stub]
-│   │   │   │   └── WikimediaOAuthClient.java # OAuth helper for Wikimedia API [stub]
+│   │   │   │   ├── congressGovApi.java      # Federal voting records; Adherence Scalar only [implemented]
+│   │   │   │   ├── googleCivicInfoApi.java  # Maps user location → representatives/districts [implemented]
+│   │   │   │   ├── legiscanApi.java         # Raw bill text + state roll-call voting records [implemented]
+│   │   │   │   ├── openFecApi.java          # Donor/PAC connections → Edge Map [implemented]
+│   │   │   │   ├── openStatesApi.java       # All 50 state legislature data; sole PoliVector source [implemented]
+│   │   │   │   ├── wikimediaApi.java        # Biographical/political history text for LLM enrichment [implemented]
+│   │   │   │   └── WikimediaOAuthClient.java # OAuth helper for Wikimedia API [implemented]
 │   │   │   ├── /storage       # Persistence (CSV/DB Management)
-│   │   │   │   └── DataManager.java     # Sole gatekeeper for CSV reads/writes [stub]
+│   │   │   │   └── DataManager.java     # Sole gatekeeper for CSV reads/writes [implemented]
 │   │   │   ├── /sampler       # Sampling
 │   │   │   │   ├── QuizEngine.java          # Presents 20-plank quiz → 20D user_vector + weights [implemented]
-│   │   │   │   └── userNegPreference.java   # Pulls last 20 disliked figures → constraint input [stub]
+│   │   │   │   └── userNegPreference.java   # Pulls last 20 disliked figures → constraint input [implemented]
 │   │   │   ├── /models        # Rigid Objects
 │   │   │   │   ├── PoliVector.java          # 20D policy vector (d1–d20, range 1–5) [implemented]
 │   │   │   │   ├── PoliFigure.java          # Full politician object (figure + ID + PoliVector) [implemented]
 │   │   │   │   ├── UserProfile.java         # Quiz-generated user_vector + weights [implemented]
 │   │   │   │   └── userSupportHistory.java  # Maps user_history.csv (titleId, timestamp, vote, tags) [implemented]
 │   │   │   ├── /managers      # Orchestration / lifecycle managers
-│   │   │   │   ├── LibraryIndexer.java  # k-d tree spatial index [stub]
-│   │   │   │   └── SearchController.java # Search routing: full-library / neighborhood / catalog [stub]
+│   │   │   │   ├── LibraryIndexer.java  # k-d tree spatial index [implemented]
+│   │   │   │   └── SearchController.java # Search routing: full-library / neighborhood / catalog [implemented]
 │   │   │   └── /bridge        # IPC (Calling Python Workers)
-│   │   │       ├── PythonRunner.java    # Java→Python stdin/stdout pipe [stub]
-│   │   │       └── InferencePayload.java # IPC data contract: request + response models [stub]
+│   │   │       ├── PythonRunner.java    # Java→Python stdin/stdout pipe [implemented]
+│   │   │       └── InferencePayload.java # IPC data contract: request + response models [implemented]
 │   │   └── pom.xml            # Java Dependencies
 │   │
 │   ├── /inference-engine      # The "Calculators" (Stateless Math)
