@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,21 @@ type SimTurn = {
   triggeredAlleles: string[];
   voice: VoiceProfile;
 };
+
+type StageSlot = {
+  leftPercent: number;
+  topPercent: number;
+};
+
+const STAGE_W = 1280;
+const STAGE_H = 720;
+
+const PLAYBACK_SPEEDS = [
+  { label: "0.75x", value: 0.75 },
+  { label: "1x", value: 1 },
+  { label: "1.5x", value: 1.5 },
+  { label: "2x", value: 2 },
+];
 
 const TOPICS: Topic[] = [
   { id: "economy", label: "Economy and labor", alleles: ["p1", "p2", "p3", "p15"] },
@@ -71,6 +86,66 @@ function marketColor(score: number): string {
   if (score <= 2.0) return "#2A7F62";
   if (score <= 3.4) return "#C97C1F";
   return "#B13A2C";
+}
+
+function getStageSlots(count: number): StageSlot[] {
+  if (count <= 2) {
+    return [
+      { leftPercent: 30, topPercent: 50 },
+      { leftPercent: 70, topPercent: 50 },
+    ];
+  }
+
+  if (count === 3) {
+    return [
+      { leftPercent: 50, topPercent: 24 },
+      { leftPercent: 30, topPercent: 72 },
+      { leftPercent: 70, topPercent: 72 },
+    ];
+  }
+
+  return [
+    { leftPercent: 28, topPercent: 30 },
+    { leftPercent: 72, topPercent: 30 },
+    { leftPercent: 28, topPercent: 74 },
+    { leftPercent: 72, topPercent: 74 },
+  ];
+}
+
+function shortName(name: string): string {
+  const [first, last] = name.split(" ");
+  if (!first) return name;
+  if (!last) return first;
+  return `${first} ${last[0]}.`;
+}
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    const next = current.length > 0 ? `${current} ${word}` : word;
+    if (ctx.measureText(next).width <= maxWidth) {
+      current = next;
+    } else {
+      if (current.length > 0) lines.push(current);
+      current = word;
+    }
+  }
+
+  if (current.length > 0) lines.push(current);
+  return lines;
+}
+
+function loadImage(url: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => resolve(image);
+    image.onerror = () => resolve(null);
+    image.src = url;
+  });
 }
 
 function getVoiceProfile(politician: Politician): VoiceProfile {
@@ -161,6 +236,12 @@ export function Simulator({ list }: { list: Politician[] }) {
   const [turns, setTurns] = useState<SimTurn[]>([]);
   const [activeTurn, setActiveTurn] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportUrl, setExportUrl] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const exportCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const topic = useMemo(() => TOPICS.find((t) => t.id === topicId) ?? TOPICS[0], [topicId]);
   const participants = useMemo(() => list.filter((p) => selectedIds.includes(p.id)), [list, selectedIds]);
@@ -171,7 +252,11 @@ export function Simulator({ list }: { list: Politician[] }) {
     return list.filter((p) => p.name.toLowerCase().includes(q) || p.district.toLowerCase().includes(q));
   }, [list, query]);
 
-  const activeSpeakerId = turns[activeTurn]?.speakerId ?? participants[0]?.id ?? null;
+  const stageSlots = useMemo(() => getStageSlots(participants.length), [participants.length]);
+
+  const selectedTurn = turns[activeTurn] ?? null;
+
+  const activeSpeakerId = selectedTurn?.speakerId ?? participants[0]?.id ?? null;
   const activeSpeaker = participants.find((p) => p.id === activeSpeakerId) ?? null;
 
   useEffect(() => {
@@ -185,10 +270,16 @@ export function Simulator({ list }: { list: Politician[] }) {
         }
         return prev + 1;
       });
-    }, 1800);
+    }, Math.round(1700 / playbackSpeed));
 
     return () => clearInterval(timer);
-  }, [isRunning, turns.length]);
+  }, [isRunning, turns.length, playbackSpeed]);
+
+  useEffect(() => {
+    return () => {
+      if (exportUrl) URL.revokeObjectURL(exportUrl);
+    };
+  }, [exportUrl]);
 
   const toggleParticipant = (id: string) => {
     setSelectedIds((current) => {
@@ -207,12 +298,221 @@ export function Simulator({ list }: { list: Politician[] }) {
     setTurns(next);
     setActiveTurn(0);
     setIsRunning(true);
+    setExportError(null);
   };
 
   const resetSimulation = () => {
     setIsRunning(false);
     setTurns([]);
     setActiveTurn(0);
+    setExportError(null);
+  };
+
+  const goPrevTurn = () => {
+    setIsRunning(false);
+    setActiveTurn((prev) => Math.max(0, prev - 1));
+  };
+
+  const goNextTurn = () => {
+    setIsRunning(false);
+    setActiveTurn((prev) => Math.min(turns.length - 1, prev + 1));
+  };
+
+  const drawStageFrame = ({
+    ctx,
+    frameTurn,
+    images,
+  }: {
+    ctx: CanvasRenderingContext2D;
+    frameTurn: SimTurn | null;
+    images: Map<string, HTMLImageElement | null>;
+  }) => {
+    const gradient = ctx.createRadialGradient(STAGE_W * 0.22, STAGE_H * 0.18, 90, STAGE_W * 0.5, STAGE_H * 0.5, STAGE_W * 0.75);
+    gradient.addColorStop(0, "#1D4448");
+    gradient.addColorStop(0.55, "#161F29");
+    gradient.addColorStop(1, "#0E1318");
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, STAGE_W, STAGE_H);
+
+    ctx.globalAlpha = 0.2;
+    ctx.fillStyle = "#D46A3C";
+    ctx.beginPath();
+    ctx.ellipse(STAGE_W * 0.8, STAGE_H * 0.76, 220, 150, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(STAGE_W / 2, STAGE_H / 2, 102, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    ctx.beginPath();
+    ctx.arc(STAGE_W / 2, STAGE_H / 2, 96, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#D9E2EF";
+    ctx.font = "600 14px var(--font-plex-mono), monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(mode === "theoretical" ? "VTHEORETICAL" : "VLEGISLATIVE", STAGE_W / 2, STAGE_H / 2 - 5);
+    ctx.fillStyle = "#F6F9FC";
+    ctx.font = "400 15px var(--font-plus-jakarta), sans-serif";
+    ctx.fillText(topic.label, STAGE_W / 2, STAGE_H / 2 + 18);
+
+    participants.forEach((speaker, index) => {
+      const slot = stageSlots[index] ?? { leftPercent: 50, topPercent: 50 };
+      const cx = (slot.leftPercent / 100) * STAGE_W;
+      const cy = (slot.topPercent / 100) * STAGE_H;
+      const active = frameTurn?.speakerId === speaker.id;
+      const scale = active ? 1.13 : 1;
+      const size = 126 * scale;
+      const ringScore = (mode === "theoretical" ? speaker.vector_stated : speaker.vector_actual)[0] ?? 3;
+      const ringColor = marketColor(ringScore);
+
+      if (active) {
+        ctx.save();
+        ctx.shadowBlur = 35;
+        ctx.shadowColor = `${ringColor}CC`;
+      }
+
+      ctx.strokeStyle = active ? ringColor : "rgba(255,255,255,0.22)";
+      ctx.lineWidth = active ? 4 : 2;
+      ctx.beginPath();
+      ctx.roundRect(cx - size / 2, cy - size / 2, size, size, 22);
+      ctx.stroke();
+
+      const image = images.get(speaker.id);
+      if (image) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(cx - size / 2 + 3, cy - size / 2 + 3, size - 6, size - 6, 18);
+        ctx.clip();
+        ctx.drawImage(image, cx - size / 2 + 3, cy - size / 2 + 3, size - 6, size - 6);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = "rgba(255,255,255,0.14)";
+        ctx.beginPath();
+        ctx.roundRect(cx - size / 2 + 3, cy - size / 2 + 3, size - 6, size - 6, 18);
+        ctx.fill();
+      }
+
+      if (active) ctx.restore();
+
+      ctx.fillStyle = "#F3F7FC";
+      ctx.font = "600 18px var(--font-plus-jakarta), sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(shortName(speaker.name), cx, cy + size / 2 + 24);
+
+      ctx.fillStyle = "#ACBACB";
+      ctx.font = "500 13px var(--font-plex-mono), monospace";
+      ctx.fillText(`${speaker.party} / ${speaker.district}`, cx, cy + size / 2 + 43);
+    });
+
+    if (frameTurn) {
+      const speaker = participants.find((p) => p.id === frameTurn.speakerId);
+      const label = speaker ? `Live speaker: ${speaker.name}` : "Live speaker";
+      const panelW = 340;
+      const panelX = STAGE_W - panelW - 28;
+      const panelY = STAGE_H - 118;
+
+      ctx.fillStyle = "rgba(10,15,20,0.62)";
+      ctx.beginPath();
+      ctx.roundRect(panelX, panelY, panelW, 90, 12);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(255,255,255,0.18)";
+      ctx.stroke();
+
+      ctx.fillStyle = "#D4DCE8";
+      ctx.font = "500 12px var(--font-plex-mono), monospace";
+      ctx.textAlign = "left";
+      ctx.fillText(label, panelX + 14, panelY + 22);
+
+      ctx.fillStyle = "#EEF3FA";
+      ctx.font = "500 13px var(--font-plus-jakarta), sans-serif";
+      const lines = wrapText(ctx, frameTurn.text, panelW - 26).slice(0, 2);
+      lines.forEach((line, index) => {
+        ctx.fillText(line, panelX + 14, panelY + 46 + index * 20);
+      });
+    }
+  };
+
+  const exportSimulationVideo = async () => {
+    if (turns.length === 0 || participants.length === 0) return;
+
+    if (typeof window === "undefined") return;
+
+    const canvas = exportCanvasRef.current;
+    if (!canvas) return;
+
+    const stream = canvas.captureStream(30);
+    if (!stream) {
+      setExportError("Unable to capture simulation stream in this browser.");
+      return;
+    }
+
+    const supportedMime = [
+      "video/webm;codecs=vp9",
+      "video/webm;codecs=vp8",
+      "video/webm",
+    ].find((type) => window.MediaRecorder?.isTypeSupported(type));
+
+    if (!supportedMime || !window.MediaRecorder) {
+      setExportError("Video export requires MediaRecorder support (try Chrome or Edge).");
+      return;
+    }
+
+    setExportError(null);
+    setIsExporting(true);
+    setIsRunning(false);
+
+    const chunks: Blob[] = [];
+    const recorder = new MediaRecorder(stream, { mimeType: supportedMime });
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) chunks.push(event.data);
+    };
+
+    const stopped = new Promise<void>((resolve) => {
+      recorder.onstop = () => resolve();
+    });
+
+    recorder.start();
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      recorder.stop();
+      await stopped;
+      setIsExporting(false);
+      setExportError("Unable to initialize export renderer.");
+      return;
+    }
+
+    const imageEntries = await Promise.all(participants.map(async (p) => [p.id, await loadImage(p.photo)] as const));
+    const imageMap = new Map<string, HTMLImageElement | null>(imageEntries);
+
+    const frameDelay = Math.max(600, Math.round(1200 / playbackSpeed));
+
+    for (let index = 0; index < turns.length; index++) {
+      const frameTurn = turns[index];
+      setActiveTurn(index);
+      drawStageFrame({ ctx, frameTurn, images: imageMap });
+      await new Promise((resolve) => window.setTimeout(resolve, frameDelay));
+    }
+
+    drawStageFrame({ ctx, frameTurn: turns[turns.length - 1] ?? null, images: imageMap });
+    await new Promise((resolve) => window.setTimeout(resolve, 650));
+
+    recorder.stop();
+    await stopped;
+
+    const blob = new Blob(chunks, { type: supportedMime });
+    const nextUrl = URL.createObjectURL(blob);
+
+    if (exportUrl) URL.revokeObjectURL(exportUrl);
+    setExportUrl(nextUrl);
+    setIsExporting(false);
   };
 
   return (
@@ -356,7 +656,7 @@ export function Simulator({ list }: { list: Politician[] }) {
                 className="h-8 border-[#D7DCE3]"
                 style={{ fontFamily: FONT_SANS, fontSize: 12 }}
               >
-                {isRunning ? "Pause" : "Resume"}
+                {isRunning ? "Pause" : "Play"}
               </Button>
               <Button
                 onClick={resetSimulation}
@@ -368,6 +668,67 @@ export function Simulator({ list }: { list: Politician[] }) {
                 Reset
               </Button>
             </div>
+            <div className="grid grid-cols-3 gap-2">
+              <Button
+                onClick={goPrevTurn}
+                disabled={turns.length === 0 || activeTurn === 0}
+                variant="outline"
+                className="h-8 border-[#D7DCE3]"
+                style={{ fontFamily: FONT_SANS, fontSize: 12 }}
+              >
+                Prev
+              </Button>
+              <Button
+                onClick={goNextTurn}
+                disabled={turns.length === 0 || activeTurn >= turns.length - 1}
+                variant="outline"
+                className="h-8 border-[#D7DCE3]"
+                style={{ fontFamily: FONT_SANS, fontSize: 12 }}
+              >
+                Next
+              </Button>
+              <select
+                value={playbackSpeed}
+                onChange={(event) => setPlaybackSpeed(Number(event.target.value))}
+                className="h-8 rounded-md border border-[#D7DCE3] bg-white px-2"
+                style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#1A2434" }}
+              >
+                {PLAYBACK_SPEEDS.map((speed) => (
+                  <option key={speed.value} value={speed.value}>
+                    {speed.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <input
+              type="range"
+              min={0}
+              max={Math.max(0, turns.length - 1)}
+              value={Math.min(activeTurn, Math.max(0, turns.length - 1))}
+              onChange={(event) => {
+                setIsRunning(false);
+                setActiveTurn(Number(event.target.value));
+              }}
+              disabled={turns.length === 0}
+              className="mt-1 w-full accent-[#0F766E]"
+            />
+            <div className="flex items-center justify-between" style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#788193" }}>
+              <span>Turn {turns.length === 0 ? 0 : activeTurn + 1}</span>
+              <span>Total {turns.length}</span>
+            </div>
+
+            <Button
+              onClick={exportSimulationVideo}
+              disabled={turns.length === 0 || isExporting}
+              className="h-9 bg-[#25364A] text-white hover:bg-[#1C2A3B]"
+              style={{ fontFamily: FONT_SANS, fontSize: 12 }}
+            >
+              {isExporting ? "Rendering video..." : "Export Playback Video"}
+            </Button>
+            {exportError && (
+              <div style={{ fontFamily: FONT_SANS, fontSize: 11, color: "#A53131" }}>{exportError}</div>
+            )}
           </div>
 
           <div className="mt-4 rounded-xl border border-[#D7DCE3] bg-[#FAFBFC] p-3">
@@ -395,28 +756,31 @@ export function Simulator({ list }: { list: Politician[] }) {
             </div>
 
             {participants.map((speaker, idx) => {
-              const angle = (idx / participants.length) * Math.PI * 2 - Math.PI / 2;
-              const x = Math.cos(angle) * 165;
-              const y = Math.sin(angle) * 125;
+              const slot = stageSlots[idx] ?? { leftPercent: 50, topPercent: 50 };
               const active = speaker.id === activeSpeakerId;
               const ringColor = marketColor((mode === "theoretical" ? speaker.vector_stated : speaker.vector_actual)[0] ?? 3);
               return (
                 <motion.div
                   key={speaker.id}
-                  className="absolute left-1/2 top-1/2"
-                  style={{ transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))` }}
-                  animate={{ scale: active ? 1.03 : 1, opacity: active ? 1 : 0.85 }}
+                  className="absolute"
+                  style={{
+                    left: `${slot.leftPercent}%`,
+                    top: `${slot.topPercent}%`,
+                    transform: "translate(-50%, -50%)",
+                    zIndex: active ? 5 : 2,
+                  }}
+                  animate={{ scale: active ? 1.12 : 1, opacity: active ? 1 : 0.84 }}
                   transition={{ duration: 0.25 }}
                 >
-                  <div className="flex flex-col items-center gap-2">
+                  <div className="flex w-[130px] flex-col items-center gap-2 text-center sm:w-[152px]">
                     <div
                       style={{
-                        width: 86,
-                        height: 86,
+                        width: 96,
+                        height: 96,
                         borderRadius: 20,
-                        padding: active ? 3 : 1,
-                        border: active ? `1px solid ${ringColor}` : "1px solid rgba(255,255,255,0.2)",
-                        boxShadow: active ? `0 0 28px ${ringColor}88` : "none",
+                        padding: active ? 4 : 1,
+                        border: active ? `2px solid ${ringColor}` : "1px solid rgba(255,255,255,0.2)",
+                        boxShadow: active ? `0 0 34px ${ringColor}AA` : "none",
                         background: "rgba(255,255,255,0.04)",
                       }}
                     >
@@ -429,7 +793,9 @@ export function Simulator({ list }: { list: Politician[] }) {
                       />
                     </div>
                     <div className="text-center">
-                      <div style={{ fontFamily: FONT_SANS, fontSize: 11, color: "#F2F6FC" }}>{speaker.name}</div>
+                      <div style={{ fontFamily: FONT_SANS, fontSize: 11, color: "#F2F6FC", fontWeight: active ? 600 : 500 }}>
+                        {shortName(speaker.name)}
+                      </div>
                       <div style={{ fontFamily: FONT_MONO, fontSize: 9, color: "#B5C0CF", marginTop: 1 }}>{speaker.party} / {speaker.district}</div>
                     </div>
                   </div>
@@ -442,64 +808,104 @@ export function Simulator({ list }: { list: Politician[] }) {
             </div>
           </div>
 
-          <div className="min-h-0 overflow-hidden rounded-2xl border border-[#D7DCE3] bg-white">
-            <div className="border-b border-[#E4E8ED] px-4 py-3">
-              <div style={{ fontFamily: FONT_MONO, fontSize: 11, color: "#6E7686", letterSpacing: "0.08em" }}>
-                LIVE TRANSCRIPTION HUD
+          <div className="grid min-h-0 gap-4 md:grid-cols-[1.2fr_1fr]">
+            <div className="min-h-0 overflow-hidden rounded-2xl border border-[#D7DCE3] bg-white">
+              <div className="border-b border-[#E4E8ED] px-4 py-3">
+                <div style={{ fontFamily: FONT_MONO, fontSize: 11, color: "#6E7686", letterSpacing: "0.08em" }}>
+                  LIVE TRANSCRIPTION HUD
+                </div>
+              </div>
+              <div className="h-full max-h-[280px] space-y-2 overflow-y-auto p-4">
+                {turns.length === 0 && (
+                  <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#6B7282" }}>
+                    No transcript yet. Generate a debate to start simulated turn-taking.
+                  </div>
+                )}
+                {turns.map((turn, idx) => {
+                  const speaker = participants.find((p) => p.id === turn.speakerId);
+                  const isActive = idx === activeTurn;
+                  return (
+                    <div
+                      key={turn.id}
+                      className="rounded-xl border px-3 py-2"
+                      style={{
+                        borderColor: isActive ? "#0F766E" : "#E4E8ED",
+                        background: isActive ? "rgba(15,118,110,0.06)" : "#FBFCFD",
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div style={{ fontFamily: FONT_SANS, fontSize: 12, fontWeight: 600, color: "#1A2434" }}>
+                          {speaker?.name ?? "Unknown"}
+                        </div>
+                        <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#6E7686" }}>
+                          Voice: {turn.voice.voiceName} ({turn.voice.tier})
+                        </div>
+                      </div>
+                      <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#2C394E", marginTop: 6 }}>{turn.text}</div>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {turn.triggeredAlleles.map((alleleId) => (
+                          <span
+                            key={`${turn.id}-${alleleId}`}
+                            style={{
+                              fontFamily: FONT_MONO,
+                              fontSize: 10,
+                              borderRadius: 999,
+                              border: "1px solid #C7D1DE",
+                              background: "#EEF3F8",
+                              color: "#334055",
+                              padding: "2px 7px",
+                            }}
+                          >
+                            {alleleId}: {ALLELE_LABEL[alleleId]}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-            <div className="h-full max-h-[280px] space-y-2 overflow-y-auto p-4">
-              {turns.length === 0 && (
-                <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#6B7282" }}>
-                  No transcript yet. Generate a debate to start simulated turn-taking.
+
+            <div className="min-h-0 overflow-hidden rounded-2xl border border-[#D7DCE3] bg-white">
+              <div className="border-b border-[#E4E8ED] px-4 py-3">
+                <div style={{ fontFamily: FONT_MONO, fontSize: 11, color: "#6E7686", letterSpacing: "0.08em" }}>
+                  PLAYBACK EXPORT
                 </div>
-              )}
-              {turns.map((turn, idx) => {
-                const speaker = participants.find((p) => p.id === turn.speakerId);
-                const isActive = idx === activeTurn;
-                return (
-                  <div
-                    key={turn.id}
-                    className="rounded-xl border px-3 py-2"
-                    style={{
-                      borderColor: isActive ? "#0F766E" : "#E4E8ED",
-                      background: isActive ? "rgba(15,118,110,0.06)" : "#FBFCFD",
-                    }}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div style={{ fontFamily: FONT_SANS, fontSize: 12, fontWeight: 600, color: "#1A2434" }}>
-                        {speaker?.name ?? "Unknown"}
-                      </div>
-                      <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#6E7686" }}>
-                        Voice: {turn.voice.voiceName} ({turn.voice.tier})
-                      </div>
-                    </div>
-                    <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#2C394E", marginTop: 6 }}>{turn.text}</div>
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {turn.triggeredAlleles.map((alleleId) => (
-                        <span
-                          key={`${turn.id}-${alleleId}`}
-                          style={{
-                            fontFamily: FONT_MONO,
-                            fontSize: 10,
-                            borderRadius: 999,
-                            border: "1px solid #C7D1DE",
-                            background: "#EEF3F8",
-                            color: "#334055",
-                            padding: "2px 7px",
-                          }}
-                        >
-                          {alleleId}: {ALLELE_LABEL[alleleId]}
-                        </span>
-                      ))}
-                    </div>
+              </div>
+              <div className="space-y-3 p-4">
+                <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#445266" }}>
+                  Render the current simulation to a playbackable video, then preview and download it.
+                </div>
+                {exportUrl ? (
+                  <video
+                    controls
+                    src={exportUrl}
+                    className="w-full rounded-lg border border-[#D7DCE3]"
+                  />
+                ) : (
+                  <div className="rounded-lg border border-dashed border-[#C9D2DE] bg-[#F8FAFC] p-4" style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#6E7686" }}>
+                    No video rendered yet.
                   </div>
-                );
-              })}
+                )}
+
+                <a
+                  href={exportUrl ?? "#"}
+                  download="simulator-playback.webm"
+                  onClick={(event) => {
+                    if (!exportUrl) event.preventDefault();
+                  }}
+                  className="inline-flex h-9 w-full items-center justify-center rounded-md bg-[#0F5B57] text-white"
+                  style={{ fontFamily: FONT_SANS, fontSize: 12, pointerEvents: exportUrl ? "auto" : "none", opacity: exportUrl ? 1 : 0.45 }}
+                >
+                  Download Video
+                </a>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      <canvas ref={exportCanvasRef} width={STAGE_W} height={STAGE_H} className="hidden" />
     </div>
   );
 }
