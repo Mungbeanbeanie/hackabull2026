@@ -1,5 +1,4 @@
 import { Politician } from "@/features/polidex/data/politicians";
-import { FlRegion } from "@/features/polidex/lib/profile";
 
 export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080";
 
@@ -30,8 +29,8 @@ export function localSearch(
 
 export type SearchResult = { id: string; score: number };
 
-// Floats same-region + statewide politicians to top within a 5% similarity band
-export function regionSort(results: SearchResult[], region: FlRegion, politicians: Politician[]): SearchResult[] {
+// Floats politicians from the user's state to top within a 5% similarity band
+export function regionSort(results: SearchResult[], state: string, politicians: Politician[]): SearchResult[] {
   if (results.length === 0) return results;
   const top = results[0].score;
   const threshold = top * 0.95;
@@ -40,8 +39,8 @@ export function regionSort(results: SearchResult[], region: FlRegion, politician
   inBand.sort((a, b) => {
     const pa = politicians.find(p => p.id === a.id);
     const pb = politicians.find(p => p.id === b.id);
-    const aLocal = pa?.region === region || pa?.region === "Statewide";
-    const bLocal = pb?.region === region || pb?.region === "Statewide";
+    const aLocal = pa?.state === state;
+    const bLocal = pb?.state === state;
     if (aLocal !== bLocal) return aLocal ? -1 : 1;
     return b.score - a.score;
   });

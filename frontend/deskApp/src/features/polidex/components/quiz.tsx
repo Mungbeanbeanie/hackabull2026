@@ -5,8 +5,13 @@ import { AnimatePresence, motion } from "motion/react";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { taxonomy } from "@/features/polidex/data/taxonomy";
-import { FlRegion, UserProfile, saveProfile } from "@/features/polidex/lib/profile";
+import { UserProfile, saveProfile } from "@/features/polidex/lib/profile";
 import { FONT_SANS } from "@/features/polidex/lib/style";
+
+const AVAILABLE_STATES = [
+  { abbr: "FL", name: "Florida" },
+  { abbr: "TX", name: "Texas" },
+];
 
 const QUESTIONS = taxonomy.map((topic) => ({
   id: topic.id,
@@ -51,7 +56,7 @@ export function Quiz({
   onCancel: () => void;
 }) {
   const [step, setStep] = useState(-1);
-  const [region, setRegion] = useState<FlRegion | undefined>(undefined);
+  const [userState, setUserState] = useState<string | undefined>(undefined);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [importance, setImportance] = useState<Record<string, number>>({});
 
@@ -66,7 +71,7 @@ export function Quiz({
     const profile: UserProfile = {
       vector,
       weights,
-      region,
+      state: userState,
       updatedAt: new Date().toISOString(),
     };
 
@@ -133,15 +138,15 @@ export function Quiz({
                 About You
               </div>
               <h2 style={{ fontFamily: FONT_SANS, fontSize: 26, fontWeight: 400, color: "#0D0F12", lineHeight: 1.3, marginBottom: 28 }}>
-                Where do you live in Florida?
+                Which state do you live in?
               </h2>
               <div className="flex flex-col gap-3">
-                {(["North FL", "Central FL", "South FL"] as FlRegion[]).map((r) => {
-                  const active = region === r;
+                {AVAILABLE_STATES.map(({ abbr, name }) => {
+                  const active = userState === abbr;
                   return (
                     <button
-                      key={r}
-                      onClick={() => setRegion(r)}
+                      key={abbr}
+                      onClick={() => setUserState(abbr)}
                       style={{
                         padding: "14px 20px",
                         borderRadius: 10,
@@ -156,13 +161,13 @@ export function Quiz({
                         transition: "all 150ms",
                       }}
                     >
-                      {r}
+                      {name}
                     </button>
                   );
                 })}
               </div>
               <button
-                onClick={() => { setRegion(undefined); setStep(0); }}
+                onClick={() => { setUserState(undefined); setStep(0); }}
                 style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#8A919E", background: "transparent", border: "none", cursor: "pointer", marginTop: 20, padding: 0 }}
               >
                 Skip

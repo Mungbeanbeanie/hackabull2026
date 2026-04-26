@@ -1,9 +1,7 @@
-export type FlRegion = "North FL" | "Central FL" | "South FL";
-
 export type UserProfile = {
   vector: number[];
   weights: number[];
-  region?: FlRegion;
+  state?: string;
   updatedAt: string;
 };
 
@@ -11,7 +9,7 @@ export type UserProfile = {
 export const DEMO_PROFILE: UserProfile = {
   vector:  [2.5, 3.0, 2.0, 2.0, 3.0, 2.5, 1.5, 2.0, 2.0, 1.5, 2.0, 3.0, 1.5, 1.5, 2.0, 2.5, 2.5, 2.0, 1.5, 3.0],
   weights: [1.0, 1.0, 1.0, 1.4, 1.0, 1.2, 1.8, 1.0, 1.5, 1.6, 1.0, 1.0, 1.3, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
-  region: "Central FL",
+  state: "FL",
   updatedAt: "2026-04-26T00:00:00.000Z",
 };
 
@@ -60,7 +58,7 @@ export function exportProfileCode(profile: UserProfile): string {
   const payload = JSON.stringify({
     vector: profile.vector,
     weights: profile.weights,
-    region: profile.region,
+    state: profile.state,
     updatedAt: profile.updatedAt,
   });
   const encoded = toBase64Url(payload);
@@ -96,13 +94,12 @@ export function importProfileCode(code: string): UserProfile | null {
       return null;
     }
 
-    const FL_REGIONS: FlRegion[] = ["North FL", "Central FL", "South FL"];
-    const region = FL_REGIONS.includes(parsed.region as FlRegion) ? (parsed.region as FlRegion) : undefined;
+    const state = typeof parsed.state === "string" && parsed.state.length > 0 ? parsed.state : undefined;
 
     return {
       vector,
       weights,
-      region,
+      state,
       updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : new Date().toISOString(),
     };
   } catch {

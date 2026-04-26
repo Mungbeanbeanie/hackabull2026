@@ -49,12 +49,12 @@ export function PoliDexApp() {
     if (!profile) return;
     // Seed immediately from local data — never block on backend
     const base = localSearch(activePoliticians, profile.vector, profile.weights, false);
-    const sorted = profile.region ? regionSort(base, profile.region, activePoliticians) : base;
+    const sorted = profile.state ? regionSort(base, profile.state, activePoliticians) : base;
     setRankedResults(sorted);
     // Attempt backend upgrade silently in background
     searchPoliticians(profile.vector, profile.weights, false, [])
       .then((results) => {
-        const backendSorted = profile.region ? regionSort(results, profile.region, activePoliticians) : results;
+        const backendSorted = profile.state ? regionSort(results, profile.state, activePoliticians) : results;
         setRankedResults(backendSorted);
       })
       .catch(() => {});
