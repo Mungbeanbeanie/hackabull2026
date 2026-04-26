@@ -29,10 +29,10 @@ export function LogicProfile({
           exit={{ x: 520, opacity: 0 }}
           transition={{ duration: 0.24, ease: "easeOut" }}
           style={{
-            position: "absolute",
+            position: "fixed",
             top: 0,
             right: 0,
-            height: "100%",
+            height: "100vh",
             width: 520,
             maxWidth: "100vw",
             background: "#FFFFFF",
