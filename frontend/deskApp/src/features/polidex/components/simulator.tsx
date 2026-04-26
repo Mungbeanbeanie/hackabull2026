@@ -302,7 +302,9 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
   useEffect(() => {
     const player = audioRef.current;
     const currentTurn = turns[activeTurn];
-    if (!player || !isRunning || !currentTurn) return;
+    // During export we intentionally advance `activeTurn` for rendering,
+    // but we do NOT want to synthesize/play audio.
+    if (!player || !isRunning || !currentTurn || isExporting) return;
 
     let canceled = false;
     const cacheKey = currentTurn.id;
@@ -341,7 +343,7 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
     return () => {
       canceled = true;
     };
-  }, [activeTurn, isRunning, playbackSpeed, turns]);
+  }, [activeTurn, isExporting, isRunning, playbackSpeed, turns]);
 
   useEffect(() => {
     return () => {

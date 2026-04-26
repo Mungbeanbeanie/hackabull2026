@@ -235,6 +235,10 @@ public class RequestHandler {
             String voiceId = resolveElevenVoiceId(voiceName);
             String apiKey = System.getProperty("ELEVENLABS_API_KEY");
             if (apiKey == null || apiKey.isBlank()) apiKey = System.getenv("ELEVENLABS_API_KEY");
+            if (apiKey == null || apiKey.isBlank()) {
+                respond(ex, 503, jsonError("elevenlabs not configured"));
+                return;
+            }
 
             String body = MAPPER.writeValueAsString(Map.of(
                 "text", text,

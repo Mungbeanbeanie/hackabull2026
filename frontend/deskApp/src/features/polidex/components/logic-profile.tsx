@@ -349,8 +349,9 @@ function InfluenceTree({ entity }: { entity: Politician }) {
           const cx = leftPad + 8;
           const routeX = targetX - 44;
           const targetNodeY = targetY - 14;
-          const laneY = y - 18;
-          const path = `M ${cx + 6} ${y} L ${cx + 20} ${y} L ${cx + 20} ${laneY} L ${routeX} ${laneY} L ${routeX} ${targetNodeY} L ${targetX - 30} ${targetNodeY}`;
+          const startX = cx + 6;
+          const endX = targetX - 30;
+          const path = `M ${startX} ${y} C ${routeX} ${y}, ${routeX} ${targetNodeY}, ${endX} ${targetNodeY}`;
 
           return (
             <g key={donor.name}>

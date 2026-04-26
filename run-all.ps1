@@ -55,7 +55,8 @@ function Wait-ForHttp([string]$url, [int]$timeoutSec = 45) {
   while ((Get-Date) -lt $deadline) {
     try {
       $res = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 3
-      if ($res.StatusCode -ge 200 -and $res.StatusCode -lt 500) { return $true }
+      # Treat 2xx/3xx as "up"; 4xx means the service is responding with an error.
+      if ($res.StatusCode -ge 200 -and $res.StatusCode -lt 400) { return $true }
     } catch {
       Start-Sleep -Milliseconds 350
     }
