@@ -23,28 +23,13 @@ import com.system.models.PoliFigure;
 import com.system.models.PoliVector;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 
 public class IngestionRunner {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public static void main(String[] args) {
-        // Load .env into JVM system properties before any class reads env vars
-        Path envFile = Path.of("backend/java-chassis/.env");
-        if (Files.exists(envFile)) {
-            try {
-                Files.lines(envFile).forEach(line -> {
-                    line = line.trim();
-                    if (line.isEmpty() || line.startsWith("#") || !line.contains("=")) return;
-                    String[] parts = line.split("=", 2);
-                    System.setProperty(parts[0].trim(), parts[1].trim());
-                });
-            } catch (Exception e) {
-                System.err.println("[IngestionRunner] Failed to load .env: " + e.getMessage());
-            }
-        }
+        com.system.EnvLoader.load();
 
         // Init Hardware/Logic layers
         ApiDispatcher api = new ApiDispatcher(
