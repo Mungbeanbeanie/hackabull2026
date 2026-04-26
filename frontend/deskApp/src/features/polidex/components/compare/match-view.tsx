@@ -13,7 +13,7 @@ import { resolveProfileSide } from "./utils";
 export function MatchView({
   ranked,
   isRanking = false,
-  backendOnline = null,
+  backendOnline: _backendOnline = null,
   onOpenProfile,
   selectedProfileId,
 }: Readonly<{
@@ -34,7 +34,7 @@ export function MatchView({
 
   const top = ranked[0];
   const rest = ranked.slice(1, 7);
-  const worst = ranked.at(-1);
+  const worst = ranked[ranked.length - 1]!;
 
   return (
     <div className="space-y-6 px-5 py-6 md:px-8">

@@ -131,6 +131,18 @@ function getStageSlots(count: number): StageSlot[] {
   ];
 }
 
+function getDynamicStageSlots(count: number): StageSlot[] {
+  if (count <= 4) return getStageSlots(count);
+  const cx = 50;
+  const cy = 52;
+  const rx = 33;
+  const ry = 26;
+  return Array.from({ length: count }, (_, i) => {
+    const t = (i / count) * Math.PI * 2 - Math.PI / 2;
+    return { leftPercent: cx + Math.cos(t) * rx, topPercent: cy + Math.sin(t) * ry };
+  });
+}
+
 function shortName(name: string): string {
   const [first, last] = name.split(" ");
   if (!first) return name;
@@ -302,10 +314,8 @@ function buildSimulation(participants: Politician[], topic: Topic, mode: SimMode
 
 function nextSelectedIds(current: string[], id: string): string[] {
   if (current.includes(id)) {
-    if (current.length <= 2) return current;
     return current.filter((x) => x !== id);
   }
-  if (current.length >= 4) return current;
   return [...current, id];
 }
 
@@ -343,7 +353,7 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
     return list.filter((p) => p.name.toLowerCase().includes(q) || p.district.toLowerCase().includes(q));
   }, [list, query]);
 
-  const stageSlots = useMemo(() => getStageSlots(participants.length), [participants.length]);
+  const stageSlots = useMemo(() => getDynamicStageSlots(participants.length), [participants.length]);
 
   const selectedTurn = turns[activeTurn] ?? null;
   useEffect(() => {
@@ -504,7 +514,7 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
   };
 
   const runSimulation = async () => {
-    if (participants.length < 2) return;
+    if (participants.length < 1) return;
     setTranscriptLoading(true);
     setAudioError(null);
     setExportError(null);
@@ -625,9 +635,7 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
     ctx.font = "600 14px var(--font-plex-mono), monospace";
     ctx.textAlign = "center";
     ctx.fillText(mode === "theoretical" ? "VTHEORETICAL" : "VLEGISLATIVE", STAGE_W / 2, STAGE_H / 2 - 5);
-    ctx.fillStyle = "#F6F9FC";
-    ctx.font = "400 15px var(--font-plus-jakarta), sans-serif";
-    ctx.fillText(topic.label, STAGE_W / 2, STAGE_H / 2 + 18);
+    // (intentionally no topic label in the center)
 
     participants.forEach((speaker, index) => {
       const slot = stageSlots[index] ?? { leftPercent: 50, topPercent: 50 };
@@ -1019,15 +1027,12 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
                 );
               })}
             </div>
-            <div className="mt-2" style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#788193" }}>
-              You must keep at least 2 and at most 4 speakers selected.
-            </div>
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-2 border-t border-[#EEF2F5] pt-4">
             <Button
               onClick={runSimulation}
-              disabled={participants.length < 2 || transcriptLoading}
+              disabled={participants.length < 1 || transcriptLoading}
               className="h-9 bg-[#0D0F12] text-white hover:bg-[#202530]"
               style={{ fontFamily: FONT_SANS, fontSize: 12 }}
             >
@@ -1178,15 +1183,6 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
         <div className="grid min-h-0 gap-4 md:grid-rows-[minmax(320px,1fr)_minmax(180px,1fr)]">
           <div className="relative min-h-[320px] overflow-hidden rounded-xl border border-[#E2E5E9] bg-[#10161C]">
             <div className="absolute left-0 top-0 h-full w-full opacity-30" style={{ backgroundImage: "radial-gradient(circle at 30% 30%, #2A7F62 0%, transparent 40%), radial-gradient(circle at 70% 70%, #B13A2C 0%, transparent 45%)" }} />
-
-            <div className="absolute left-1/2 top-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/25 bg-white/10 backdrop-blur-sm">
-              <div className="flex h-full w-full flex-col items-center justify-center px-2 text-center">
-                <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#D0D8E3", letterSpacing: "0.08em" }}>
-                  {mode === "theoretical" ? "VTHEORETICAL" : "VLEGISLATIVE"}
-                </div>
-                <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#F4F7FA", marginTop: 4 }}>{topic.label}</div>
-              </div>
-            </div>
 
             {participants.map((speaker, idx) => {
               const slot = stageSlots[idx] ?? { leftPercent: 50, topPercent: 50 };

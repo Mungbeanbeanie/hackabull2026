@@ -4,9 +4,9 @@
   "private": true,
   "main": "electron/main.js",
   "scripts": {
-    "dev": "./node_modules/.bin/next dev",
-    "build": "./node_modules/.bin/next build",
-    "start": "./node_modules/.bin/next start",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "lint": "eslint",
     "test": "npm run lint && npm run build",
     "electron:dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
