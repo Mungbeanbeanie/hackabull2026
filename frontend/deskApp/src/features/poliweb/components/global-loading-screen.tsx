@@ -3,6 +3,8 @@ import { motion } from "motion/react";
 
 import { FONT_MONO, FONT_SANS } from "@/features/poliweb/lib/style";
 
+import { BrandLogo } from "./ui/brand-logo";
+
 export function GlobalLoadingScreen({
   onComplete,
   backendOnline,
@@ -32,6 +34,9 @@ export function GlobalLoadingScreen({
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-white" style={{ fontFamily: FONT_SANS }}>
+      <div style={{ marginBottom: 28 }}>
+        <BrandLogo size="md" />
+      </div>
       <div style={{ width: 280 }}>
         <div
           className="mb-3 flex items-center justify-between"
