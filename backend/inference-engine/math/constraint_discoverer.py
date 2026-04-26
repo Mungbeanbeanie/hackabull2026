@@ -36,7 +36,7 @@ def main():
 
     print(json.dumps(compute(vectors)))
     sys.exit(0)
-
+ #wow
 
 def compute(vectors: list) -> dict:
     # find 3 alleles with lowest σ — strongest consistent signal of what's hated
