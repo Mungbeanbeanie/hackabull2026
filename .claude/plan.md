@@ -54,7 +54,7 @@ Ordered by dependency. Each phase unblocks the next.
 - [x] `PythonRunner.java` — launch Python scripts, pass payload via stdin, capture stdout
 
 ## Phase 10 — Search Orchestration
-- [ ] `SearchController.java` — route queries (full-library / neighborhood / catalog)
+- [x] `SearchController.java` — route queries (full-library / neighborhood / catalog)
 
 ## Phase 11 — HTTP Layer
 - [ ] `RequestHandler.java` — inbound HTTP gateway; validate request, delegate to SearchController
