@@ -23,12 +23,6 @@ export type Politician = {
 
 const v = (arr: number[]): number[] => arr;
 
-const adherence = (a: number[], b: number[]) => {
-  let s = 0;
-  for (let i = 0; i < a.length; i++) s += Math.abs(a[i] - b[i]);
-  return Math.max(0, 1 - (s / a.length) / 4);
-};
-
 type RawP = Omit<Politician, "w" | "photo" | "role" | "region">;
 
 const PHOTOS = [
@@ -500,10 +494,14 @@ const raw: RawP[] = [
   },
 ];
 
-export const politicians: Politician[] = raw.map((p, i) => ({
-  ...p,
-  w: adherence(p.vector_stated, p.vector_actual),
-  photo: PHOTOS[i % PHOTOS.length],
-  role: META[p.id]?.role ?? "U.S. House",
-  region: META[p.id]?.region ?? "Statewide",
-}));
+export const politicians: Politician[] = raw.map((p, i) => {
+  let s = 0;
+  for (let j = 0; j < 20; j++) s += Math.abs(p.vector_stated[j] - p.vector_actual[j]);
+  return {
+    ...p,
+    w: Math.max(0, 1 - (s / 20) / 4),
+    photo: PHOTOS[i % PHOTOS.length],
+    role: META[p.id]?.role ?? "U.S. House",
+    region: META[p.id]?.region ?? "Statewide",
+  };
+});

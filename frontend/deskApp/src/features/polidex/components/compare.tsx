@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { motion } from "motion/react";
 import { ChevronDown, Search, SlidersHorizontal } from "lucide-react";
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer } from "recharts";
@@ -7,7 +7,6 @@ import { politicians, Politician } from "@/features/polidex/data/politicians";
 import { taxonomy } from "@/features/polidex/data/taxonomy";
 import { RankedPolitician } from "@/features/polidex/lib/api";
 import { districtLabel, levelLabel, partyLabel, regionLabel } from "@/features/polidex/lib/display";
-import { cosine } from "@/features/polidex/lib/math";
 import { UserProfile } from "@/features/polidex/lib/profile";
 import { FONT_MONO, FONT_SANS, consistencyLabel } from "@/features/polidex/lib/style";
 
@@ -50,7 +49,7 @@ export function Compare({
 
       <div className="flex-1 overflow-y-auto" style={{ background: "#F8F9FA" }}>
         {mode === "match" && profile && <MatchView profile={profile} ranked={ranked} />}
-        {mode === "vsYou" && profile && <VersusView profile={profile} sel={vsYouSel} setSel={setVsYouSel} />}
+        {mode === "vsYou" && profile && <VersusView profile={profile} sel={vsYouSel} setSel={setVsYouSel} ranked={ranked} />}
         {mode === "vsPol" && <PolPolView selected={vsPolSels} setSelected={setVsPolSels} />}
         {!profile && mode !== "vsPol" && (
           <div className="px-8 py-16 text-center" style={{ color: "#8A919E", fontSize: 14, fontFamily: FONT_SANS }}>
@@ -101,17 +100,18 @@ function ModeTab({
   );
 }
 
-function MatchView({ profile, ranked }: { profile: UserProfile; ranked: RankedPolitician[] }) {
-  const sortedRanked = useMemo(() => {
-    if (ranked.length > 0) return ranked;
-    return politicians
-      .map((politician) => ({ politician, sim: cosine(profile.vector, politician.vector_actual) }))
-      .sort((a, b) => b.sim - a.sim);
-  }, [profile, ranked]);
+function MatchView({ ranked }: { profile: UserProfile; ranked: RankedPolitician[] }) {
+  if (ranked.length === 0) {
+    return (
+      <div className="px-8 py-16 text-center" style={{ color: "#8A919E", fontSize: 14, fontFamily: FONT_SANS }}>
+        Waiting for backend results…
+      </div>
+    );
+  }
 
-  const top = sortedRanked[0];
-  const rest = sortedRanked.slice(1, 7);
-  const worst = sortedRanked[sortedRanked.length - 1];
+  const top = ranked[0];
+  const rest = ranked.slice(1, 7);
+  const worst = ranked[ranked.length - 1];
 
   return (
     <div className="space-y-6 px-5 py-6 md:px-8">
@@ -554,13 +554,16 @@ function VersusView({
   profile,
   sel,
   setSel,
+  ranked,
 }: {
   profile: UserProfile;
   sel: string;
   setSel: (id: string) => void;
+  ranked: RankedPolitician[];
 }) {
   const selectedPolitician = politicians.find((p) => p.id === sel) ?? politicians[0];
-  const similarity = cosine(profile.vector, selectedPolitician.vector_actual);
+  const rankedEntry = ranked.find((r) => r.politician.id === sel);
+  const similarity = rankedEntry?.sim ?? null;
 
   const data = taxonomy.map((topic, i) => ({
     dim: topic.name,
@@ -620,10 +623,10 @@ function VersusView({
             <span
               style={{
                 fontWeight: 500,
-                color: similarity > 0.85 ? "#1B6B3A" : similarity > 0.65 ? "#7A4F00" : "#991B1B",
+                color: similarity === null ? "#8A919E" : similarity > 0.85 ? "#1B6B3A" : similarity > 0.65 ? "#7A4F00" : "#991B1B",
               }}
             >
-              {Math.round(similarity * 100)}%
+              {similarity === null ? "—" : `${Math.round(similarity * 100)}%`}
             </span>
           </div>
         </div>
