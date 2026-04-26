@@ -140,13 +140,15 @@ public class LibraryIndexer {
         List<Double> adherenceWeights = new ArrayList<>(20);
         for (float w : figure.adherenceWeights) adherenceWeights.add((double) w);
 
-        return new Document("_id", figure.id)
+        Document doc = new Document("_id", figure.id)
                 .append("name",             figure.name)
                 .append("party",            figure.party)
                 .append("state",            figure.state)
                 .append("office",           figure.office)
                 .append("vector",           vector)
                 .append("adherence_weights", adherenceWeights);
+        if (figure.imageUrl != null) doc.append("image_url", figure.imageUrl);
+        return doc;
     }
 
     @SuppressWarnings("unchecked")
@@ -174,6 +176,7 @@ public class LibraryIndexer {
             Arrays.fill(adherenceWeights, 1.0f);
         }
 
-        return new PoliFigure(id, name, party, state, office, vector, adherenceWeights);
+        String imageUrl = doc.getString("image_url");
+        return new PoliFigure(id, name, party, state, office, vector, adherenceWeights, imageUrl);
     }
 }

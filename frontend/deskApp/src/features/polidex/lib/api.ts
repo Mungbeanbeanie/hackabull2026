@@ -29,7 +29,7 @@ export function localSearch(
 
 export type SearchResult = { id: string; score: number };
 export type RankedPolitician = { politician: Politician; sim: number };
-export type BackendPolitician = { id: string; name: string; party: string; state: string; office: string; vector: number[] };
+export type BackendPolitician = { id: string; name: string; party: string; state: string; office: string; vector: number[]; imageUrl?: string };
 
 export async function searchPoliticians(
   vector: number[],

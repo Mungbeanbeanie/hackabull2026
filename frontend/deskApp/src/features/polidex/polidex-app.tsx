@@ -34,7 +34,7 @@ export function PoliDexApp() {
         const merged = backendList
           .map((bp) => {
             const base = politicians.find((p) => p.id === bp.id);
-            return base ? { ...base, vector_actual: bp.vector } : null;
+            return base ? { ...base, vector_actual: bp.vector, photo: bp.imageUrl ?? base.photo } : null;
           })
           .filter((p): p is Politician => p !== null);
         if (merged.length > 0) setActivePoliticians(merged);

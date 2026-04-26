@@ -17,6 +17,7 @@ import com.system.api.legiscanApi;
 import com.system.api.openFecApi;
 import com.system.api.openStatesApi;
 import com.system.api.wikimediaApi;
+import com.system.api.wikipediaRestApi;
 import com.system.bridge.PythonRunner;
 import com.system.models.PoliFigure;
 import com.system.models.PoliVector;
@@ -37,6 +38,7 @@ public class IngestionRunner {
             new wikimediaApi(new WikimediaOAuthClient()),
             new legiscanApi()
         );
+        wikipediaRestApi wikipedia = new wikipediaRestApi();
         PythonRunner python = new PythonRunner();
         LibraryIndexer indexer = new LibraryIndexer(); // Loads MongoDB/Cache on init
 
@@ -106,9 +108,10 @@ public class IngestionRunner {
                     for (int i = 0; i < 20; i++) adherenceWeights[i] = (float) wArr.get(i).asDouble();
 
                     // 5. Commit to Library (and DB via LibraryIndexer internal DataManager)
+                    String imageUrl = wikipedia.fetchImageUrl(name);
                     PoliFigure figure = new PoliFigure(id, name, metadata.get("party").toString(),
                                                        metadata.get("state").toString(),
-                                                       target.get("office").asText(), vector, adherenceWeights);
+                                                       target.get("office").asText(), vector, adherenceWeights, imageUrl);
                     
                     indexer.addFigure(figure);
                     System.out.println("[OK] Ingested: " + name);
