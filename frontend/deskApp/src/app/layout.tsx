@@ -16,7 +16,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PoliWeb",
+  title: "PoliDex",
   description: "Civic analysis dashboard for promises, votes, and influence mapping.",
 };
 

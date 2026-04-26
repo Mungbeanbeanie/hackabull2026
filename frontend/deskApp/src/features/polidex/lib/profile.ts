@@ -4,7 +4,7 @@ export type UserProfile = {
   updatedAt: string;
 };
 
-const KEY = "poliweb:profile";
+const KEY = "polidex:profile";
 
 export function loadProfile(): UserProfile | null {
   if (typeof window === "undefined") {

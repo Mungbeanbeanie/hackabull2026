@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 
 import { Button } from "@/components/ui/button";
-import { Politician } from "@/features/poliweb/data/politicians";
-import { taxonomy } from "@/features/poliweb/data/taxonomy";
-import { FONT_MONO, FONT_SANS } from "@/features/poliweb/lib/style";
+import { Politician } from "@/features/polidex/data/politicians";
+import { taxonomy } from "@/features/polidex/data/taxonomy";
+import { FONT_MONO, FONT_SANS } from "@/features/polidex/lib/style";
 
 import { ImageWithFallback } from "./figma/image-with-fallback";
 

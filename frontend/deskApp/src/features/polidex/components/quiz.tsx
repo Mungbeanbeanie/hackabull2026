@@ -2,9 +2,9 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 
-import { taxonomy } from "@/features/poliweb/data/taxonomy";
-import { UserProfile, saveProfile } from "@/features/poliweb/lib/profile";
-import { FONT_SANS } from "@/features/poliweb/lib/style";
+import { taxonomy } from "@/features/polidex/data/taxonomy";
+import { UserProfile, saveProfile } from "@/features/polidex/lib/profile";
+import { FONT_SANS } from "@/features/polidex/lib/style";
 
 const QUESTIONS = taxonomy.map((topic) => ({
   id: topic.id,

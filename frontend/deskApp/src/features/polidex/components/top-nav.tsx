@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 
-import { UserProfile } from "@/features/poliweb/lib/profile";
-import { FONT_SANS } from "@/features/poliweb/lib/style";
-import { View } from "@/features/poliweb/types";
+import { UserProfile } from "@/features/polidex/lib/profile";
+import { FONT_SANS } from "@/features/polidex/lib/style";
+import { View } from "@/features/polidex/types";
 
 import { BrandLogo } from "./ui/brand-logo";
 import { InfoTooltip } from "./ui/info-tooltip";

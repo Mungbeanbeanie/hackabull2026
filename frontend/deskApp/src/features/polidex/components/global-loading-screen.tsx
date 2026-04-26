@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 
-import { FONT_MONO, FONT_SANS } from "@/features/poliweb/lib/style";
+import { FONT_MONO, FONT_SANS } from "@/features/polidex/lib/style";
 
 import { BrandLogo } from "./ui/brand-logo";
 

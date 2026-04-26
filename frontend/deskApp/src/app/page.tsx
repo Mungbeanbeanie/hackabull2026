@@ -1,5 +1,5 @@
-import { PoliWebApp } from "@/features/poliweb/poliweb-app";
+import { PoliDexApp } from "@/features/polidex/polidex-app";
 
 export default function Home() {
-  return <PoliWebApp />;
+  return <PoliDexApp />;
 }

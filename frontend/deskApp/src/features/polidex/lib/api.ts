@@ -1,4 +1,4 @@
-import { Politician } from "@/features/poliweb/data/politicians";
+import { Politician } from "@/features/polidex/data/politicians";
 
 export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080";
 

@@ -1,6 +1,6 @@
 import { CSSProperties } from "react";
 
-import { FONT_SANS } from "@/features/poliweb/lib/style";
+import { FONT_SANS } from "@/features/polidex/lib/style";
 
 type BrandLogoProps = {
   size?: "sm" | "md" | "lg";

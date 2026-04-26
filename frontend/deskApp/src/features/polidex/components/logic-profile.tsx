@@ -3,9 +3,9 @@ import { AnimatePresence, motion } from "motion/react";
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer } from "recharts";
 import { ArrowRight } from "lucide-react";
 
-import { Politician } from "@/features/poliweb/data/politicians";
-import { taxonomy } from "@/features/poliweb/data/taxonomy";
-import { FONT_MONO, FONT_SANS, consistencyColor, consistencyLabel } from "@/features/poliweb/lib/style";
+import { Politician } from "@/features/polidex/data/politicians";
+import { taxonomy } from "@/features/polidex/data/taxonomy";
+import { FONT_MONO, FONT_SANS, consistencyColor, consistencyLabel } from "@/features/polidex/lib/style";
 
 import { ImageWithFallback } from "./figma/image-with-fallback";
 
