@@ -55,7 +55,12 @@ public class SearchController {
             constraints,
             seenIds
         );
-        return pythonRunner.run(request);
+        try {
+            return pythonRunner.run(request);
+        } catch (Exception e) {
+            System.err.println("[SearchController] Python inference failed, using Java fallback: " + e.getMessage());
+            return javaFallbackSearch(userVector, useAdherence, candidates, constraints, seenIds);
+        }
     } //search method end
     
     private InferencePayload.Response searchViaAtlas(
@@ -124,6 +129,44 @@ public class SearchController {
             ));
         }
         return candidates;
+    }
+
+    private InferencePayload.Response javaFallbackSearch(
+            List<Double> userVector,
+            boolean useAdherence,
+            List<InferencePayload.Candidate> candidates,
+            List<InferencePayload.Constraint> constraints,
+            List<String> seenIds) {
+
+        List<InferencePayload.Result> results = new ArrayList<>();
+        for (InferencePayload.Candidate c : candidates) {
+            if (seenIds.contains(c.id)) continue;
+            if (inHateZone(c.id, constraints)) continue;
+            List<Double> w = (useAdherence && c.adherenceWeights != null)
+                ? c.adherenceWeights
+                : Collections.nCopies(20, 1.0);
+            InferencePayload.Result r = new InferencePayload.Result();
+            r.id    = c.id;
+            r.score = weightedCosine(userVector, c.vector, w);
+            results.add(r);
+        }
+        results.sort((a, b) -> Double.compare(b.score, a.score));
+
+        InferencePayload.Response response = new InferencePayload.Response();
+        response.results = new ArrayList<>(results.subList(0, Math.min(10, results.size())));
+        return response;
+    }
+
+    private static double weightedCosine(List<Double> u, List<Double> v, List<Double> w) {
+        double num = 0, du = 0, dv = 0;
+        for (int i = 0; i < 20; i++) {
+            double wi = w.get(i), ui = u.get(i), vi = v.get(i);
+            num += wi * ui * vi;
+            du  += wi * ui * ui;
+            dv  += wi * vi * vi;
+        }
+        if (du == 0 || dv == 0) return 0;
+        return Math.min(1.0, Math.max(-1.0, num / (Math.sqrt(du) * Math.sqrt(dv))));
     }
 
     public List<PoliFigure> getAllFigures() {
