@@ -5,7 +5,6 @@ import { useState } from "react";
 import { politicians } from "@/features/polidex/data/politicians";
 import { RankedPolitician } from "@/features/polidex/lib/api";
 import { districtLabel, levelLabel, partyLabel, regionLabel } from "@/features/polidex/lib/display";
-import { cosine } from "@/features/polidex/lib/math";
 import { UserProfile, exportProfileCode } from "@/features/polidex/lib/profile";
 import { FONT_MONO, FONT_SANS, consistencyLabel } from "@/features/polidex/lib/style";
 
