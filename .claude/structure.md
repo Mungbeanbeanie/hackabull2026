@@ -5,6 +5,10 @@ Plan extension and relational edge mapping if time permits
 │
 ├── /backend                   # The "Intelligence" Layer
 │   ├── /java-chassis          # The "System Manager" (State & Flow)
+│   │   ├── App.java               # Main entry point [implemented]
+│   │   ├── SeedData.java          # Seed data runner [implemented]
+│   │   ├── .env                   # Environment variables (gitignored)
+│   │   ├── .env.example           # Environment variable template
 │   │   ├── /src/main/java/com/system/
 │   │   │   ├── /controllers   # Inbound HTTP gateway
 │   │   │   │   └── RequestHandler.java  # Receives frontend requests, delegates to SearchController [implemented]
@@ -26,10 +30,12 @@ Plan extension and relational edge mapping if time permits
 │   │   │   │   ├── PoliVector.java          # 20D policy vector (d1–d20, range 1–5) [implemented]
 │   │   │   │   ├── PoliFigure.java          # Full politician object (figure + ID + PoliVector) [implemented]
 │   │   │   │   ├── UserProfile.java         # Quiz-generated user_vector + weights [implemented]
+│   │   │   │   ├── DemoProfile.java         # Hardcoded demo vector + uniform weights [implemented]
 │   │   │   │   └── userSupportHistory.java  # Maps user_history.csv (titleId, timestamp, vote, tags) [implemented]
 │   │   │   ├── /managers      # Orchestration / lifecycle managers
-│   │   │   │   ├── LibraryIndexer.java  # k-d tree spatial index [implemented]
-│   │   │   │   └── SearchController.java # Search routing: full-library / neighborhood / catalog [implemented]
+│   │   │   │   ├── LibraryIndexer.java   # k-d tree spatial index [implemented]
+│   │   │   │   ├── SearchController.java # Search routing: full-library / neighborhood / catalog [implemented]
+│   │   │   │   └── IngestionRunner.java  # API ingestion orchestrator [implemented]
 │   │   │   └── /bridge        # IPC (Calling Python Workers)
 │   │   │       ├── PythonRunner.java    # Java→Python stdin/stdout pipe [implemented]
 │   │   │       └── InferencePayload.java # IPC data contract: request + response models [implemented]
@@ -53,11 +59,76 @@ Plan extension and relational edge mapping if time permits
 │
 ├── /data                      # The "Knowledge Base" (The State)
 │   └── /cache
-│       ├── /raw               # Raw JSON API dumps
 │       └── user_history.csv   # User vote/support history log
 │
+├── /scripts
+│   └── seed_politicians.py    # Seed script for politician data [implemented]
+│
 ├── /frontend                  # The "Interface" Layer
-│   ├── /deskApp               # Desktop dashboard (Electron/web)
+│   ├── /deskApp               # Desktop dashboard (Next.js App Router)
+│   │   ├── next.config.ts
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   ├── components.json
+│   │   ├── eslint.config.mjs
+│   │   ├── postcss.config.mjs
+│   │   ├── /public            # Static assets
+│   │   │   ├── file.svg
+│   │   │   ├── globe.svg
+│   │   │   ├── next.svg
+│   │   │   ├── vercel.svg
+│   │   │   └── window.svg
+│   │   └── /src
+│   │       ├── /app
+│   │       │   ├── layout.tsx
+│   │       │   ├── page.tsx
+│   │       │   ├── globals.css
+│   │       │   └── favicon.ico
+│   │       ├── /lib
+│   │       │   └── utils.ts
+│   │       ├── /components
+│   │       │   └── /ui
+│   │       │       ├── button.tsx
+│   │       │       └── tooltip.tsx
+│   │       └── /features
+│   │           └── /polidex
+│   │               ├── polidex-app.tsx
+│   │               ├── types.ts
+│   │               ├── /components
+│   │               │   ├── compare.tsx
+│   │               │   ├── dashboard.tsx
+│   │               │   ├── landing.tsx
+│   │               │   ├── quiz.tsx
+│   │               │   ├── simulator.tsx
+│   │               │   ├── top-nav.tsx
+│   │               │   ├── logic-profile.tsx
+│   │               │   ├── global-loading-screen.tsx
+│   │               │   ├── /compare
+│   │               │   │   ├── legend.tsx
+│   │               │   │   ├── list-box.tsx
+│   │               │   │   ├── match-row.tsx
+│   │               │   │   ├── match-view.tsx
+│   │               │   │   ├── mode-tab.tsx
+│   │               │   │   ├── pol-pol-view.tsx
+│   │               │   │   ├── politician-picker.tsx
+│   │               │   │   ├── utils.ts
+│   │               │   │   └── versus-view.tsx
+│   │               │   ├── /figma
+│   │               │   │   └── image-with-fallback.tsx
+│   │               │   └── /ui
+│   │               │       ├── brand-logo.tsx
+│   │               │       ├── button-component.tsx
+│   │               │       ├── info-tooltip.tsx
+│   │               │       ├── input-component.tsx
+│   │               │       └── select-filter.tsx
+│   │               ├── /data
+│   │               │   ├── politicians.ts
+│   │               │   └── taxonomy.ts
+│   │               └── /lib
+│   │                   ├── api.ts
+│   │                   ├── display.ts
+│   │                   ├── profile.ts
+│   │                   └── style.ts
 │   └── /extension                 # Chrome Extension — HUD Hover Card
 │       ├── manifest.json              # MV3 config; registers content script, service worker, popup [implemented]
 │       ├── /scripts
@@ -69,4 +140,3 @@ Plan extension and relational edge mapping if time permits
 │           ├── card.html              # Hover card markup only; no logic [implemented]
 │           └── popup.js               # Card rendering + data binding only; no math or storage [implemented]
 │
-└── docker-compose.yml         # [planned] Run everything in sync
