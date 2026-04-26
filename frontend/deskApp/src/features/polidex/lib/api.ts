@@ -140,7 +140,14 @@ export async function synthesizeTranscriptAudio(text: string, voiceName: string)
     body: JSON.stringify({ text, voiceName }),
   });
   if (!res.ok) {
-    throw new Error(`/api/simulation/tts responded ${res.status}`);
+    let details = "";
+    try {
+      const data = (await res.json()) as { error?: string };
+      if (data?.error) details = ` (${data.error})`;
+    } catch {
+      // ignore
+    }
+    throw new Error(`/api/simulation/tts responded ${res.status}${details}`);
   }
   return (await res.json()) as { audioBase64: string; mimeType: string };
 }
