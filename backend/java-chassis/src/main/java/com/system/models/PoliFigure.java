@@ -15,14 +15,16 @@ public final class PoliFigure {
     public final String state;
     public final String office;
     public final PoliVector vector;
+    public final float[] adherenceWeights;
 
-    public PoliFigure(String id, String name, String party, String state, String office, PoliVector vector) {
+    public PoliFigure(String id, String name, String party, String state, String office, PoliVector vector, float[] adherenceWeights) {
         this.id = id;
         this.name = name;
         this.party = party;
         this.state = state;
         this.office = office;
         this.vector = vector;
+        this.adherenceWeights = adherenceWeights != null ? adherenceWeights : new float[]{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
     }
 
     @Override
@@ -41,6 +43,6 @@ public final class PoliFigure {
     @Override
     public String toString() {
         return String.format("PoliFigure{id='%s', name='%s', party='%s', state='%s', office='%s', vector=%s}",
-            id, name, party, state, office, vector);
+                id, name, party, state, office, vector);
     }
 }

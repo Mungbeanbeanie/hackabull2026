@@ -3,6 +3,7 @@ package com.system;
 import com.system.managers.LibraryIndexer;
 import com.system.models.PoliFigure;
 import com.system.models.PoliVector;
+import java.util.Arrays;
 
 public class SeedData {
 
@@ -42,9 +43,11 @@ public class SeedData {
     }
 
     private static void add(LibraryIndexer indexer, String id, String name, String party, String office, float[] v) {
+        float[] uniformWeights = new float[20];
+        Arrays.fill(uniformWeights, 1.0f);
         indexer.addFigure(new PoliFigure(id, name, party, "FL", office, new PoliVector(
             v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9],
             v[10], v[11], v[12], v[13], v[14], v[15], v[16], v[17], v[18], v[19]
-        )));
+        ), uniformWeights));
     }
 }

@@ -75,6 +75,11 @@ public class LibraryIndexer {
         return figure != null ? figure.vector : null;
     }
 
+    public float[] lookupAdherenceWeights(String id) {
+        PoliFigure figure = index.get(id);
+        return figure != null ? figure.adherenceWeights : null;
+    }
+
     public List<PoliFigure> getAllFigures() {
         return Collections.unmodifiableList(figures);
     }
@@ -112,14 +117,18 @@ public class LibraryIndexer {
     // ── private helpers ───────────────────────────────────────────────────────
 
     private void loadFromDb() {
-        for (Document doc : collection.find()) {
-            try {
-                PoliFigure figure = fromDocument(doc);
-                index.put(figure.id, figure);
-                figures.add(figure);
-            } catch (Exception e) {
-                System.err.println("[LibraryIndexer] Skipping malformed document: " + e.getMessage());
+        try {
+            for (Document doc : collection.find()) {
+                try {
+                    PoliFigure figure = fromDocument(doc);
+                    index.put(figure.id, figure);
+                    figures.add(figure);
+                } catch (Exception e) {
+                    System.err.println("[LibraryIndexer] Skipping malformed document: " + e.getMessage());
+                }
             }
+        } catch (Exception e) {
+            System.err.println("[LibraryIndexer] DB load failed, starting empty: " + e.getMessage());
         }
     }
 
@@ -128,12 +137,16 @@ public class LibraryIndexer {
         List<Double> vector = new ArrayList<>(arr.length);
         for (float v : arr) vector.add((double) v);
 
+        List<Double> adherenceWeights = new ArrayList<>(20);
+        for (float w : figure.adherenceWeights) adherenceWeights.add((double) w);
+
         return new Document("_id", figure.id)
-                .append("name",   figure.name)
-                .append("party",  figure.party)
-                .append("state",  figure.state)
-                .append("office", figure.office)
-                .append("vector", vector);
+                .append("name",             figure.name)
+                .append("party",            figure.party)
+                .append("state",            figure.state)
+                .append("office",           figure.office)
+                .append("vector",           vector)
+                .append("adherence_weights", adherenceWeights);
     }
 
     @SuppressWarnings("unchecked")
@@ -153,6 +166,14 @@ public class LibraryIndexer {
             v.get(16).floatValue(), v.get(17).floatValue(), v.get(18).floatValue(), v.get(19).floatValue()
         );
 
-        return new PoliFigure(id, name, party, state, office, vector);
+        float[] adherenceWeights = new float[20];
+        List<Double> aw = (List<Double>) doc.get("adherence_weights");
+        if (aw != null && aw.size() == 20) {
+            for (int i = 0; i < 20; i++) adherenceWeights[i] = aw.get(i).floatValue();
+        } else {
+            Arrays.fill(adherenceWeights, 1.0f);
+        }
+
+        return new PoliFigure(id, name, party, state, office, vector, adherenceWeights);
     }
 }

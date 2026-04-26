@@ -10,6 +10,13 @@ package com.system.managers;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.system.api.ApiDispatcher;
+import com.system.api.WikimediaOAuthClient;
+import com.system.api.congressGovApi;
+import com.system.api.googleCivicInfoApi;
+import com.system.api.legiscanApi;
+import com.system.api.openFecApi;
+import com.system.api.openStatesApi;
+import com.system.api.wikimediaApi;
 import com.system.bridge.PythonRunner;
 import com.system.models.PoliFigure;
 import com.system.models.PoliVector;
@@ -22,7 +29,14 @@ public class IngestionRunner {
 
     public static void main(String[] args) {
         // Init Hardware/Logic layers
-        ApiDispatcher api = new ApiDispatcher();
+        ApiDispatcher api = new ApiDispatcher(
+            new googleCivicInfoApi(),
+            new openStatesApi(),
+            new congressGovApi(),
+            new openFecApi(),
+            new wikimediaApi(new WikimediaOAuthClient()),
+            new legiscanApi()
+        );
         PythonRunner python = new PythonRunner();
         LibraryIndexer indexer = new LibraryIndexer(); // Loads MongoDB/Cache on init
 
@@ -66,20 +80,35 @@ public class IngestionRunner {
                     // 4. Vectorize via Python Bridge
                     String payload = MAPPER.writeValueAsString(metadata);
                     String result = python.run("backend/inference-engine/tagging/llm_analyst.py", payload);
-                    
+
                     JsonNode vectorNode = MAPPER.readTree(result);
-                    
+
                     // Construct PoliVector (Ensure d1-d20 order matches constructor)
                     float[] d = new float[20];
                     for (int i = 1; i <= 20; i++) {
                         d[i-1] = (float) vectorNode.get("d" + i).asDouble();
                     }
-                    PoliVector vector = new PoliVector(d);
+                    PoliVector vector = new PoliVector(
+                        d[0],  d[1],  d[2],  d[3],  d[4],  d[5],  d[6],  d[7],  d[8],  d[9],
+                        d[10], d[11], d[12], d[13], d[14], d[15], d[16], d[17], d[18], d[19]
+                    );
+
+                    // 4b. Compute adherence weights via weight_calculator.py
+                    //     Proxy history: two copies of stated vector (real voting history not yet available)
+                    List<Double> statedVec = new ArrayList<>();
+                    for (float fv : d) statedVec.add((double) fv);
+                    Map<String, Object> wcPayload = new HashMap<>();
+                    wcPayload.put("vectors", List.of(statedVec, statedVec));
+                    String wcResult = python.run("backend/inference-engine/math/weight_calculator.py", MAPPER.writeValueAsString(wcPayload));
+                    JsonNode wcNode = MAPPER.readTree(wcResult);
+                    float[] adherenceWeights = new float[20];
+                    JsonNode wArr = wcNode.get("weights");
+                    for (int i = 0; i < 20; i++) adherenceWeights[i] = (float) wArr.get(i).asDouble();
 
                     // 5. Commit to Library (and DB via LibraryIndexer internal DataManager)
-                    PoliFigure figure = new PoliFigure(id, name, metadata.get("party").toString(), 
-                                                       metadata.get("state").toString(), 
-                                                       target.get("office").asText(), vector);
+                    PoliFigure figure = new PoliFigure(id, name, metadata.get("party").toString(),
+                                                       metadata.get("state").toString(),
+                                                       target.get("office").asText(), vector, adherenceWeights);
                     
                     indexer.addFigure(figure);
                     System.out.println("[OK] Ingested: " + name);

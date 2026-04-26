@@ -15,6 +15,7 @@ import com.system.models.UserProfile;
 import com.system.sampler.userNegPreference;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class SearchController {
@@ -35,7 +36,7 @@ public class SearchController {
     public InferencePayload.Response search(UserProfile profile, boolean useAdherence, List<String> seenIds) throws Exception {
         List<InferencePayload.Constraint> constraints = buildConstraints();
         List<Double> userVector = floatToDoubleList(profile.getUserVector());
-        List<Double> weights    = floatToDoubleList(profile.getWeights());
+        List<Double> weights    = Collections.nCopies(20, 1.0); // per-candidate adherence_weights now carry the signal
 
         if (!useAdherence) {
             try {
@@ -112,9 +113,14 @@ public class SearchController {
     private List<InferencePayload.Candidate> buildCandidates() {
         List<InferencePayload.Candidate> candidates = new ArrayList<>();
         for (PoliFigure figure : libraryIndexer.getAllFigures()) {
+            float[] aw = libraryIndexer.lookupAdherenceWeights(figure.id);
+            List<Double> adherenceWeights = aw != null
+                ? floatToDoubleList(aw)
+                : Collections.nCopies(20, 1.0);
             candidates.add(new InferencePayload.Candidate(
                 figure.id,
-                floatToDoubleList(figure.vector.toArray())
+                floatToDoubleList(figure.vector.toArray()),
+                adherenceWeights
             ));
         }
         return candidates;

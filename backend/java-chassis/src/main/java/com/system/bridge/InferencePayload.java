@@ -53,12 +53,14 @@ public class InferencePayload {
     // ── Candidate ─────────────────────────────────────────────────────────────
 
     public static class Candidate {
-        @JsonProperty("id")     public final String       id;
-        @JsonProperty("vector") public final List<Double> vector;
+        @JsonProperty("id")                public final String       id;
+        @JsonProperty("vector")            public final List<Double> vector;
+        @JsonProperty("adherence_weights") public final List<Double> adherenceWeights;
 
-        public Candidate(String id, List<Double> vector) {
-            this.id     = id;
-            this.vector = vector;
+        public Candidate(String id, List<Double> vector, List<Double> adherenceWeights) {
+            this.id               = id;
+            this.vector           = vector;
+            this.adherenceWeights = adherenceWeights;
         }
     }
 
