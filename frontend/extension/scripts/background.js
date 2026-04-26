@@ -139,6 +139,7 @@ async function handleLookup(text, tabId) {
         summary:    match.summary || "",
         policies:   match.policies,
         dimensions: result.dimensions || [],
+        poliVector: match.vector,
       }
     });
 
@@ -153,6 +154,8 @@ async function handleLookup(text, tabId) {
           summary:    match.summary || "",
           policies:   match.policies || [],
           dimensions: result.dimensions || [],
+          userVector,
+          poliVector: match.vector,
         }
       }, () => { if (chrome.runtime.lastError) {} });
     }

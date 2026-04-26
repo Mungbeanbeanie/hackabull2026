@@ -82,26 +82,62 @@ function showOverlay(data) {
     ? `<div style="font-size:11px;color:#8A919E;margin-top:1px;margin-bottom:4px;font-family:inherit">${escapeHtml(data.position)}</div>`
     : "";
 
-  // Top 5 most divergent dimensions
-  const dimRows = (data.dimensions || [])
-    .slice()
-    .sort((a, b) => a.agreement - b.agreement)
-    .slice(0, 5)
-    .map(d => {
-      const c = d.agreement >= 70 ? "#1B6B3A" : d.agreement >= 45 ? "#7A4F00" : "#991B1B";
-      return `<div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
-        <div style="font-size:9px;color:#4B5260;width:70px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:monospace">${escapeHtml(d.name)}</div>
-        <div style="flex:1;height:4px;background:#F1F3F5;border-radius:2px;overflow:hidden">
-          <div style="height:100%;width:${d.agreement}%;background:${c};border-radius:2px"></div>
-        </div>
-        <div style="font-size:9px;color:${c};width:26px;text-align:right;flex-shrink:0;font-family:monospace">${d.agreement}%</div>
-      </div>`;
+  // Mini SVG radar chart — same geometry as the desktop comparison panel
+  function buildOverlayRadar(uv, pv) {
+    const W = 252, H = 192, cx = 126, cy = 96, R = 66, N = 20;
+    const LR = R + 12;
+    const LABELS = [
+      "Market","Fiscal","Tax","Energy",
+      "Education","Immigr.","Repro.","Guns",
+      "Healthcare","Climate","Foreign Pol.","Defense",
+      "Civil Lib.","Voting","Labor","Housing",
+      "Tech Reg.","Crim. Just.","Env. Reg.","Cultural",
+    ];
+    const ang = i => (2 * Math.PI * i / N) - Math.PI / 2;
+    const coord = (v, i) => { const a = ang(i), r = ((v-1)/4)*R; return [cx+r*Math.cos(a), cy+r*Math.sin(a)]; };
+    const pts = vec => Array.from({length:N},(_,i)=>coord(vec[i],i)).map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+
+    const rings = [0.25,0.5,0.75,1.0].map(f=>{
+      const p=Array.from({length:N},(_,i)=>{const a=ang(i);return `${(cx+f*R*Math.cos(a)).toFixed(1)},${(cy+f*R*Math.sin(a)).toFixed(1)}`;}).join(" ");
+      return `<polygon points="${p}" fill="none" stroke="#E2E5E9" stroke-width="${f===1?1.2:0.7}"/>`;
     }).join("");
 
-  const dimSection = dimRows ? `
+    const spokes = Array.from({length:N},(_,i)=>{
+      const a=ang(i);
+      return `<line x1="${cx}" y1="${cy}" x2="${(cx+R*Math.cos(a)).toFixed(1)}" y2="${(cy+R*Math.sin(a)).toFixed(1)}" stroke="#E2E5E9" stroke-width="0.7"/>`;
+    }).join("");
+
+    const labels = LABELS.map((name,i)=>{
+      const a=ang(i), ca=Math.cos(a), sa=Math.sin(a);
+      const lx=cx+LR*ca, ly=cy+LR*sa;
+      const anchor=ca>0.25?"start":ca<-0.25?"end":"middle";
+      const dy=sa<-0.3?-3:sa>0.3?10:4;
+      return `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" dy="${dy}" text-anchor="${anchor}" font-size="7" font-family="monospace" fill="#8A919E">${name}</text>`;
+    }).join("");
+
+    return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="overflow:visible;display:block" xmlns="http://www.w3.org/2000/svg">
+      ${rings}${spokes}
+      <polygon points="${pts(uv)}" fill="#1565C0" fill-opacity="0.14" stroke="#1565C0" stroke-width="1.5" stroke-linejoin="round"/>
+      <polygon points="${pts(pv)}" fill="#C84B00" fill-opacity="0.14" stroke="#C84B00" stroke-width="1.5" stroke-linejoin="round"/>
+      ${labels}
+    </svg>`;
+  }
+
+  const uv = data.userVector, pv = data.poliVector;
+  const radarSVG = (uv && pv && uv.length === 20 && pv.length === 20) ? buildOverlayRadar(uv, pv) : null;
+
+  const dimSection = radarSVG ? `
     <div style="height:1px;background:#F1F3F5;margin:10px 0"></div>
-    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.09em;color:#8A919E;margin-bottom:6px;font-family:inherit">Most Divergent Issues</div>
-    ${dimRows}
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.09em;color:#8A919E;margin-bottom:6px;font-family:inherit">Issue-by-Issue</div>
+    ${radarSVG}
+    <div style="display:flex;gap:12px;margin-top:6px">
+      <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#4B5260;font-family:inherit">
+        <div style="width:8px;height:8px;border-radius:2px;background:#1565C0;flex-shrink:0"></div>You
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#4B5260;font-family:inherit">
+        <div style="width:8px;height:8px;border-radius:2px;background:#C84B00;flex-shrink:0"></div>${escapeHtml(data.name)}
+      </div>
+    </div>
   ` : "";
 
   card.innerHTML = `
