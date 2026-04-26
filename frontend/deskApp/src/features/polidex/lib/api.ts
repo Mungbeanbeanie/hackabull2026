@@ -82,6 +82,21 @@ export async function fetchPoliticians(): Promise<BackendPolitician[]> {
   return data.politicians as BackendPolitician[];
 }
 
+export async function fetchCandidatesForElection(candidateIds: string[]): Promise<BackendPolitician[]> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/search/catalog`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ candidateIds }),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.candidates as BackendPolitician[];
+  } catch {
+    return [];
+  }
+}
+
 export async function checkHealth(): Promise<boolean> {
   try {
     const res = await fetch(`${BACKEND_URL}/health`);

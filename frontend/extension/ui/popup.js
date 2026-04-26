@@ -82,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       fill("top-aligned", last_match.topAligned);
       fill("top-misaligned", last_match.topMisaligned);
-      fill("policies", last_match.policies);
+      fill("policies", last_match.policies || []);
     });
   });
 });

@@ -19,11 +19,12 @@ export type Politician = {
   photo: string;
   role: "U.S. Senate" | "U.S. House" | "Governor" | "State Senate" | "State House" | "Statewide";
   region: "North FL" | "Central FL" | "South FL" | "Statewide";
+  state: string;
 };
 
 const v = (arr: number[]): number[] => arr;
 
-type RawP = Omit<Politician, "w" | "photo" | "role" | "region">;
+type RawP = Omit<Politician, "w" | "photo" | "role" | "region" | "state">;
 
 const PHOTOS = [
   "https://images.unsplash.com/photo-1579168064425-7a8f8ef3f1ea?w=400&q=75",
@@ -40,39 +41,43 @@ const PHOTOS = [
   "https://images.unsplash.com/photo-1766763845459-08a5a630da65?w=400&q=75",
 ];
 
-const META: Record<string, { role: Politician["role"]; region: Politician["region"] }> = {
-  "bd-fl19": { role: "U.S. House", region: "South FL" },
-  "jc-fl15": { role: "State Senate", region: "Central FL" },
-  "am-flag": { role: "Statewide", region: "Statewide" },
-  "rs-flgov": { role: "Governor", region: "Statewide" },
-  "rs-flsen": { role: "U.S. Senate", region: "Statewide" },
-  "mr-flsen": { role: "U.S. Senate", region: "Statewide" },
-  "mw-fl23": { role: "U.S. House", region: "South FL" },
-  "fc-fl20": { role: "U.S. House", region: "South FL" },
-  "ms-fl09": { role: "U.S. House", region: "Central FL" },
-  "kc-fl14": { role: "U.S. House", region: "Central FL" },
-  "mw-flsd17": { role: "State Senate", region: "South FL" },
-  "rs-fl08": { role: "U.S. House", region: "Central FL" },
-  "ms-fl01": { role: "U.S. House", region: "North FL" },
-  "as-fl04": { role: "U.S. House", region: "North FL" },
-  "vs-fl27": { role: "U.S. House", region: "South FL" },
-  "cm-fl26": { role: "U.S. House", region: "South FL" },
-  "ds-fl17": { role: "U.S. House", region: "Central FL" },
-  "mw-fl05": { role: "U.S. House", region: "North FL" },
-  "kc-fl11": { role: "U.S. House", region: "Central FL" },
-  "lf-fl22": { role: "U.S. House", region: "South FL" },
-  "cd-fl12": { role: "U.S. House", region: "South FL" },
-  "jm-fl13": { role: "U.S. House", region: "Central FL" },
-  "vs-fl16": { role: "U.S. House", region: "Central FL" },
-  "ms-fl06": { role: "U.S. House", region: "North FL" },
-  "ds-fl21": { role: "U.S. House", region: "South FL" },
-  "vs-fl07": { role: "U.S. House", region: "Central FL" },
-  "ds-flag2": { role: "Statewide", region: "Statewide" },
-  "cs-flsen": { role: "State Senate", region: "North FL" },
-  "mp-flsen": { role: "State Senate", region: "South FL" },
-  "ds-flhs2": { role: "State House", region: "South FL" },
-  "ds-flhs3": { role: "State House", region: "Central FL" },
-  "ml-flsen": { role: "State Senate", region: "Central FL" },
+const META: Record<string, { role: Politician["role"]; region: Politician["region"]; state: string }> = {
+  "bd-fl19":   { role: "U.S. House",   region: "South FL",   state: "FL" },
+  "jc-fl15":   { role: "State Senate", region: "Central FL", state: "FL" },
+  "am-flag":   { role: "Statewide",    region: "Statewide",  state: "FL" },
+  "rs-flgov":  { role: "Governor",     region: "Statewide",  state: "FL" },
+  "rs-flsen":  { role: "U.S. Senate",  region: "Statewide",  state: "FL" },
+  "mr-flsen":  { role: "U.S. Senate",  region: "Statewide",  state: "FL" },
+  "mw-fl23":   { role: "U.S. House",   region: "South FL",   state: "FL" },
+  "fc-fl20":   { role: "U.S. House",   region: "South FL",   state: "FL" },
+  "ms-fl09":   { role: "U.S. House",   region: "Central FL", state: "FL" },
+  "kc-fl14":   { role: "U.S. House",   region: "Central FL", state: "FL" },
+  "mw-flsd17": { role: "State Senate", region: "South FL",   state: "FL" },
+  "rs-fl08":   { role: "U.S. House",   region: "Central FL", state: "FL" },
+  "ms-fl01":   { role: "U.S. House",   region: "North FL",   state: "FL" },
+  "as-fl04":   { role: "U.S. House",   region: "North FL",   state: "FL" },
+  "vs-fl27":   { role: "U.S. House",   region: "South FL",   state: "FL" },
+  "cm-fl26":   { role: "U.S. House",   region: "South FL",   state: "FL" },
+  "ds-fl17":   { role: "U.S. House",   region: "Central FL", state: "FL" },
+  "mw-fl05":   { role: "U.S. House",   region: "North FL",   state: "FL" },
+  "kc-fl11":   { role: "U.S. House",   region: "Central FL", state: "FL" },
+  "lf-fl22":   { role: "U.S. House",   region: "South FL",   state: "FL" },
+  "cd-fl12":   { role: "U.S. House",   region: "South FL",   state: "FL" },
+  "jm-fl13":   { role: "U.S. House",   region: "Central FL", state: "FL" },
+  "vs-fl16":   { role: "U.S. House",   region: "Central FL", state: "FL" },
+  "ms-fl06":   { role: "U.S. House",   region: "North FL",   state: "FL" },
+  "ds-fl21":   { role: "U.S. House",   region: "South FL",   state: "FL" },
+  "vs-fl07":   { role: "U.S. House",   region: "Central FL", state: "FL" },
+  "ds-flag2":  { role: "Statewide",    region: "Statewide",  state: "FL" },
+  "cs-flsen":  { role: "State Senate", region: "North FL",   state: "FL" },
+  "mp-flsen":  { role: "State Senate", region: "South FL",   state: "FL" },
+  "ds-flhs2":  { role: "State House",  region: "South FL",   state: "FL" },
+  "ds-flhs3":  { role: "State House",  region: "Central FL", state: "FL" },
+  "ml-flsen":  { role: "State Senate", region: "Central FL", state: "FL" },
+  "tc-tx-sen":  { role: "U.S. Senate", region: "Statewide",  state: "TX" },
+  "jc-tx-sen2": { role: "U.S. Senate", region: "Statewide",  state: "TX" },
+  "ga-tx-gov":  { role: "Governor",    region: "Statewide",  state: "TX" },
+  "jc-tx-20":   { role: "U.S. House",  region: "Statewide",  state: "TX" },
 };
 
 const raw: RawP[] = [
@@ -492,6 +497,54 @@ const raw: RawP[] = [
       { name: "Gruters Family", tier: 2, amount: 8000, dimensions: ["p20"] },
     ],
   },
+  {
+    id: "tc-tx-sen", name: "Ted Cruz", initials: "TC", party: "R", district: "TX-Sen",
+    vector_stated: v([5,5,5,4,5,4,5,5,3,2,4,5,3,4,2,4,5,5,4,5]),
+    vector_actual:  v([5,5,5,3,5,4,5,5,3,2,4,5,2,4,2,4,5,5,4,5]),
+    bio: "U.S. Senator (TX). Strict constitutionalist, fiscal hawk, immigration enforcement.",
+    donors: [
+      { name: "Club for Growth",     tier: 4, amount: 180000, dimensions: ["p1","p3"] },
+      { name: "Texas Petroleum PAC", tier: 3, amount: 62000,  dimensions: ["p4","p19"] },
+      { name: "NRA Victory Fund",    tier: 4, amount: 28000,  dimensions: ["p8"] },
+      { name: "Cruz Family",         tier: 2, amount: 5000,   dimensions: ["p20"] },
+    ],
+  },
+  {
+    id: "jc-tx-sen2", name: "John Cornyn", initials: "JC", party: "R", district: "TX-Sen",
+    vector_stated: v([4,4,4,4,4,4,4,4,4,3,4,5,3,4,3,4,4,4,4,4]),
+    vector_actual:  v([4,4,4,4,4,4,4,4,4,3,4,5,3,4,3,4,4,4,4,4]),
+    bio: "U.S. Senator (TX). Senate Majority Whip. National security, bipartisan dealmaker.",
+    donors: [
+      { name: "AT&T Inc PAC",        tier: 3, amount: 45000, dimensions: ["p15"] },
+      { name: "Lockheed Martin PAC", tier: 3, amount: 38000, dimensions: ["p12"] },
+      { name: "Texas Realtors PAC",  tier: 4, amount: 22000, dimensions: ["p16"] },
+      { name: "Cornyn Family",       tier: 2, amount: 4000,  dimensions: ["p20"] },
+    ],
+  },
+  {
+    id: "ga-tx-gov", name: "Greg Abbott", initials: "GA", party: "R", district: "TX-Gov",
+    vector_stated: v([4,5,5,4,5,4,5,4,4,2,5,5,3,4,3,4,5,5,4,5]),
+    vector_actual:  v([4,4,4,3,5,5,5,4,3,2,5,5,2,4,3,4,4,5,4,4]),
+    bio: "Governor of Texas. Border security, school choice, tort reform.",
+    donors: [
+      { name: "Texans for Lawsuit Reform", tier: 3, amount: 120000, dimensions: ["p3"] },
+      { name: "Texas Petroleum PAC",       tier: 3, amount: 55000,  dimensions: ["p4","p19"] },
+      { name: "Liberty Institute",         tier: 4, amount: 35000,  dimensions: ["p2","p5"] },
+      { name: "Abbott Family",             tier: 2, amount: 6000,   dimensions: ["p20"] },
+    ],
+  },
+  {
+    id: "jc-tx-20", name: "Joaquin Castro", initials: "JC", party: "D", district: "TX-20",
+    vector_stated: v([2,2,2,3,2,3,2,3,4,4,3,2,4,3,4,3,2,2,4,3]),
+    vector_actual:  v([2,2,2,3,2,3,2,3,4,4,3,2,4,3,4,3,2,2,4,3]),
+    bio: "U.S. Representative (TX-20). Progressive on immigration, housing, education.",
+    donors: [
+      { name: "SEIU Political Fund", tier: 4, amount: 42000, dimensions: ["p14"] },
+      { name: "Emily's List",        tier: 4, amount: 28000, dimensions: ["p10"] },
+      { name: "Act Blue TX",         tier: 3, amount: 65000, dimensions: ["p20"] },
+      { name: "Castro Family",       tier: 2, amount: 3000,  dimensions: ["p20"] },
+    ],
+  },
 ];
 
 export const politicians: Politician[] = raw.map((p, i) => {
@@ -503,5 +556,6 @@ export const politicians: Politician[] = raw.map((p, i) => {
     photo: PHOTOS[i % PHOTOS.length],
     role: META[p.id]?.role ?? "U.S. House",
     region: META[p.id]?.region ?? "Statewide",
+    state: META[p.id]?.state ?? "FL",
   };
 });
