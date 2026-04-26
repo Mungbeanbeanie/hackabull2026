@@ -24,7 +24,12 @@ async function refreshPoliticianCache() {
     const response = await fetch(`${BACKEND_URL}/api/politicians`);
     if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
     const data = await response.json();
-    await chrome.storage.local.set({ [STORAGE_KEY]: data });
+    const raw = Array.isArray(data) ? data : (data.politicians || []);
+    const politicians = raw.map(p => ({
+      ...p,
+      vector: Array.from({ length: 20 }, (_, i) => p.vector[`d${i + 1}`])
+    }));
+    await chrome.storage.local.set({ [STORAGE_KEY]: politicians });
     console.log("Politician cache updated from API.");
   } catch (error) {
     console.warn("API fetch failed. System using existing cache or will rely on stub.");
@@ -37,7 +42,7 @@ async function refreshPoliticianCache() {
  */
 async function findPolitician(text) {
   const result = await chrome.storage.local.get(STORAGE_KEY);
-  const db = result[STORAGE_KEY] || STUB_DB; // Fallback to stub if storage is empty
+  const db = Array.isArray(result[STORAGE_KEY]) ? result[STORAGE_KEY] : STUB_DB; // Fallback to stub if storage is empty or malformed
 
   const normalizedText = text.trim().toLowerCase();
   
@@ -78,7 +83,7 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
       return;
     }
 
-    const result = await computeMatch(userVector, match.vector);
+    const result = computeMatch(userVector, match.vector);
 
     await chrome.storage.local.set({
       last_match: {
@@ -92,6 +97,8 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 
     if (tabId != null) chrome.action.setBadgeText({ text: "!", tabId });
     chrome.action.setBadgeBackgroundColor({ color: "#7ee8a2" });
+
+    try { await chrome.action.openPopup(); } catch {}
   })();
 
   return true; // Keep channel open for async response if needed
