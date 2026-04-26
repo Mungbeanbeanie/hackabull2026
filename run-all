@@ -1,0 +1,243 @@
+#!/usr/bin/env node
+/**
+ * Cross-platform one-command launcher.
+ *
+ * Mirrors run-all.ps1 behavior:
+ * - Loads backend/java-chassis/.env (if present)
+ * - Ensures deps (frontend) unless --skip-install
+ * - Starts backend (mvn exec:java), waits for /health
+ * - Starts frontend (npm run dev -- -p PORT), waits for response
+ * - Ctrl+C stops both
+ */
+
+const fs = require("node:fs");
+const path = require("node:path");
+const { spawn, spawnSync } = require("node:child_process");
+
+const isWin = process.platform === "win32";
+const repoRoot = path.resolve(__dirname);
+
+function info(msg) {
+  process.stdout.write(`[run-all] ${msg}\n`);
+}
+function warn(msg) {
+  process.stderr.write(`[run-all] ${msg}\n`);
+}
+function err(msg) {
+  process.stderr.write(`[run-all] ${msg}\n`);
+}
+
+function parseArgs(argv) {
+  const out = {
+    backendPort: 8080,
+    frontendPort: 3000,
+    skipInstall: false,
+  };
+
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === "--backend-port" || a === "--backendPort") {
+      out.backendPort = Number(argv[++i]);
+    } else if (a === "--frontend-port" || a === "--frontendPort") {
+      out.frontendPort = Number(argv[++i]);
+    } else if (a === "--skip-install" || a === "--skipInstall") {
+      out.skipInstall = true;
+    } else if (a === "-h" || a === "--help") {
+      out.help = true;
+    } else {
+      // tolerate unknown args for forward-compat
+    }
+  }
+  return out;
+}
+
+function assertCmd(cmd, installHint) {
+  const which = isWin ? "where" : "which";
+  const res = spawnSync(which, [cmd], { stdio: "ignore" });
+  if (res.status !== 0) {
+    throw new Error(`Missing required command '${cmd}'. ${installHint}`);
+  }
+}
+
+function loadDotEnv(filePath) {
+  if (!fs.existsSync(filePath)) {
+    warn(`No .env found at ${filePath} (continuing).`);
+    return;
+  }
+  info(`Loading env from ${filePath}`);
+  const raw = fs.readFileSync(filePath, "utf8");
+  for (const line of raw.split(/\r?\n/)) {
+    const t = line.trim();
+    if (!t || t.startsWith("#")) continue;
+    const idx = t.indexOf("=");
+    if (idx < 1) continue;
+    const key = t.slice(0, idx).trim();
+    let val = t.slice(idx + 1).trim();
+    if (
+      (val.startsWith('"') && val.endsWith('"')) ||
+      (val.startsWith("'") && val.endsWith("'"))
+    ) {
+      val = val.slice(1, -1);
+    }
+    process.env[key] = val;
+  }
+}
+
+async function waitForHttp(url, timeoutSec = 60) {
+  const deadline = Date.now() + timeoutSec * 1000;
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetch(url, { method: "GET" });
+      if (res.status >= 200 && res.status < 500) return true;
+    } catch {
+      // ignore
+    }
+    await new Promise((r) => setTimeout(r, 350));
+  }
+  return false;
+}
+
+function startProc(name, cwd, cmd, args, extraEnv) {
+  info(`Starting ${name}`);
+  const child = spawn(cmd, args, {
+    cwd,
+    stdio: "inherit",
+    env: { ...process.env, ...(extraEnv ?? {}) },
+    windowsHide: false,
+    detached: !isWin, // allow killing whole process group on unix
+  });
+  return child;
+}
+
+function stopProc(name, child) {
+  if (!child || child.killed) return;
+  info(`Stopping ${name}...`);
+  try {
+    if (isWin) {
+      spawnSync("taskkill", ["/PID", String(child.pid), "/T", "/F"], {
+        stdio: "ignore",
+      });
+    } else {
+      // kill the whole process group
+      process.kill(-child.pid, "SIGTERM");
+    }
+  } catch {
+    // best-effort
+    try {
+      child.kill("SIGKILL");
+    } catch {}
+  }
+}
+
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  if (args.help) {
+    process.stdout.write(
+      [
+        "Usage: ./run-all [--backend-port 8080] [--frontend-port 3000] [--skip-install]",
+        "",
+      ].join("\n"),
+    );
+    return;
+  }
+
+  if (!Number.isFinite(args.backendPort) || args.backendPort <= 0) {
+    throw new Error(`Invalid backend port: ${args.backendPort}`);
+  }
+  if (!Number.isFinite(args.frontendPort) || args.frontendPort <= 0) {
+    throw new Error(`Invalid frontend port: ${args.frontendPort}`);
+  }
+
+  // Dependency checks (node is already running, but keep parity with PS1)
+  assertCmd("node", "Install Node.js 18+ from https://nodejs.org/ (then reopen your terminal).");
+  assertCmd("npm", "Install Node.js 18+ from https://nodejs.org/ (includes npm).");
+  assertCmd("java", "Install Java 17+ (Temurin recommended) from https://adoptium.net/ and ensure 'java' is on PATH.");
+  assertCmd("mvn", "Install Maven 3.8+ from https://maven.apache.org/download.cgi and ensure 'mvn' is on PATH.");
+
+  loadDotEnv(path.join(repoRoot, "backend", "java-chassis", ".env"));
+  process.env.PORT = String(args.backendPort);
+
+  const backendDir = path.join(repoRoot, "backend", "java-chassis");
+  const frontendDir = path.join(repoRoot, "frontend", "deskApp");
+
+  if (!args.skipInstall) {
+    const nodeModules = path.join(frontendDir, "node_modules");
+    if (!fs.existsSync(nodeModules)) {
+      info("Installing frontend deps (npm install)");
+      const res = spawnSync("npm", ["install"], { cwd: frontendDir, stdio: "inherit" });
+      if (res.status !== 0) {
+        throw new Error("npm install failed.");
+      }
+    }
+  }
+
+  let backend;
+  let frontend;
+
+  const shutdown = () => {
+    stopProc("frontend", frontend);
+    stopProc("backend", backend);
+  };
+
+  process.on("SIGINT", () => {
+    shutdown();
+    process.exit(0);
+  });
+  process.on("SIGTERM", () => {
+    shutdown();
+    process.exit(0);
+  });
+  process.on("exit", () => shutdown());
+
+  try {
+    backend = startProc("backend", backendDir, "mvn", ["exec:java"]);
+    const backendHealthy = await waitForHttp(
+      `http://localhost:${args.backendPort}/health`,
+      60,
+    );
+    if (!backendHealthy) {
+      warn("Backend did not become healthy at /health within timeout.");
+    } else {
+      info(`Backend healthy on http://localhost:${args.backendPort}`);
+    }
+
+    frontend = startProc(
+      "frontend",
+      frontendDir,
+      "npm",
+      ["run", "dev", "--", "-p", String(args.frontendPort)],
+      { NEXT_PUBLIC_BACKEND_URL: `http://localhost:${args.backendPort}` },
+    );
+    const frontendUp = await waitForHttp(`http://localhost:${args.frontendPort}`, 60);
+    if (!frontendUp) {
+      warn("Frontend did not respond within timeout.");
+    } else {
+      info(`Frontend up on http://localhost:${args.frontendPort}`);
+    }
+
+    info("Press Ctrl+C to stop both.");
+
+    // wait until one exits
+    await new Promise((resolve) => {
+      const done = () => resolve();
+      backend.once("exit", done);
+      frontend.once("exit", done);
+    });
+
+    if (backend.exitCode !== null && backend.exitCode !== 0) {
+      err(`Backend exited (code ${backend.exitCode}).`);
+    }
+    if (frontend.exitCode !== null && frontend.exitCode !== 0) {
+      err(`Frontend exited (code ${frontend.exitCode}).`);
+    }
+  } finally {
+    shutdown();
+    info("Done.");
+  }
+}
+
+main().catch((e) => {
+  err(e?.message ?? String(e));
+  process.exitCode = 1;
+});
+

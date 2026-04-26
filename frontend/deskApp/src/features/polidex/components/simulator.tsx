@@ -6,6 +6,8 @@ import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Politician } from "@/features/polidex/data/politicians";
 import { taxonomy } from "@/features/polidex/data/taxonomy";
+import { generateSimulationTranscript, synthesizeTranscriptAudio } from "@/features/polidex/lib/api";
+import { UserProfile } from "@/features/polidex/lib/profile";
 import { FONT_MONO, FONT_SANS } from "@/features/polidex/lib/style";
 
 import { ImageWithFallback } from "./figma/image-with-fallback";
@@ -93,24 +95,24 @@ function marketColor(score: number): string {
 function getStageSlots(count: number): StageSlot[] {
   if (count <= 2) {
     return [
-      { leftPercent: 30, topPercent: 50 },
-      { leftPercent: 70, topPercent: 50 },
+      { leftPercent: 24, topPercent: 50 },
+      { leftPercent: 76, topPercent: 50 },
     ];
   }
 
   if (count === 3) {
     return [
-      { leftPercent: 50, topPercent: 24 },
-      { leftPercent: 30, topPercent: 72 },
-      { leftPercent: 70, topPercent: 72 },
+      { leftPercent: 50, topPercent: 15 },
+      { leftPercent: 22, topPercent: 78 },
+      { leftPercent: 78, topPercent: 78 },
     ];
   }
 
   return [
-    { leftPercent: 28, topPercent: 30 },
-    { leftPercent: 72, topPercent: 30 },
-    { leftPercent: 28, topPercent: 74 },
-    { leftPercent: 72, topPercent: 74 },
+    { leftPercent: 22, topPercent: 22 },
+    { leftPercent: 78, topPercent: 22 },
+    { leftPercent: 22, topPercent: 78 },
+    { leftPercent: 78, topPercent: 78 },
   ];
 }
 
@@ -236,7 +238,7 @@ function nextSelectedIds(current: string[], id: string): string[] {
   return [...current, id];
 }
 
-export function Simulator({ list }: Readonly<{ list: Politician[] }>) {
+export function Simulator({ list, profile }: Readonly<{ list: Politician[]; profile: UserProfile | null }>) {
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>(() => list.slice(0, 3).map((p) => p.id));
   const [mode, setMode] = useState<SimMode>("theoretical");
@@ -249,8 +251,12 @@ export function Simulator({ list }: Readonly<{ list: Politician[] }>) {
   const [exportUrl, setExportUrl] = useState<string | null>(null);
   const [exportMimeType, setExportMimeType] = useState<"video/webm" | "video/mp4" | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [transcriptLoading, setTranscriptLoading] = useState(false);
+  const [audioError, setAudioError] = useState<string | null>(null);
 
   const exportCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const turnAudioCacheRef = useRef<Map<string, string>>(new Map());
 
   const topic = useMemo(() => TOPICS.find((t) => t.id === topicId) ?? TOPICS[0], [topicId]);
   const participants = useMemo(() => list.filter((p) => selectedIds.includes(p.id)), [list, selectedIds]);
@@ -293,16 +299,113 @@ export function Simulator({ list }: Readonly<{ list: Politician[] }>) {
     };
   }, [exportUrl]);
 
+  useEffect(() => {
+    const player = audioRef.current;
+    const currentTurn = turns[activeTurn];
+    // During export we intentionally advance `activeTurn` for rendering,
+    // but we do NOT want to synthesize/play audio.
+    if (!player || !isRunning || !currentTurn || isExporting) return;
+
+    let canceled = false;
+    const cacheKey = currentTurn.id;
+    const cached = turnAudioCacheRef.current.get(cacheKey);
+
+    const playUrl = async (url: string) => {
+      if (canceled || audioRef.current == null) return;
+      try {
+        audioRef.current.src = url;
+        audioRef.current.playbackRate = playbackSpeed;
+        await audioRef.current.play();
+      } catch {
+        setAudioError("Unable to autoplay this turn audio.");
+      }
+    };
+
+    if (cached) {
+      void playUrl(cached);
+      return () => {
+        canceled = true;
+      };
+    }
+
+    void synthesizeTranscriptAudio(currentTurn.text, currentTurn.voice.voiceName)
+      .then((res) => {
+        if (canceled) return;
+        const blob = new Blob([Uint8Array.from(atob(res.audioBase64), (char) => char.charCodeAt(0))], { type: res.mimeType || "audio/mpeg" });
+        const url = URL.createObjectURL(blob);
+        turnAudioCacheRef.current.set(cacheKey, url);
+        void playUrl(url);
+      })
+      .catch(() => {
+        if (!canceled) setAudioError("ElevenLabs audio unavailable; transcript is still generated.");
+      });
+
+    return () => {
+      canceled = true;
+    };
+  }, [activeTurn, isExporting, isRunning, playbackSpeed, turns]);
+
+  useEffect(() => {
+    return () => {
+      turnAudioCacheRef.current.forEach((url) => URL.revokeObjectURL(url));
+      turnAudioCacheRef.current.clear();
+    };
+  }, []);
+
   const toggleParticipant = (id: string) => {
     setSelectedIds((current) => nextSelectedIds(current, id));
   };
 
-  const runSimulation = () => {
-    const next = buildSimulation(participants, topic, mode);
-    setTurns(next);
-    setActiveTurn(0);
-    setIsRunning(true);
+  const runSimulation = async () => {
+    if (participants.length < 2) return;
+    setTranscriptLoading(true);
+    setAudioError(null);
     setExportError(null);
+    try {
+      const generated = await generateSimulationTranscript({
+        participants: participants.map((participant) => ({
+          id: participant.id,
+          name: participant.name,
+          party: participant.party,
+          district: participant.district,
+          role: participant.role,
+          vector_stated: participant.vector_stated,
+          vector_actual: participant.vector_actual,
+        })),
+        topic: { id: topic.id, label: topic.label, alleles: topic.alleles },
+        mode,
+        userProfile: profile
+          ? {
+              vector: profile.vector,
+              weights: profile.weights,
+              state: profile.state,
+            }
+          : undefined,
+      });
+
+      const participantById = new Map(participants.map((participant) => [participant.id, participant]));
+      const next: SimTurn[] = generated.turns.map((turn, index) => {
+        const speaker = participantById.get(turn.speakerId) ?? participants[index % participants.length];
+        return {
+          id: `${speaker.id}-${index}`,
+          speakerId: speaker.id,
+          text: turn.text,
+          triggeredAlleles: turn.triggeredAlleles,
+          voice: getVoiceProfile(speaker),
+        };
+      });
+
+      setTurns(next);
+      setActiveTurn(0);
+      setIsRunning(true);
+    } catch {
+      const fallback = buildSimulation(participants, topic, mode);
+      setTurns(fallback);
+      setActiveTurn(0);
+      setIsRunning(true);
+    } finally {
+      setTranscriptLoading(false);
+    }
   };
 
   const resetSimulation = () => {
@@ -310,6 +413,7 @@ export function Simulator({ list }: Readonly<{ list: Politician[] }>) {
     setTurns([]);
     setActiveTurn(0);
     setExportError(null);
+    setAudioError(null);
   };
 
   const goPrevTurn = () => {
@@ -768,11 +872,11 @@ export function Simulator({ list }: Readonly<{ list: Politician[] }>) {
           <div className="mt-4 grid grid-cols-1 gap-2 border-t border-[#EEF2F5] pt-4">
             <Button
               onClick={runSimulation}
-              disabled={participants.length < 2}
+              disabled={participants.length < 2 || transcriptLoading}
               className="h-9 bg-[#0D0F12] text-white hover:bg-[#202530]"
               style={{ fontFamily: FONT_SANS, fontSize: 12 }}
             >
-              Generate Simulation
+              {transcriptLoading ? "Generating with Gemini..." : "Generate Simulation"}
             </Button>
             <div className="grid grid-cols-2 gap-2">
               <Button
@@ -865,6 +969,9 @@ export function Simulator({ list }: Readonly<{ list: Politician[] }>) {
             {exportError && (
               <div style={{ fontFamily: FONT_SANS, fontSize: 11, color: "#A53131" }}>{exportError}</div>
             )}
+            {audioError && (
+              <div style={{ fontFamily: FONT_SANS, fontSize: 11, color: "#A53131" }}>{audioError}</div>
+            )}
           </div>
 
           <div className="mt-4 rounded-xl border border-[#E2E5E9] bg-[#FAFBFC] p-3">
@@ -882,7 +989,7 @@ export function Simulator({ list }: Readonly<{ list: Politician[] }>) {
           <div className="relative min-h-[320px] overflow-hidden rounded-xl border border-[#E2E5E9] bg-[#10161C]">
             <div className="absolute left-0 top-0 h-full w-full opacity-30" style={{ backgroundImage: "radial-gradient(circle at 30% 30%, #2A7F62 0%, transparent 40%), radial-gradient(circle at 70% 70%, #B13A2C 0%, transparent 45%)" }} />
 
-            <div className="absolute left-1/2 top-1/2 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/25 bg-white/10 backdrop-blur-sm">
+            <div className="absolute left-1/2 top-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/25 bg-white/10 backdrop-blur-sm">
               <div className="flex h-full w-full flex-col items-center justify-center px-2 text-center">
                 <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#D0D8E3", letterSpacing: "0.08em" }}>
                   {mode === "theoretical" ? "VTHEORETICAL" : "VLEGISLATIVE"}
@@ -1049,6 +1156,9 @@ export function Simulator({ list }: Readonly<{ list: Politician[] }>) {
       </div>
 
       <canvas ref={exportCanvasRef} width={STAGE_W} height={STAGE_H} className="hidden" />
+      <audio ref={audioRef} className="hidden">
+        <track kind="captions" />
+      </audio>
     </div>
   );
 }

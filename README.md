@@ -129,6 +129,29 @@ The Java chassis orchestrates all system state and HTTP traffic. Stateless math 
 | Python | 3.10+ |
 | MongoDB | 6+ (local or Atlas URI) |
 
+### Quick Start (one command)
+
+From the repo root:
+
+- **macOS/Linux**:
+
+```bash
+chmod +x ./run-all
+./run-all
+```
+
+- **Windows**:
+
+```bash
+.\run-all.cmd
+```
+
+Optional flags:
+
+```bash
+./run-all --backend-port 8080 --frontend-port 3000 --skip-install
+```
+
 ### 1. Environment Setup
 
 Copy and fill in the environment file:
