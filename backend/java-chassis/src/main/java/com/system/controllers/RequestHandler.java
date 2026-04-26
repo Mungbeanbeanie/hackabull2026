@@ -271,6 +271,14 @@ public class RequestHandler {
 
     // ── utilities ─────────────────────────────────────────────────────────────
 
+    private static String stanceWord(double score) {
+        if (score <= 1.4) return "strongly oppose";
+        if (score <= 2.4) return "lean oppose";
+        if (score <= 3.4) return "mixed/uncertain";
+        if (score <= 4.4) return "lean support";
+        return "strongly support";
+    }
+
     private JsonNode buildGeminiTranscript(JsonNode participants, JsonNode topic, String mode, JsonNode userProfile) throws Exception {
         String apiKey = System.getProperty("GEMINI_API_KEY");
         if (apiKey == null || apiKey.isBlank()) apiKey = System.getProperty("GOOGLE_API_KEY");
@@ -278,24 +286,66 @@ public class RequestHandler {
         if (apiKey == null || apiKey.isBlank()) apiKey = System.getenv("GOOGLE_API_KEY");
 
         int turnCount = Math.max(8, participants.size() * 3);
-        String prompt = "Generate a political debate transcript in strict JSON only (no markdown, no prose outside JSON)." +
-            " Return an object with key turns: [{speakerId, text, triggeredAlleles}]." +
-            " Generate exactly " + turnCount + " turns." +
-            " Each turn text should be natural spoken dialogue (2-5 sentences), grounded in the provided vectors and topic." +
-            " Do not truncate or artificially cap character counts." +
-            " Use only speakerId values from provided participants." +
-            " triggeredAlleles must be 1-2 entries from topic.alleles." +
-            " topic=" + MAPPER.writeValueAsString(topic) +
-            " mode=" + mode +
-            " participants=" + MAPPER.writeValueAsString(participants) +
-            " userProfile=" + (userProfile == null ? "null" : MAPPER.writeValueAsString(userProfile));
+
+        // Pre-compute a compact, speaker-specific policy summary for the selected topic alleles.
+        JsonNode alleles = topic.path("alleles");
+        List<Map<String, Object>> speakerStandard = new ArrayList<>();
+        for (JsonNode p : participants) {
+            String speakerId = p.path("id").asText("unknown");
+            String name = p.path("name").asText("Speaker");
+            String party = p.path("party").asText("");
+            String role = p.path("role").asText("");
+            String district = p.path("district").asText("");
+
+            JsonNode vec = "functional".equals(mode) ? p.path("vector_actual") : p.path("vector_stated");
+            List<Map<String, Object>> alleleScores = new ArrayList<>();
+            if (alleles.isArray()) {
+                for (JsonNode a : alleles) {
+                    String alleleId = a.asText();
+                    int idx = 0;
+                    try { idx = Integer.parseInt(alleleId.replaceAll("[^0-9]", "")) - 1; } catch (Exception ignored) {}
+                    double score = (idx >= 0 && idx < vec.size()) ? vec.path(idx).asDouble(3.0) : 3.0;
+                    alleleScores.add(Map.of(
+                        "alleleId", alleleId,
+                        "score", score,
+                        "stance", stanceWord(score)
+                    ));
+                }
+            }
+            speakerStandard.add(Map.of(
+                "speakerId", speakerId,
+                "name", name,
+                "party", party,
+                "role", role,
+                "district", district,
+                "topicAlleles", alleleScores
+            ));
+        }
+
+        String prompt =
+            "You are generating a simulated policy debate transcript.\n" +
+            "OUTPUT: Strict JSON only. No markdown, no commentary.\n" +
+            "SCHEMA: {\"turns\":[{\"speakerId\":string,\"text\":string,\"triggeredAlleles\":[string,string?]}]}\n" +
+            "COUNT: Generate exactly " + turnCount + " turns.\n" +
+            "SPEAKERS: Use only speakerId values from speakerStandard.\n" +
+            "STYLE STANDARD:\n" +
+            "- Each turn is 2–4 sentences, written for spoken audio.\n" +
+            "- No generic filler openings. No repetition across turns.\n" +
+            "- Each turn must propose at least one concrete mechanism (funding level, enforcement, program design, timeline, tradeoff).\n" +
+            "- triggeredAlleles must be 1–2 entries from topic.alleles and MUST match what the turn is about.\n" +
+            "- The stance implied by the turn must align with the speakerStandard topicAlleles stance words.\n" +
+            "INPUT JSON:\n" +
+            "topic=" + MAPPER.writeValueAsString(topic) + "\n" +
+            "mode=" + mode + "\n" +
+            "speakerStandard=" + MAPPER.writeValueAsString(speakerStandard) + "\n" +
+            "userProfile=" + (userProfile == null ? "null" : MAPPER.writeValueAsString(userProfile)) + "\n";
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))));
         payload.put("generationConfig", Map.of(
             "responseMimeType", "application/json",
             "temperature", 0.35,
-            "maxOutputTokens", 1400
+            "maxOutputTokens", 2200
         ));
 
         HttpRequest req = HttpRequest.newBuilder()

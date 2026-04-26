@@ -620,22 +620,7 @@ export function Simulator({ list, profile }: Readonly<{ list: Politician[]; prof
     ctx.fill();
     ctx.globalAlpha = 1;
 
-    ctx.strokeStyle = "rgba(255,255,255,0.18)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(STAGE_W / 2, STAGE_H / 2, 102, 0, Math.PI * 2);
-    ctx.stroke();
-
-    ctx.fillStyle = "rgba(255,255,255,0.08)";
-    ctx.beginPath();
-    ctx.arc(STAGE_W / 2, STAGE_H / 2, 96, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "#D9E2EF";
-    ctx.font = "600 14px var(--font-plex-mono), monospace";
-    ctx.textAlign = "center";
-    ctx.fillText(mode === "theoretical" ? "VTHEORETICAL" : "VLEGISLATIVE", STAGE_W / 2, STAGE_H / 2 - 5);
-    // (intentionally no topic label in the center)
+    // (intentionally no center HUD bubble/text)
 
     participants.forEach((speaker, index) => {
       const slot = stageSlots[index] ?? { leftPercent: 50, topPercent: 50 };
