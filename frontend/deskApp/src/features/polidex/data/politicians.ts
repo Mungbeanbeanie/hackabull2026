@@ -80,6 +80,20 @@ const PHOTO_BY_ID: Record<string, string> = {
   "sg-tx-29":   `${B}/G/G000587.jpg`, // Sylvia Garcia
   "ve-tx-16":   `${B}/E/E000299.jpg`, // Veronica Escobar
   "ca-tx-32":   `${B}/A/A000378.jpg`, // Colin Allred
+  // California federal
+  "ap-ca-sen": `${B}/P/P000145.jpg`, // Alex Padilla
+  "as-ca-sen": `${B}/S/S001150.jpg`, // Adam Schiff
+  "ao-ny-14":  `${B}/O/O000172.jpg`, // Alexandria Ocasio-Cortez
+  "cs-ny-sen": `${B}/S/S000148.jpg`, // Chuck Schumer
+  "kg-ny-sen": `${B}/G/G000555.jpg`, // Kirsten Gillibrand
+  "rw-ga-sen": `${B}/W/W000790.jpg`, // Raphael Warnock
+  "jo-ga-sen": `${B}/O/O000175.jpg`, // Jon Ossoff
+  // Wikipedia — governors + no confirmed bioguide
+  "gn-ca-gov": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Governor_of_California_Gavin_Newsom_%28cropped_3x4%29.jpg/330px-Governor_of_California_Gavin_Newsom_%28cropped_3x4%29.jpg",
+  "mg-ca-27":  "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Mike_Garcia%2C_official_portrait%2C_116th_Congress_%28cropped1%29.jpg/330px-Mike_Garcia%2C_official_portrait%2C_116th_Congress_%28cropped1%29.jpg",
+  "ml-ny-17":  "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Rep._Mike_Lawler_official_photo.jpg/330px-Rep._Mike_Lawler_official_photo.jpg",
+  "mg-ga-14":  "https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Marjorie_Taylor_Greene_%28cropped%29.jpg/330px-Marjorie_Taylor_Greene_%28cropped%29.jpg",
+  "bk-ga-gov": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Brian_Kemp_2023.jpg/330px-Brian_Kemp_2023.jpg",
   // State-level officials — Wikipedia thumbnails (no federal bioguide)
   "am-flag":    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Senator_Ashley_Moody_Official_Portrait.jpg/330px-Senator_Ashley_Moody_Official_Portrait.jpg",
   "mw-flsd17":  "https://upload.wikimedia.org/wikipedia/commons/b/b2/Senator_Lori_Berman.jpg",
@@ -127,6 +141,18 @@ const META: Record<string, { role: Politician["role"]; region: Politician["regio
   "ds-flhs2":  { role: "State House",  region: "South FL",   state: "FL" },
   "ds-flhs3":  { role: "State House",  region: "Central FL", state: "FL" },
   "ml-flsen":  { role: "State Senate", region: "Central FL", state: "FL" },
+  "gn-ca-gov":  { role: "Governor",    region: "Statewide",  state: "CA" },
+  "ap-ca-sen":  { role: "U.S. Senate", region: "Statewide",  state: "CA" },
+  "as-ca-sen":  { role: "U.S. Senate", region: "Statewide",  state: "CA" },
+  "mg-ca-27":   { role: "U.S. House",  region: "Statewide",  state: "CA" },
+  "cs-ny-sen":  { role: "U.S. Senate", region: "Statewide",  state: "NY" },
+  "ao-ny-14":   { role: "U.S. House",  region: "Statewide",  state: "NY" },
+  "kg-ny-sen":  { role: "U.S. Senate", region: "Statewide",  state: "NY" },
+  "ml-ny-17":   { role: "U.S. House",  region: "Statewide",  state: "NY" },
+  "rw-ga-sen":  { role: "U.S. Senate", region: "Statewide",  state: "GA" },
+  "jo-ga-sen":  { role: "U.S. Senate", region: "Statewide",  state: "GA" },
+  "mg-ga-14":   { role: "U.S. House",  region: "Statewide",  state: "GA" },
+  "bk-ga-gov":  { role: "Governor",    region: "Statewide",  state: "GA" },
   "tc-tx-sen":  { role: "U.S. Senate", region: "Statewide",  state: "TX" },
   "jc-tx-sen2": { role: "U.S. Senate", region: "Statewide",  state: "TX" },
   "ga-tx-gov":  { role: "Governor",    region: "Statewide",  state: "TX" },
@@ -556,6 +582,165 @@ const raw: RawP[] = [
       { name: "NRA", tier: 4, amount: 18000, dimensions: ["p8"] },
       { name: "Heritage Action", tier: 4, amount: 14000, dimensions: ["p20"] },
       { name: "Gruters Family", tier: 2, amount: 8000, dimensions: ["p20"] },
+    ],
+  },
+  // California
+  {
+    id: "gn-ca-gov", name: "Gavin Newsom", initials: "GN", party: "D", district: "CA-Gov",
+    vector_stated: v([1,2,1,1,1,2,1,2,1,1,2,2,1,1,2,1,2,1,1,1]),
+    vector_actual: v([1,2,1,1,1,2,1,2,1,1,2,2,1,1,2,1,2,1,1,1]),
+    bio: "Governor of California. Climate policy, universal healthcare, 2028 presidential prospect.",
+    donors: [
+      { name: "Reed Hastings", tier: 2, amount: 55000, dimensions: ["p17"] },
+      { name: "CA Teachers Assoc PAC", tier: 4, amount: 95000, dimensions: ["p5", "p15"] },
+      { name: "Tom Steyer", tier: 2, amount: 45000, dimensions: ["p10"] },
+      { name: "SEIU CA PAC", tier: 4, amount: 38000, dimensions: ["p14", "p15"] },
+      { name: "Newsom Family Trust", tier: 2, amount: 8000, dimensions: ["p20"] },
+    ],
+  },
+  {
+    id: "ap-ca-sen", name: "Alex Padilla", initials: "AP", party: "D", district: "CA-Sen",
+    vector_stated: v([2,2,1,1,2,2,1,2,1,1,2,3,1,1,2,2,2,2,1,2]),
+    vector_actual: v([2,2,1,1,2,2,1,2,1,1,2,3,1,1,2,2,2,2,1,2]),
+    bio: "U.S. Senator (CA). Immigration reform. Former CA Secretary of State.",
+    donors: [
+      { name: "SEIU CA PAC", tier: 4, amount: 48000, dimensions: ["p14", "p15"] },
+      { name: "RAICES Action Fund", tier: 4, amount: 28000, dimensions: ["p6"] },
+      { name: "Google PAC", tier: 3, amount: 32000, dimensions: ["p17"] },
+      { name: "AFL-CIO", tier: 4, amount: 22000, dimensions: ["p15"] },
+      { name: "Padilla Family", tier: 2, amount: 3000, dimensions: ["p20"] },
+    ],
+  },
+  {
+    id: "as-ca-sen", name: "Adam Schiff", initials: "AS", party: "D", district: "CA-Sen",
+    vector_stated: v([2,2,2,2,2,2,1,2,1,2,2,3,2,2,2,2,2,2,2,2]),
+    vector_actual: v([2,2,2,2,2,2,1,2,1,2,2,3,2,2,2,2,2,2,2,2]),
+    bio: "U.S. Senator (CA). Former House Intelligence Chair. Led Trump impeachment proceedings.",
+    donors: [
+      { name: "AIPAC", tier: 4, amount: 42000, dimensions: ["p11"] },
+      { name: "WarnerMedia PAC", tier: 3, amount: 28000, dimensions: ["p17"] },
+      { name: "EMILY's List", tier: 4, amount: 18000, dimensions: ["p7"] },
+      { name: "Google PAC", tier: 3, amount: 22000, dimensions: ["p17"] },
+      { name: "Schiff Family", tier: 2, amount: 4000, dimensions: ["p20"] },
+    ],
+  },
+  {
+    id: "mg-ca-27", name: "Mike Garcia", initials: "MG", party: "R", district: "CA-27",
+    vector_stated: v([4,4,4,4,4,4,4,4,3,3,4,5,3,4,3,4,4,4,4,4]),
+    vector_actual: v([4,4,4,4,4,4,4,4,3,3,4,5,3,4,3,4,4,4,4,4]),
+    bio: "U.S. Representative (CA-27). Navy fighter pilot. One of few CA Republicans in a competitive district.",
+    donors: [
+      { name: "Northrop Grumman PAC", tier: 3, amount: 32000, dimensions: ["p12"] },
+      { name: "Boeing PAC", tier: 3, amount: 28000, dimensions: ["p12"] },
+      { name: "NRA Victory Fund", tier: 4, amount: 18000, dimensions: ["p8"] },
+      { name: "CA Chamber PAC", tier: 3, amount: 14000, dimensions: ["p1"] },
+      { name: "Garcia Family", tier: 2, amount: 3000, dimensions: ["p20"] },
+    ],
+  },
+  // New York
+  {
+    id: "cs-ny-sen", name: "Chuck Schumer", initials: "CS", party: "D", district: "NY-Sen",
+    vector_stated: v([2,2,2,2,2,2,1,2,1,2,2,3,2,2,2,2,2,2,2,2]),
+    vector_actual: v([2,2,2,2,2,2,1,2,1,2,2,3,2,2,2,2,2,2,2,2]),
+    bio: "U.S. Senate Minority Leader. Decades-long champion of NY labor, healthcare, and gun safety.",
+    donors: [
+      { name: "AIPAC", tier: 4, amount: 85000, dimensions: ["p11"] },
+      { name: "Goldman Sachs PAC", tier: 3, amount: 62000, dimensions: ["p1"] },
+      { name: "AFSCME", tier: 4, amount: 38000, dimensions: ["p15"] },
+      { name: "Senate Majority PAC", tier: 4, amount: 120000, dimensions: ["p20"] },
+      { name: "Schumer Family", tier: 2, amount: 5000, dimensions: ["p20"] },
+    ],
+  },
+  {
+    id: "ao-ny-14", name: "Alexandria Ocasio-Cortez", initials: "AO", party: "D", district: "NY-14",
+    vector_stated: v([1,1,1,1,1,1,1,1,1,1,2,2,1,1,1,1,2,1,1,1]),
+    vector_actual: v([1,1,1,1,1,1,1,1,1,1,2,2,1,1,1,1,2,1,1,1]),
+    bio: "U.S. Representative (NY-14). Democratic Socialist. Green New Deal, Medicare for All, housing justice.",
+    donors: [
+      { name: "Act Blue (grassroots)", tier: 4, amount: 185000, dimensions: ["p20"] },
+      { name: "Sunrise Movement", tier: 4, amount: 38000, dimensions: ["p10"] },
+      { name: "WFP PAC", tier: 4, amount: 22000, dimensions: ["p15"] },
+      { name: "SEIU 32BJ PAC", tier: 4, amount: 18000, dimensions: ["p14", "p15"] },
+      { name: "Ocasio-Cortez Family", tier: 2, amount: 1000, dimensions: ["p20"] },
+    ],
+  },
+  {
+    id: "kg-ny-sen", name: "Kirsten Gillibrand", initials: "KG", party: "D", district: "NY-Sen",
+    vector_stated: v([2,2,2,2,2,2,1,2,1,2,2,3,2,2,2,2,2,2,2,2]),
+    vector_actual: v([2,2,2,2,2,2,1,2,1,2,2,3,2,2,2,2,2,2,2,2]),
+    bio: "U.S. Senator (NY). Military sexual assault reform, paid family leave, women's rights.",
+    donors: [
+      { name: "EMILY's List", tier: 4, amount: 65000, dimensions: ["p7"] },
+      { name: "Planned Parenthood PAC", tier: 4, amount: 28000, dimensions: ["p7"] },
+      { name: "Goldman Sachs PAC", tier: 3, amount: 38000, dimensions: ["p1"] },
+      { name: "AFSCME", tier: 4, amount: 22000, dimensions: ["p15"] },
+      { name: "Gillibrand Family", tier: 2, amount: 4000, dimensions: ["p20"] },
+    ],
+  },
+  {
+    id: "ml-ny-17", name: "Mike Lawler", initials: "ML", party: "R", district: "NY-17",
+    vector_stated: v([3,4,4,3,4,4,4,4,3,3,4,4,3,3,3,4,4,4,3,3]),
+    vector_actual: v([3,4,4,3,4,4,4,4,3,3,4,4,3,3,3,4,4,4,3,3]),
+    bio: "U.S. Representative (NY-17). Moderate Republican in a swing district. Bipartisan dealmaker.",
+    donors: [
+      { name: "NY Business Council PAC", tier: 3, amount: 28000, dimensions: ["p1"] },
+      { name: "AIPAC", tier: 4, amount: 22000, dimensions: ["p11"] },
+      { name: "Goldman Sachs PAC", tier: 3, amount: 18000, dimensions: ["p1"] },
+      { name: "Suburban First PAC", tier: 4, amount: 38000, dimensions: ["p20"] },
+      { name: "Lawler Family", tier: 2, amount: 2000, dimensions: ["p20"] },
+    ],
+  },
+  // Georgia
+  {
+    id: "rw-ga-sen", name: "Raphael Warnock", initials: "RW", party: "D", district: "GA-Sen",
+    vector_stated: v([2,2,2,2,2,2,1,2,1,2,2,3,2,1,2,2,2,2,2,2]),
+    vector_actual: v([2,2,2,2,2,2,1,2,1,2,2,3,2,1,2,2,2,2,2,2]),
+    bio: "U.S. Senator (GA). Senior pastor, Ebenezer Baptist Church. Voting rights, healthcare equity.",
+    donors: [
+      { name: "Act Blue (grassroots)", tier: 4, amount: 245000, dimensions: ["p20"] },
+      { name: "EMILY's List", tier: 4, amount: 42000, dimensions: ["p7"] },
+      { name: "AFL-CIO", tier: 4, amount: 28000, dimensions: ["p15"] },
+      { name: "NAACP PAC", tier: 4, amount: 18000, dimensions: ["p14"] },
+      { name: "Warnock Family", tier: 2, amount: 2000, dimensions: ["p20"] },
+    ],
+  },
+  {
+    id: "jo-ga-sen", name: "Jon Ossoff", initials: "JO", party: "D", district: "GA-Sen",
+    vector_stated: v([2,2,2,2,2,2,2,2,2,2,2,3,2,2,2,2,2,2,2,2]),
+    vector_actual: v([2,2,2,2,2,2,2,2,2,2,2,3,2,2,2,2,2,2,2,2]),
+    bio: "U.S. Senator (GA). Investigative journalist background. Anti-corruption, criminal justice reform.",
+    donors: [
+      { name: "Act Blue (grassroots)", tier: 4, amount: 188000, dimensions: ["p20"] },
+      { name: "AFSCME", tier: 4, amount: 22000, dimensions: ["p15"] },
+      { name: "J Street PAC", tier: 4, amount: 18000, dimensions: ["p11"] },
+      { name: "EMILY's List", tier: 4, amount: 14000, dimensions: ["p7"] },
+      { name: "Ossoff Family", tier: 2, amount: 3000, dimensions: ["p20"] },
+    ],
+  },
+  {
+    id: "mg-ga-14", name: "Marjorie Taylor Greene", initials: "MT", party: "R", district: "GA-14",
+    vector_stated: v([5,5,5,5,5,5,5,5,4,2,5,4,4,5,4,4,5,5,5,5]),
+    vector_actual: v([5,5,5,5,5,5,5,5,4,2,5,4,4,5,4,4,5,5,5,5]),
+    bio: "U.S. Representative (GA-14). Freedom Caucus leader. MAGA movement figurehead.",
+    donors: [
+      { name: "Save America PAC", tier: 4, amount: 145000, dimensions: ["p20"] },
+      { name: "Club for Growth", tier: 4, amount: 65000, dimensions: ["p1", "p3"] },
+      { name: "NRA Victory Fund", tier: 4, amount: 28000, dimensions: ["p8"] },
+      { name: "Heritage Action", tier: 4, amount: 22000, dimensions: ["p20"] },
+      { name: "Greene Family", tier: 2, amount: 15000, dimensions: ["p20"] },
+    ],
+  },
+  {
+    id: "bk-ga-gov", name: "Brian Kemp", initials: "BK", party: "R", district: "GA-Gov",
+    vector_stated: v([4,4,4,4,5,4,4,4,4,3,4,4,3,4,3,4,4,4,4,4]),
+    vector_actual: v([4,4,4,4,5,4,4,4,4,3,4,4,3,4,3,4,4,4,4,4]),
+    bio: "Governor of Georgia. Traditional Republican, resisted 2020 election pressure. Business-friendly.",
+    donors: [
+      { name: "GA Chamber of Commerce", tier: 3, amount: 85000, dimensions: ["p1"] },
+      { name: "Cox Enterprises", tier: 3, amount: 55000, dimensions: ["p17"] },
+      { name: "Home Depot PAC", tier: 3, amount: 42000, dimensions: ["p2"] },
+      { name: "Delta Air Lines PAC", tier: 3, amount: 35000, dimensions: ["p17"] },
+      { name: "Kemp Family", tier: 2, amount: 8000, dimensions: ["p20"] },
     ],
   },
   {
