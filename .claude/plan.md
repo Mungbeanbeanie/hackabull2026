@@ -74,7 +74,7 @@ Ordered by dependency. Each phase unblocks the next.
 ## Phase 14 — MongoDB Setup & Environment
 - [x] verify `MONGODB_URI` in `.env` is picked up by LibraryIndexer + DataManager at boot
 - [x] verify `GEMINI_API_KEY` in `.env` is available to IngestionRunner → llm_analyst.py subprocess (`genai.Client()` reads this key)
-- [ ] confirm LibraryIndexer.loadFromDb() populates RAM index at startup; if empty → SeedData.seed() fires
+- [x] confirm LibraryIndexer.loadFromDb() populates RAM index at startup; if empty → SeedData.seed() fires
 - [x] remove stale `user_history.csv` reference from overview.md — DataManager is MongoDB-backed
 
 ## Phase 15 — Python IPC: CWD Fix + Two Silent Bugs in buildConstraints()
