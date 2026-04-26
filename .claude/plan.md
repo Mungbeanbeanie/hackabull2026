@@ -94,7 +94,7 @@ Ordered by dependency. Each phase unblocks the next.
 - [x] `SearchController` — pass per-politician adherence weights (not `profile.getWeights()`) when `useAdherence=true`
 
 ## Phase 18 — Extension DB Sync
-- [ ] `background.js` — add fetch from `http://localhost:8080/api/politicians` on service worker startup; cache in `chrome.storage.local` under key `"politician_db"`
+- [x] `background.js` — add fetch from `http://localhost:8080/api/politicians` on service worker startup; cache in `chrome.storage.local` under key `"politician_db"`
 - [ ] `background.js` — read name-match DB from `chrome.storage.local` politician_db first; fall back to bundled 5-record stub if fetch fails
 
 ## Phase 19 — Profile Sync: App → Extension
