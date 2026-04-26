@@ -1,20 +1,30 @@
-# The script that sends metadata + taxonomy.json to chosen LLM to generate scores
-# The LLM will return a list of scores for each "allele", which will
-# be used to create the vector for the figure
-
 import json
 import os
 import re
 import sys
+from google import genai
+from google.genai import types
 
-import anthropic
-
+# Ensure local modules are accessible
 sys.path.insert(0, os.path.dirname(__file__))
+
 from prompt_builder import build_prompt
 import score_validator
 
-_MODEL = "claude-haiku-4-5-20251001"
-_client = anthropic.Anthropic()
+_MODEL = "gemini-3-flash"
+
+_client = genai.Client()
+
+
+def _extract_json(text: str) -> str:
+    """Remove markdown fences if the model adds them."""
+    text = text.strip()
+
+    # Remove ```json or ``` wrappers
+    text = re.sub(r"^```(?:json)?", "", text)
+    text = re.sub(r"```$", "", text)
+
+    return text.strip()
 
 
 def analyze(figure_metadata: dict) -> dict:
@@ -22,17 +32,56 @@ def analyze(figure_metadata: dict) -> dict:
     figure_metadata: {name, state, party, bio, positions}
     Returns validated score dict {d1: float, ..., d20: float}
     """
+
+    # 1. Build prompt
     prompt = build_prompt(figure_metadata)
 
-    response = _client.messages.create(
+    # 2. Call Gemini (JSON mode)
+    response = _client.models.generate_content(
         model=_MODEL,
-        max_tokens=512,
-        messages=[{"role": "user", "content": prompt}],
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            temperature=0.1,
+        ),
     )
 
-    raw = response.content[0].text.strip()
-    raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw, flags=re.DOTALL).strip()
+    # 3. Extract raw text
+    raw_text = getattr(response, "text", None)
+    if raw_text is None:
+        raise ValueError("Model returned no text output")
 
-    scores = json.loads(raw)
-    score_validator.validate_scores(scores)
-    return scores
+    # 4. Clean JSON
+    clean_json = _extract_json(raw_text)
+
+    # 5. Parse JSON
+    try:
+        data = json.loads(clean_json)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON from model:\n{clean_json}") from e
+
+    # 6. Validate scores (FIXED NAME)
+    validated = score_validator.validate_scores(data)
+
+    return validated
+
+
+# Entry point for Java subprocess execution
+if __name__ == "__main__":
+    try:
+        # Read JSON input from stdin
+        input_data = json.load(sys.stdin)
+
+        # Run analysis
+        result = analyze(input_data)
+
+        # Output JSON to stdout
+        print(json.dumps(result))
+
+    except Exception as e:
+        # Return structured error (important for Java side)
+        error_output = {
+            "error": str(e)
+        }
+        print(json.dumps(error_output))
+        sys.exit(1)
