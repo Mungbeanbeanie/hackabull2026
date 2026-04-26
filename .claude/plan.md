@@ -88,10 +88,10 @@ Ordered by dependency. Each phase unblocks the next.
 - [ ] confirm localSearch fallback uses `vector_stated` when backend offline — intentional for demo resilience
 
 ## Phase 17 — Adherence Toggle Correctness
-- [ ] `use_adherence=true` currently passes quiz weights as `adherence_weights` — NOT legislative consistency weights
-- [ ] fix: run `weight_calculator.py` per politician at IngestionRunner time using stated vs actual vectors as proxy history; store `adherence_weights: float[20]` per politician in MongoDB
-- [ ] `LibraryIndexer` — carry and expose `adherence_weights` per figure
-- [ ] `SearchController` — pass per-politician adherence weights (not `profile.getWeights()`) when `useAdherence=true`
+- [x] `use_adherence=true` currently passes quiz weights as `adherence_weights` — NOT legislative consistency weights
+- [x] fix: run `weight_calculator.py` per politician at IngestionRunner time using stated vs actual vectors as proxy history; store `adherence_weights: float[20]` per politician in MongoDB
+- [x] `LibraryIndexer` — carry and expose `adherence_weights` per figure
+- [x] `SearchController` — pass per-politician adherence weights (not `profile.getWeights()`) when `useAdherence=true`
 
 ## Phase 18 — Extension DB Sync
 - [ ] `background.js` — add fetch from `http://localhost:8080/api/politicians` on service worker startup; cache in `chrome.storage.local` under key `"politician_db"`
