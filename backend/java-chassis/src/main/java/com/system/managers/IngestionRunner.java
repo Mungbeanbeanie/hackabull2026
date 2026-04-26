@@ -124,6 +124,21 @@ public class IngestionRunner {
 
             System.out.println("--- Ingestion Complete: " + successCount + "/" + targets.size() + " new figures ---");
 
+            // Patch pass: backfill imageUrl for any figure that was ingested without one
+            int patched = 0;
+            for (PoliFigure existing : indexer.getAllFigures()) {
+                if (existing.imageUrl != null) continue;
+                String imageUrl = wikipedia.fetchImageUrl(existing.name);
+                if (imageUrl == null) continue;
+                PoliFigure updated = new PoliFigure(
+                    existing.id, existing.name, existing.party, existing.state,
+                    existing.office, existing.vector, existing.adherenceWeights, imageUrl
+                );
+                indexer.addFigure(updated);
+                patched++;
+            }
+            if (patched > 0) System.out.println("--- Image Patch Complete: " + patched + " figures updated ---");
+
         } catch (Exception e) {
             e.printStackTrace();
         }
