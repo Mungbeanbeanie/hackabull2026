@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Election } from "@/features/polidex/types";
 import { BackendPolitician, fetchCandidatesForElection } from "@/features/polidex/lib/api";
 import { politicians } from "@/features/polidex/data/politicians";
@@ -22,36 +22,82 @@ const PARTY_BG: Record<string, string> = {
   I: "#F9FAFB",
 };
 
+function localCandidatesFromIds(candidateIds: string[]): BackendPolitician[] {
+  return candidateIds
+    .map((id) => {
+      const p = politicians.find((pol) => pol.id === id);
+      if (!p) return null;
+      return {
+        id: p.id,
+        name: p.name,
+        party: p.party,
+        state: p.state,
+        office: p.role,
+        vector: p.vector_stated,
+        imageUrl: p.photo,
+      } as BackendPolitician;
+    })
+    .filter((p): p is BackendPolitician => p !== null);
+}
+
 export function ElectionCard({ election, onSelect }: Readonly<{ election: Election; onSelect: (id: string, side: "left" | "right") => void }>) {
+  const cardRef = useRef<HTMLDivElement | null>(null);
   const [candidates, setCandidates] = useState<BackendPolitician[]>([]);
+  const [isVisible, setIsVisible] = useState(false);
+  const [resolvedSignature, setResolvedSignature] = useState<string | null>(null);
+
+  const candidateSignature = useMemo(() => election.candidateIds.join("|"), [election.candidateIds]);
+  const isLoadingCandidates = isVisible && resolvedSignature !== candidateSignature;
 
   useEffect(() => {
-    fetchCandidatesForElection(election.candidateIds).then((result) => {
-      if (result.length > 0) {
-        setCandidates(result);
-        return;
-      }
-      const local = election.candidateIds
-        .map((id) => {
-          const p = politicians.find((pol) => pol.id === id);
-          if (!p) return null;
-          return {
-            id: p.id,
-            name: p.name,
-            party: p.party,
-            state: p.state,
-            office: p.role,
-            vector: p.vector_stated,
-            imageUrl: p.photo,
-          } as BackendPolitician;
-        })
-        .filter((p): p is BackendPolitician => p !== null);
-      setCandidates(local);
-    });
-  }, [election.candidateIds]);
+    if (!cardRef.current || isVisible) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "240px 0px" },
+    );
+
+    observer.observe(cardRef.current);
+
+    return () => observer.disconnect();
+  }, [isVisible]);
+
+  useEffect(() => {
+    if (!isVisible) return;
+    if (resolvedSignature === candidateSignature) return;
+
+    let cancelled = false;
+
+    fetchCandidatesForElection(election.candidateIds)
+      .then((result) => {
+        if (cancelled) return;
+
+        if (result.length > 0) {
+          setCandidates(result);
+          return;
+        }
+
+        setCandidates(localCandidatesFromIds(election.candidateIds));
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setResolvedSignature(candidateSignature);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [candidateSignature, election.candidateIds, isVisible, resolvedSignature]);
 
   return (
     <div
+      ref={cardRef}
       style={{
         borderRadius: 14,
         border: "1px solid #E2E5E9",
@@ -94,7 +140,48 @@ export function ElectionCard({ election, onSelect }: Readonly<{ election: Electi
       </div>
 
       {/* Candidates */}
-      {candidates.length > 0 && (
+      {isVisible && isLoadingCandidates && (
+        <div style={{ padding: "12px 16px" }}>
+          <div style={{ fontFamily: FONT_MONO, fontSize: 9, color: "#8A919E", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
+            Candidates
+          </div>
+          <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 2 }}>
+            {Array.from({ length: Math.min(3, election.candidateIds.length || 3) }).map((_, index) => (
+              <div
+                key={`candidate-skeleton-${election.id}-${index}`}
+                style={{
+                  flexShrink: 0,
+                  width: 100,
+                  borderRadius: 12,
+                  border: "1px solid #E2E5E9",
+                  background: "#F8FAFC",
+                  padding: "10px 8px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#E8ECF1" }} />
+                <div style={{ width: "90%" }}>
+                  <div style={{ height: 8, borderRadius: 4, background: "#E8ECF1" }} />
+                  <div style={{ height: 8, borderRadius: 4, background: "#E8ECF1", marginTop: 6, width: "72%", marginInline: "auto" }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!isVisible && (
+        <div style={{ padding: "12px 16px" }}>
+          <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#8A919E" }}>
+            Candidate profiles load when this election card enters view.
+          </div>
+        </div>
+      )}
+
+      {isVisible && !isLoadingCandidates && resolvedSignature === candidateSignature && candidates.length > 0 && (
         <div style={{ padding: "12px 16px" }}>
           <div style={{ fontFamily: FONT_MONO, fontSize: 9, color: "#8A919E", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
             Candidates

@@ -12,6 +12,7 @@ import { FONT_MONO, FONT_SANS, consistencyColor, consistencyLabel } from "@/feat
 import { ImageWithFallback } from "./figma/image-with-fallback";
 
 type RadarMode = "intent" | "actual" | "both";
+const PROFILE_SKELETON_ROW_IDS = ["r1", "r2", "r3", "r4", "r5"] as const;
 
 export function LogicProfile({
   entity,
@@ -22,6 +23,8 @@ export function LogicProfile({
   side?: "left" | "right";
   onClose: () => void;
 }) {
+  const [isProfileReady, setIsProfileReady] = useState(false);
+
   return (
     <AnimatePresence>
       {entity && (
@@ -46,19 +49,66 @@ export function LogicProfile({
             zIndex: 20,
           }}
         >
-          <Header entity={entity} side={side} onClose={onClose} />
-          <ScalarGauge entity={entity} />
-          <RadarSection entity={entity} />
-          <InfluenceTree entity={entity} />
-          <TrajectoryCard entity={entity} />
-          <NutritionLabel entity={entity} />
+          <div style={{ opacity: isProfileReady ? 1 : 0, transition: "opacity 180ms ease" }}>
+            <Header entity={entity} side={side} onClose={onClose} onAvatarLoaded={setIsProfileReady} />
+            <ScalarGauge entity={entity} />
+            <RadarSection entity={entity} />
+            <InfluenceTree entity={entity} />
+            <TrajectoryCard entity={entity} />
+            <NutritionLabel entity={entity} />
+          </div>
+
+          {!isProfileReady && (
+            <div className="absolute inset-0 bg-white">
+              <div className="border-b border-[#E2E5E9] px-6 pb-5 pt-5">
+                <div className="mb-4 flex items-start justify-between">
+                  <div className="h-8 w-8 rounded-md bg-[#F1F3F5]" />
+                  <div style={{ fontFamily: FONT_SANS, fontSize: 12, fontWeight: 500, color: "#8A919E", paddingTop: 4 }}>Profile</div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 rounded-xl bg-[#F1F3F5]" />
+                  <div className="min-w-0 flex-1">
+                    <div className="h-5 w-3/5 rounded bg-[#F1F3F5]" />
+                    <div className="mt-2 h-4 w-4/5 rounded bg-[#F1F3F5]" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 px-6 py-5">
+                {PROFILE_SKELETON_ROW_IDS.map((id, index) => (
+                  <motion.div
+                    key={`logic-profile-skeleton-${id}`}
+                    initial={{ opacity: 0.45 }}
+                    animate={{ opacity: [0.45, 0.9, 0.45] }}
+                    transition={{ duration: 1.3, delay: index * 0.07, repeat: Infinity, ease: "easeInOut" }}
+                    className="rounded-xl border border-[#E8EBEF] bg-[#FAFBFC] p-4"
+                  >
+                    <div className="h-4 w-1/3 rounded bg-[#ECEFF3]" />
+                    <div className="mt-3 h-3 w-full rounded bg-[#ECEFF3]" />
+                    <div className="mt-2 h-3 w-5/6 rounded bg-[#ECEFF3]" />
+                    <div className="mt-2 h-3 w-2/3 rounded bg-[#ECEFF3]" />
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
         </motion.div>
       )}
     </AnimatePresence>
   );
 }
 
-function Header({ entity, side, onClose }: { entity: Politician; side: "left" | "right"; onClose: () => void }) {
+function Header({
+  entity,
+  side,
+  onClose,
+  onAvatarLoaded,
+}: {
+  entity: Politician;
+  side: "left" | "right";
+  onClose: () => void;
+  onAvatarLoaded: (loaded: boolean) => void;
+}) {
   return (
     <div className="border-b border-[#E2E5E9] px-6 pb-5 pt-5">
       <div className="mb-4 flex items-start justify-between">
@@ -78,6 +128,7 @@ function Header({ entity, side, onClose }: { entity: Politician; side: "left" | 
             alt={entity.name}
             className="h-full w-full"
             style={{ objectFit: "cover", filter: "grayscale(0.15)" }}
+            onLoadStateChange={onAvatarLoaded}
           />
         </div>
         <div className="min-w-0">

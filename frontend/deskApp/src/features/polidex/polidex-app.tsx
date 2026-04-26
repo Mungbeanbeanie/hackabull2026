@@ -7,6 +7,7 @@ import { Compare } from "@/features/polidex/components/compare";
 import { Dashboard } from "@/features/polidex/components/dashboard";
 import { GlobalLoadingScreen } from "@/features/polidex/components/global-loading-screen";
 import { Landing } from "@/features/polidex/components/landing";
+import { ProfileLoadingPanel } from "@/features/polidex/components/profile-loading-panel";
 import { Quiz } from "@/features/polidex/components/quiz";
 import { Simulator } from "@/features/polidex/components/simulator";
 import { TopNav } from "@/features/polidex/components/top-nav";
@@ -31,10 +32,7 @@ export function PoliDexApp() {
   const [selectedProfile, setSelectedProfile] = useState<SelectedProfile>(null);
   const [profile, setProfile] = useState<UserProfile | null>(() => loadProfile() ?? DEMO_PROFILE);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
-  const [rankedResults, setRankedResults] = useState<SearchResult[]>(() => {
-    const p = loadProfile() ?? DEMO_PROFILE;
-    return localSearch(politicians, p.vector, p.weights, false);
-  });
+  const [remoteRankedResults, setRemoteRankedResults] = useState<{ key: string; results: SearchResult[] } | null>(null);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
   const [activePoliticians, setActivePoliticians] = useState<Politician[]>(politicians);
 
@@ -52,20 +50,34 @@ export function PoliDexApp() {
       .catch(() => {});
   }, []);
 
+  const rankingKey = useMemo(() => {
+    if (!profile) return "none";
+    return `${profile.state ?? "ALL"}|${profile.vector.join(",")}|${profile.weights.join(",")}|${activePoliticians.map((p) => p.id).join(",")}`;
+  }, [profile, activePoliticians]);
+
+  const rankedResults = useMemo(() => {
+    if (!profile) return [];
+    const base = localSearch(activePoliticians, profile.vector, profile.weights, false);
+    const localSorted = profile.state ? regionSort(base, profile.state, activePoliticians) : base;
+
+    if (remoteRankedResults?.key === rankingKey) {
+      return remoteRankedResults.results;
+    }
+    return localSorted;
+  }, [profile, activePoliticians, remoteRankedResults, rankingKey]);
+
   useEffect(() => {
     if (!profile) return;
 
-    const base = localSearch(activePoliticians, profile.vector, profile.weights, false);
-    const sorted = profile.state ? regionSort(base, profile.state, activePoliticians) : base;
-    setRankedResults(sorted);
+    const requestKey = rankingKey;
 
     searchPoliticians(profile.vector, profile.weights, false, [])
       .then((results) => {
         const backendSorted = profile.state ? regionSort(results, profile.state, activePoliticians) : results;
-        setRankedResults(backendSorted);
+        setRemoteRankedResults({ key: requestKey, results: backendSorted });
       })
       .catch(() => {});
-  }, [profile, backendOnline, activePoliticians]);
+  }, [profile, backendOnline, activePoliticians, rankingKey]);
 
   const rankedPoliticians = useMemo((): RankedPolitician[] => {
     if (rankedResults.length === 0) return [];
@@ -155,7 +167,7 @@ export function PoliDexApp() {
 
         <AnimatePresence mode="wait">
           {selected && (
-            <Suspense fallback={null}>
+            <Suspense fallback={<ProfileLoadingPanel side={selectedProfile?.side ?? "right"} />}>
               <LazyLogicProfile
                 key={`${selectedProfile?.politicianId ?? "none"}-${selectedProfile?.side ?? "right"}`}
                 entity={selected}

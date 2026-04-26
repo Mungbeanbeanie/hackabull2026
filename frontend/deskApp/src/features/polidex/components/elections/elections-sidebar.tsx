@@ -61,11 +61,13 @@ const STATE_OPTIONS = [
   { value: "WI", label: "Wisconsin" },
   { value: "WY", label: "Wyoming" },
 ];
+const ELECTION_SKELETON_IDS = ["one", "two", "three"] as const;
 
 export function ElectionsSidebar({ onSelect }: Readonly<{ onSelect: (id: string, side: "left" | "right") => void }>) {
   const [selectedState, setSelectedState] = useState("ALL");
   const [upcomingElections, setUpcomingElections] = useState<Election[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(4);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,12 +93,25 @@ export function ElectionsSidebar({ onSelect }: Readonly<{ onSelect: (id: string,
     (e) => selectedState === "ALL" || e.state === selectedState,
   );
 
+  const visibleElections = filtered.slice(0, visibleCount);
+  const hasMore = filtered.length > visibleCount;
+
   let bodyContent: ReactNode;
 
   if (isLoading) {
     bodyContent = (
-      <div style={{ fontFamily: FONT_MONO, fontSize: 11, color: "#8A919E", marginTop: 8 }}>
-        Loading upcoming elections...
+      <div className="space-y-3 pt-1">
+        {ELECTION_SKELETON_IDS.map((id) => (
+          <div key={`election-skeleton-${id}`} className="rounded-xl border border-[#E2E5E9] bg-white p-4">
+            <div className="h-4 w-3/4 rounded bg-[#EDF0F4]" />
+            <div className="mt-2 h-3 w-1/3 rounded bg-[#EDF0F4]" />
+            <div className="mt-4 h-14 rounded bg-[#F6F8FA]" />
+            <div className="mt-4 flex gap-2">
+              <div className="h-16 w-20 rounded-lg bg-[#F3F5F8]" />
+              <div className="h-16 w-20 rounded-lg bg-[#F3F5F8]" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   } else if (filtered.length === 0) {
@@ -106,9 +121,22 @@ export function ElectionsSidebar({ onSelect }: Readonly<{ onSelect: (id: string,
       </div>
     );
   } else {
-    bodyContent = filtered.map((election) => (
-      <ElectionCard key={election.id} election={election} onSelect={onSelect} />
-    ));
+    bodyContent = (
+      <>
+        {visibleElections.map((election) => (
+          <ElectionCard key={election.id} election={election} onSelect={onSelect} />
+        ))}
+        {hasMore && (
+          <button
+            onClick={() => setVisibleCount((current) => Math.min(current + 4, filtered.length))}
+            className="mt-1 w-full rounded-md border border-[#D8DEE7] bg-white px-3 py-2"
+            style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#1C2431" }}
+          >
+            Load more elections ({filtered.length - visibleCount} left)
+          </button>
+        )}
+      </>
+    );
   }
 
   return (
@@ -146,7 +174,10 @@ export function ElectionsSidebar({ onSelect }: Readonly<{ onSelect: (id: string,
         </div>
         <select
           value={selectedState}
-          onChange={(e) => setSelectedState(e.target.value)}
+          onChange={(e) => {
+            setSelectedState(e.target.value);
+            setVisibleCount(4);
+          }}
           style={{
             fontFamily: FONT_SANS,
             fontSize: 12,

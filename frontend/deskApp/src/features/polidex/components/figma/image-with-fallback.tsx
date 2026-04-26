@@ -12,17 +12,19 @@ type ImageWithFallbackProps = {
   className?: string;
   style?: CSSProperties;
   loading?: "eager" | "lazy";
+  onLoadStateChange?: (loaded: boolean) => void;
 };
 
-export function ImageWithFallback({ src, alt, className, style, loading }: ImageWithFallbackProps) {
+export function ImageWithFallback({ src, alt, className, style, loading, onLoadStateChange }: ImageWithFallbackProps) {
   const [didError, setDidError] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
   const resolvedSrc = didError ? ERROR_IMG_SRC : src;
-
 
   const unoptimized = resolvedSrc.startsWith("data:");
 
   return (
     <div className="relative h-full w-full">
+      {!isLoaded && <div className="absolute inset-0 bg-[#E9EDF2]" />}
       <Image
         src={resolvedSrc}
         alt={alt}
@@ -32,9 +34,16 @@ export function ImageWithFallback({ src, alt, className, style, loading }: Image
         style={style}
         sizes="(max-width: 768px) 100vw, 33vw"
         unoptimized={unoptimized}
+        onLoad={() => {
+          setIsLoaded(true);
+          onLoadStateChange?.(true);
+        }}
         onError={() => {
           if (!didError) {
             setDidError(true);
+          } else {
+            setIsLoaded(true);
+            onLoadStateChange?.(true);
           }
         }}
       />

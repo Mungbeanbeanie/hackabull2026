@@ -649,19 +649,19 @@ export function Simulator({ list }: Readonly<{ list: Politician[] }>) {
 
   return (
     <div className="flex min-w-0 flex-1 flex-col bg-white">
-      <div className="border-b border-[#D7DCE3] px-5 pb-4 pt-6 md:px-8">
+      <div className="border-b border-[#E2E5E9] px-5 pb-4 pt-6 md:px-8">
         <h1 style={{ fontFamily: FONT_SANS, fontSize: 22, fontWeight: 300, letterSpacing: "-0.02em", color: "#0D0F12" }}>
-          Synthesized Discourse Simulator
+          Simulator
         </h1>
         <p style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#8A919E", marginTop: 4 }}>
-          Select 2-4 politicians, choose a policy lane, then run a vector-grounded debate with voice-tier mapping.
+          Run a vector-grounded policy debate across selected politicians, then review transcript and export playback.
         </p>
       </div>
 
-      <div className="grid flex-1 gap-4 px-5 py-5 md:grid-cols-[340px_1fr] md:px-8" style={{ minHeight: 0, background: "#F8F9FA" }}>
+      <div className="grid flex-1 gap-5 px-5 py-6 md:grid-cols-[340px_1fr] md:px-8" style={{ minHeight: 0, background: "#F8F9FA" }}>
         <div className="flex min-h-0 flex-col rounded-xl border border-[#E2E5E9] bg-white p-4">
           <div className="mb-3" style={{ fontFamily: FONT_MONO, fontSize: 11, color: "#6E7686", letterSpacing: "0.08em" }}>
-            SCENARIO CONTROLS
+            Scenario Controls
           </div>
 
           <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#495163" }}>Topic</div>
@@ -684,7 +684,7 @@ export function Simulator({ list }: Readonly<{ list: Politician[] }>) {
             ))}
           </div>
 
-          <div className="mt-4">
+          <div className="mt-4 border-t border-[#EEF2F5] pt-4">
             <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#495163" }}>Adherence Override</div>
             <div className="mt-1 grid grid-cols-2 gap-2 rounded-lg bg-[#EEF2F5] p-1">
               <button
@@ -720,7 +720,7 @@ export function Simulator({ list }: Readonly<{ list: Politician[] }>) {
             </div>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-4 border-t border-[#EEF2F5] pt-4">
             <div style={{ fontFamily: FONT_SANS, fontSize: 12, color: "#495163" }}>Participants ({selectedIds.length}/4)</div>
             <input
               value={query}
@@ -765,14 +765,14 @@ export function Simulator({ list }: Readonly<{ list: Politician[] }>) {
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-2">
+          <div className="mt-4 grid grid-cols-1 gap-2 border-t border-[#EEF2F5] pt-4">
             <Button
               onClick={runSimulation}
               disabled={participants.length < 2}
-              className="h-9 bg-[#0D0F12] text-white hover:bg-[#1B1E25]"
+              className="h-9 bg-[#0D0F12] text-white hover:bg-[#202530]"
               style={{ fontFamily: FONT_SANS, fontSize: 12 }}
             >
-              Generate Debate
+              Generate Simulation
             </Button>
             <div className="grid grid-cols-2 gap-2">
               <Button
@@ -879,11 +879,11 @@ export function Simulator({ list }: Readonly<{ list: Politician[] }>) {
         </div>
 
         <div className="grid min-h-0 gap-4 md:grid-rows-[minmax(320px,1fr)_minmax(180px,1fr)]">
-          <div className="relative min-h-[320px] overflow-hidden rounded-xl border border-[#E2E5E9] bg-[#0E1318]">
+          <div className="relative min-h-[320px] overflow-hidden rounded-xl border border-[#E2E5E9] bg-[#10161C]">
             <div className="absolute left-0 top-0 h-full w-full opacity-30" style={{ backgroundImage: "radial-gradient(circle at 30% 30%, #2A7F62 0%, transparent 40%), radial-gradient(circle at 70% 70%, #B13A2C 0%, transparent 45%)" }} />
 
             <div className="absolute left-1/2 top-1/2 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/25 bg-white/10 backdrop-blur-sm">
-              <div className="flex h-full w-full flex-col items-center justify-center text-center">
+              <div className="flex h-full w-full flex-col items-center justify-center px-2 text-center">
                 <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: "#D0D8E3", letterSpacing: "0.08em" }}>
                   {mode === "theoretical" ? "VTHEORETICAL" : "VLEGISLATIVE"}
                 </div>
@@ -948,7 +948,7 @@ export function Simulator({ list }: Readonly<{ list: Politician[] }>) {
             <div className="min-h-0 overflow-hidden rounded-xl border border-[#E2E5E9] bg-white">
               <div className="border-b border-[#E4E8ED] px-4 py-3">
                 <div style={{ fontFamily: FONT_MONO, fontSize: 11, color: "#6E7686", letterSpacing: "0.08em" }}>
-                  LIVE TRANSCRIPTION HUD
+                  Live Transcript
                 </div>
               </div>
               <div className="h-full max-h-[280px] space-y-2 overflow-y-auto p-4">
@@ -1005,7 +1005,7 @@ export function Simulator({ list }: Readonly<{ list: Politician[] }>) {
             <div className="min-h-0 overflow-hidden rounded-xl border border-[#E2E5E9] bg-white">
               <div className="border-b border-[#E4E8ED] px-4 py-3">
                 <div style={{ fontFamily: FONT_MONO, fontSize: 11, color: "#6E7686", letterSpacing: "0.08em" }}>
-                  PLAYBACK EXPORT
+                  Playback Export
                 </div>
               </div>
               <div className="space-y-3 p-4">
