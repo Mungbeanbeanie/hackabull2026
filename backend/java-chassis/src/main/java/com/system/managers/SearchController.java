@@ -55,8 +55,8 @@ public class SearchController {
             seenIds
         );
         return pythonRunner.run(request);
-    }
-
+    } //search method end
+    
     private InferencePayload.Response searchViaAtlas(
             List<Double> userVector,
             List<String> seenIds,
