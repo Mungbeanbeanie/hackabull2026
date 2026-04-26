@@ -63,7 +63,7 @@ Ordered by dependency. Each phase unblocks the next.
 - [x] `deskApp` — Still tweak in progress - desktop dashboard (radar chart, scatter plot, edge map)
 
 ## Phase 13 — Chrome Extension HUD
-- [ ] `manifest.json` — declares permissions: `activeTab`, `storage`, `scripting`; content script on `<all_urls>`
+- [x] `manifest.json` — declares permissions: `activeTab`, `storage`, `scripting`; content script on `<all_urls>`
 - [ ] `content.js` — double-click listener; captures selected text, fires name lookup to background
 - [ ] `background.js` — receives selected text, queries politician DB, returns match + 20D vector
 - [ ] `cosine_bridge.js` — runs cosine_sim in-extension against stored user_vector (JS port or fetch to local backend)
