@@ -2,3 +2,4 @@
 .claude/link.md
 .env
 backend/java-chassis/.env
+backend/java-chassis/target/
