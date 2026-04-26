@@ -69,4 +69,34 @@ Ordered by dependency. Each phase unblocks the next.
 - [X] `cosine_bridge.js` — runs cosine_sim in-extension against stored user_vector (JS port or fetch to local backend)
 - [x] `user_vector_store.js` — stores/retrieves user_vector via `chrome.storage.local`; source TBD (see open questions)
 - [x] `card.html` / `popup.js` — renders hover card: % match, top aligned/misaligned dims, top 2 implemented policies
-- [ ] **[Stretch]** mini IV distribution panel in card
+- [x] **[Stretch]** mini IV distribution panel in card
+
+## Phase 14 — MongoDB Setup & Environment
+- [ ] verify `MONGODB_URI` in `.env` is picked up by LibraryIndexer + DataManager at boot
+- [ ] verify `GEMINI_API_KEY` in `.env` is available to IngestionRunner → llm_analyst.py subprocess (`genai.Client()` reads this key)
+- [ ] confirm LibraryIndexer.loadFromDb() populates RAM index at startup; if empty → SeedData.seed() fires
+- [ ] remove stale `user_history.csv` reference from overview.md — DataManager is MongoDB-backed
+
+## Phase 15 — Python IPC: CWD Fix + Two Silent Bugs in buildConstraints()
+- [ ] `pom.xml` — add `<workingDirectory>../../</workingDirectory>` to exec plugin `<configuration>`; sets JVM CWD to project root when `mvn exec:java` runs from `backend/java-chassis/`; all relative Python paths (`backend/inference-engine/...`) currently resolve to wrong location
+- [ ] `SearchController.java` — fix `root.path("bounds")` → `root.path("constraints")`; `constraint_discoverer.py` returns key `"constraints"`, not `"bounds"`; hate-zone filtering silently produces empty list today
+- [ ] `SearchController.java` — fix `b.get("dim")` → `b.get("allele")`; `constraint_discoverer.py` returns field `"allele"`, not `"dim"`; would NPE if any constraints were ever found
+
+## Phase 16 — Frontend Environment Wiring
+- [ ] create `frontend/deskApp/.env.local` with `NEXT_PUBLIC_BACKEND_URL=http://localhost:8080`
+- [ ] verify GlobalLoadingScreen correctly reflects `backendOnline` state
+- [ ] confirm localSearch fallback uses `vector_stated` when backend offline — intentional for demo resilience
+
+## Phase 17 — Adherence Toggle Correctness
+- [ ] `use_adherence=true` currently passes quiz weights as `adherence_weights` — NOT legislative consistency weights
+- [ ] fix: run `weight_calculator.py` per politician at IngestionRunner time using stated vs actual vectors as proxy history; store `adherence_weights: float[20]` per politician in MongoDB
+- [ ] `LibraryIndexer` — carry and expose `adherence_weights` per figure
+- [ ] `SearchController` — pass per-politician adherence weights (not `profile.getWeights()`) when `useAdherence=true`
+
+## Phase 18 — Extension DB Sync
+- [ ] `background.js` — add fetch from `http://localhost:8080/api/politicians` on service worker startup; cache in `chrome.storage.local` under key `"politician_db"`
+- [ ] `background.js` — read name-match DB from `chrome.storage.local` politician_db first; fall back to bundled 5-record stub if fetch fails
+
+## Phase 19 — Profile Sync: App → Extension
+- [ ] deskApp Compare view — add "Export to Extension" action that copies base64 profile code to clipboard (reuse existing `exportProfileCode` from `profile.ts`)
+- [ ] extension popup — add input field; user pastes code → `setUserVector(parsed.vector)` via `user_vector_store.js`; reuse `importProfileCode` from `profile.ts` logic (port to JS)
