@@ -26,7 +26,7 @@ const v = (arr: number[]): number[] => arr;
 
 type RawP = Omit<Politician, "w" | "photo" | "role" | "region" | "state">;
 
-const PHOTOS = [
+const FALLBACK_PHOTOS = [
   "https://images.unsplash.com/photo-1579168064425-7a8f8ef3f1ea?w=400&q=75",
   "https://images.unsplash.com/photo-1531630142108-cb432ed39657?w=400&q=75",
   "https://images.unsplash.com/photo-1584940120505-117038d90b05?w=400&q=75",
@@ -40,6 +40,47 @@ const PHOTOS = [
   "https://images.unsplash.com/photo-1766763845473-3cee8b8ea574?w=400&q=75",
   "https://images.unsplash.com/photo-1766763845459-08a5a630da65?w=400&q=75",
 ];
+
+// Official congressional headshots from bioguide.congress.gov.
+// State-level officials (no federal bioguide) fall back to FALLBACK_PHOTOS.
+const B = "https://bioguide.congress.gov/bioguide/photo";
+const PHOTO_BY_ID: Record<string, string> = {
+  // Florida federal
+  "bd-fl19":  `${B}/D/D000032.jpg`, // Byron Donalds
+  "rs-flgov": `${B}/D/D000600.jpg`, // Ron DeSantis (former FL-6)
+  "rs-flsen": `${B}/S/S001217.jpg`, // Rick Scott
+  "mr-flsen": `${B}/R/R000595.jpg`, // Marco Rubio
+  "mw-fl23":  `${B}/W/W000797.jpg`, // Debbie Wasserman Schultz
+  "fc-fl20":  `${B}/W/W000808.jpg`, // Frederica Wilson
+  "ms-fl09":  `${B}/F/F000476.jpg`, // Maxwell Frost
+  "kc-fl14":  `${B}/C/C001066.jpg`, // Kathy Castor
+  "rs-fl08":  `${B}/P/P000599.jpg`, // Bill Posey
+  "ms-fl01":  `${B}/G/G000578.jpg`, // Matt Gaetz
+  "as-fl04":  `${B}/B/B001316.jpg`, // Aaron Bean
+  "vs-fl27":  `${B}/S/S001235.jpg`, // Maria Salazar
+  "cm-fl26":  `${B}/G/G000592.jpg`, // Carlos Gimenez
+  "ds-fl17":  `${B}/F/F000475.jpg`, // Scott Franklin
+  "mw-fl05":  `${B}/R/R000609.jpg`, // John Rutherford
+  "kc-fl11":  `${B}/W/W000806.jpg`, // Daniel Webster
+  "lf-fl22":  `${B}/F/F000462.jpg`, // Lois Frankel
+  "cd-fl12":  `${B}/C/C001121.jpg`, // Sheila Cherfilus-McCormick
+  "jm-fl13":  `${B}/L/L000601.jpg`, // Anna Paulina Luna
+  "vs-fl16":  `${B}/B/B001260.jpg`, // Vern Buchanan
+  "ms-fl06":  `${B}/W/W000823.jpg`, // Mike Waltz
+  "ds-fl21":  `${B}/M/M001199.jpg`, // Brian Mast
+  "vs-fl07":  `${B}/M/M001212.jpg`, // Cory Mills
+  // Texas federal
+  "tc-tx-sen":  `${B}/C/C001098.jpg`, // Ted Cruz
+  "jc-tx-sen2": `${B}/C/C001056.jpg`, // John Cornyn
+  "jc-tx-20":   `${B}/C/C001091.jpg`, // Joaquin Castro
+  "dc-tx-02":   `${B}/C/C001120.jpg`, // Dan Crenshaw
+  "cr-tx-21":   `${B}/R/R000614.jpg`, // Chip Roy
+  "mm-tx-10":   `${B}/M/M001157.jpg`, // Michael McCaul
+  "hc-tx-28":   `${B}/C/C001063.jpg`, // Henry Cuellar
+  "sg-tx-29":   `${B}/G/G000587.jpg`, // Sylvia Garcia
+  "ve-tx-16":   `${B}/E/E000299.jpg`, // Veronica Escobar
+  "ca-tx-32":   `${B}/A/A000378.jpg`, // Colin Allred
+};
 
 const META: Record<string, { role: Politician["role"]; region: Politician["region"]; state: string }> = {
   "bd-fl19":   { role: "U.S. House",   region: "South FL",   state: "FL" },
@@ -662,7 +703,7 @@ export const politicians: Politician[] = raw.map((p, i) => {
   return {
     ...p,
     w: Math.max(0, 1 - (s / 20) / 4),
-    photo: PHOTOS[i % PHOTOS.length],
+    photo: PHOTO_BY_ID[p.id] ?? FALLBACK_PHOTOS[i % FALLBACK_PHOTOS.length],
     role: META[p.id]?.role ?? "U.S. House",
     region: META[p.id]?.region ?? "Statewide",
     state: META[p.id]?.state ?? "FL",
