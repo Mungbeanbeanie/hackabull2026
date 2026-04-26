@@ -4,6 +4,7 @@ export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localh
 
 export type SearchResult = { id: string; score: number };
 export type RankedPolitician = { politician: Politician; sim: number };
+export type BackendPolitician = { id: string; name: string; party: string; state: string; office: string; vector: number[] };
 
 export async function searchPoliticians(
   vector: number[],
@@ -28,6 +29,13 @@ export async function searchPoliticians(
 
   const data = await res.json();
   return data.results as SearchResult[];
+}
+
+export async function fetchPoliticians(): Promise<BackendPolitician[]> {
+  const res = await fetch(`${BACKEND_URL}/api/politicians`);
+  if (!res.ok) throw new Error(`/api/politicians responded ${res.status}`);
+  const data = await res.json();
+  return data.politicians as BackendPolitician[];
 }
 
 export async function checkHealth(): Promise<boolean> {

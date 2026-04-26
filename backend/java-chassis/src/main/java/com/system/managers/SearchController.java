@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.system.bridge.InferencePayload;
 import com.system.bridge.PythonRunner;
+import com.system.managers.LibraryIndexer.AtlasResult;
 import com.system.models.PoliFigure;
 import com.system.models.UserProfile;
 import com.system.sampler.userNegPreference;
@@ -33,11 +34,18 @@ public class SearchController {
     // Full-library scan: score every figure in the index against the user profile
     public InferencePayload.Response search(UserProfile profile, boolean useAdherence, List<String> seenIds) throws Exception {
         List<InferencePayload.Constraint> constraints = buildConstraints();
-        List<InferencePayload.Candidate>  candidates  = buildCandidates();
-
         List<Double> userVector = floatToDoubleList(profile.getUserVector());
         List<Double> weights    = floatToDoubleList(profile.getWeights());
 
+        if (!useAdherence) {
+            try {
+                return searchViaAtlas(userVector, seenIds, constraints);
+            } catch (UnsupportedOperationException ignored) {
+                // fall through to Python pipeline
+            }
+        }
+
+        List<InferencePayload.Candidate> candidates = buildCandidates();
         InferencePayload.Request request = new InferencePayload.Request(
             userVector,
             weights,
@@ -46,8 +54,43 @@ public class SearchController {
             constraints,
             seenIds
         );
-
         return pythonRunner.run(request);
+    }
+
+    private InferencePayload.Response searchViaAtlas(
+            List<Double> userVector,
+            List<String> seenIds,
+            List<InferencePayload.Constraint> constraints) {
+
+        List<AtlasResult> atlasResults = libraryIndexer.searchByVector(userVector, 50);
+
+        List<InferencePayload.Result> survivors = new ArrayList<>();
+        for (AtlasResult r : atlasResults) {
+            if (seenIds.contains(r.id())) continue;
+            if (inHateZone(r.id(), constraints)) continue;
+            InferencePayload.Result res = new InferencePayload.Result();
+            res.id    = r.id();
+            res.score = r.score();
+            survivors.add(res);
+            if (survivors.size() == 10) break;
+        }
+
+        InferencePayload.Response response = new InferencePayload.Response();
+        response.results = survivors;
+        return response;
+    }
+
+    private boolean inHateZone(String id, List<InferencePayload.Constraint> constraints) {
+        if (constraints.isEmpty()) return false;
+        float[] vec = libraryIndexer.lookupVector(id) != null
+            ? libraryIndexer.lookupVector(id).toArray()
+            : null;
+        if (vec == null) return false;
+        for (InferencePayload.Constraint c : constraints) {
+            double v = vec[c.allele];
+            if (v >= c.lower && v <= c.upper) return true;
+        }
+        return false;
     }
 
     private List<InferencePayload.Constraint> buildConstraints() throws Exception {
@@ -75,6 +118,10 @@ public class SearchController {
             ));
         }
         return candidates;
+    }
+
+    public List<PoliFigure> getAllFigures() {
+        return libraryIndexer.getAllFigures();
     }
 
     private static List<Double> floatToDoubleList(float[] arr) {

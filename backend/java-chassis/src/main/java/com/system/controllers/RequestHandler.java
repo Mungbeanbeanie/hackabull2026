@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class RequestHandler {
 
@@ -32,9 +33,10 @@ public class RequestHandler {
     public RequestHandler(SearchController controller, int port) throws IOException {
         this.controller = controller;
         this.server     = HttpServer.create(new InetSocketAddress(port), 0);
-        server.createContext("/api/search", this::handleSearch);
-        server.createContext("/health",     this::handleHealth);
-        server.createContext("/",           ex -> respond(ex, 404, jsonError("not found")));
+        server.createContext("/api/search",      this::handleSearch);
+        server.createContext("/api/politicians", this::handlePoliticians);
+        server.createContext("/health",          this::handleHealth);
+        server.createContext("/",                ex -> respond(ex, 404, jsonError("not found")));
     }
 
     public void start()  { server.start(); }
@@ -46,6 +48,20 @@ public class RequestHandler {
     private void handleHealth(HttpExchange ex) throws IOException {
         if (handlePreflight(ex)) return;
         respond(ex, 200, "{\"status\":\"ok\"}");
+    }
+
+    private void handlePoliticians(HttpExchange ex) throws IOException {
+        if (handlePreflight(ex)) return;
+        if (!"GET".equals(ex.getRequestMethod())) {
+            respond(ex, 405, jsonError("method not allowed"));
+            return;
+        }
+        try {
+            String body = MAPPER.writeValueAsString(Map.of("politicians", controller.getAllFigures()));
+            respond(ex, 200, body);
+        } catch (Exception e) {
+            respond(ex, 500, jsonError("internal server error"));
+        }
     }
 
     private void handleSearch(HttpExchange ex) throws IOException {
